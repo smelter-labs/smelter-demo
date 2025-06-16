@@ -35,13 +35,19 @@ resource "aws_subnet" "demo_public_subnet" {
 }
 
 resource "aws_security_group" "demo_sg" {
-  name        = "demo_sg"
+  name = "demo_sg"
 
   ingress {
-     from_port = 22
-     to_port = 22
-     protocol = "tcp"
-     cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port       = 1
+    to_port         = 65535
+    protocol        = "tcp"
+    security_groups = [aws_security_group.demo_elb_sg.id]
   }
   egress {
     from_port   = 0
@@ -49,8 +55,8 @@ resource "aws_security_group" "demo_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  vpc_id = aws_vpc.demo_vpc.id
-  depends_on = [ aws_vpc.demo_vpc ]
+  vpc_id     = aws_vpc.demo_vpc.id
+  depends_on = [aws_vpc.demo_vpc]
 
   tags = {
     project = "smelter-demo"
@@ -58,8 +64,8 @@ resource "aws_security_group" "demo_sg" {
 }
 
 resource "aws_internet_gateway" "demo_ig" {
-  vpc_id = aws_vpc.demo_vpc.id
-  depends_on = [ aws_vpc.demo_vpc ]
+  vpc_id     = aws_vpc.demo_vpc.id
+  depends_on = [aws_vpc.demo_vpc]
 
   tags = {
     project = "smelter-demo"
@@ -89,13 +95,82 @@ resource "aws_route_table_association" "demo_public_rt_1" {
   route_table_id = aws_route_table.demo_public_rt.id
 }
 
-resource "aws_instance" "demo_instance_g4dn_2xlarge" {
+resource "aws_security_group" "demo_elb_sg" {
+  name = "demo_elb_sg"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  vpc_id     = aws_vpc.demo_vpc.id
+  depends_on = [aws_vpc.demo_vpc]
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_elb" "demo_elb" {
+  name            = "smelter-demo-elb"
+  subnets         = [aws_subnet.demo_public_subnet.id]
+  security_groups = [aws_security_group.demo_elb_sg.id]
+
+  listener {
+    instance_port     = 8000
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+
+  listener {
+    instance_port      = 8000
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "arn:aws:acm:us-east-1:105239478464:certificate/8e68591f-e332-46cd-a5e8-495b95f7155c"
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "HTTP:8000/"
+    interval            = 30
+  }
+
+  instances                   = [aws_instance.demo_instance.id]
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 400
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_instance" "demo_instance" {
   # packer build  -var 'with-gpu=true' standalone.pkr.hcl
   ami = "ami-0bdc49fe81f2600c1"
 
   # 8vCPU 32GB NVIDIA T4 GPU
   # $0.752
-  instance_type = "g4dn.2xlarge"
+  #instance_type = "g4dn.2xlarge"
+  instance_type = "t3.micro"
 
   key_name = "wojtek-compositor-demo"
 
