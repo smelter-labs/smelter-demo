@@ -15,6 +15,7 @@
                 packer
                 pnpm
                 nodejs
+                ffmpeg-full
               ];
             };
           };
