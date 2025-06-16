@@ -1,0 +1,110 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.7.0"
+    }
+  }
+
+  required_version = ">= 1.2.0"
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_vpc" "demo_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  instance_tenancy     = "default"
+  enable_dns_support   = "true"
+  enable_dns_hostnames = "true"
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_subnet" "demo_public_subnet" {
+  vpc_id            = aws_vpc.demo_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_security_group" "demo_sg" {
+  name        = "demo_sg"
+
+  ingress {
+     from_port = 22
+     to_port = 22
+     protocol = "tcp"
+     cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  vpc_id = aws_vpc.demo_vpc.id
+  depends_on = [ aws_vpc.demo_vpc ]
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_internet_gateway" "demo_ig" {
+  vpc_id = aws_vpc.demo_vpc.id
+  depends_on = [ aws_vpc.demo_vpc ]
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_route_table" "demo_public_rt" {
+  vpc_id = aws_vpc.demo_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.demo_ig.id
+  }
+
+  route {
+    ipv6_cidr_block = "::/0"
+    gateway_id      = aws_internet_gateway.demo_ig.id
+  }
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
+resource "aws_route_table_association" "demo_public_rt_1" {
+  subnet_id      = aws_subnet.demo_public_subnet.id
+  route_table_id = aws_route_table.demo_public_rt.id
+}
+
+resource "aws_instance" "demo_instance_g4dn_2xlarge" {
+  # packer build  -var 'with-gpu=true' standalone.pkr.hcl
+  ami = "ami-0bdc49fe81f2600c1"
+
+  # 8vCPU 32GB NVIDIA T4 GPU
+  # $0.752
+  instance_type = "g4dn.2xlarge"
+
+  key_name = "wojtek-compositor-demo"
+
+  subnet_id                   = aws_subnet.demo_public_subnet.id
+  vpc_security_group_ids      = [aws_security_group.demo_sg.id]
+  associate_public_ip_address = true
+
+  tags = {
+    project = "smelter-demo"
+  }
+}
+
