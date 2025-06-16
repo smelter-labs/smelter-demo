@@ -13,6 +13,8 @@
               packages = with pkgs; [
                 terraform
                 packer
+                pnpm
+                nodejs
               ];
             };
           };
