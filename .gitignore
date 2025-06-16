@@ -1,0 +1,4 @@
+.terraform
+terraform.tfstate.backup
+.direnv
+*.mp4
