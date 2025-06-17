@@ -12,6 +12,7 @@
     "@swmansion/smelter": "^0.2.1",
     "@swmansion/smelter-node": "^0.2.1",
     "express": "^4.21.0",
+    "prettier": "^3.5.3",
     "react": "^18.3.1",
     "zustand": "4.5.5"
   },
