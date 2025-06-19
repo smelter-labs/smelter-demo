@@ -1,4 +1,4 @@
-import { View, Text, useInputStreams, InputStream, Tiles } from '@swmansion/smelter';
+import { View, useInputStreams, InputStream, Tiles, Rescaler } from '@swmansion/smelter';
 
 import { store } from './store';
 import { useStore } from 'zustand';
@@ -8,49 +8,102 @@ export default function App() {
 }
 
 function OutputScene() {
-  const inputs = useInputStreams();
-  const showInstructions = useStore(store, state => state.shouldShowInstructions);
+  const layout = useStore(store, state => state.layout);
 
   return (
-    <View style={{ backgroundColor: '#161127' }}>
-      {showInstructions ? <Instructions /> : undefined}
-      <Tiles>
-        {Object.values(inputs).map(input => (
-          <InputStream key={input.inputId} inputId={input.inputId} />
-        ))}
+    <View style={{ backgroundColor: '#161127', padding: 50 }}>
+      {layout === 'grid' ? (
+        <GridLayout />
+      ) : layout === 'primary-on-top' ? (
+        <PrimaryOnTopLayout />
+      ) : layout === 'primary-on-left' ? (
+        <PrimaryOnLeftLayout />
+      ) : layout === 'secondary-in-corner' ? (
+        <SecondaryInCornerLayout />
+      ) : null}
+    </View>
+  );
+}
+
+function Input(props: { inputId: string }) {
+  const audioStreamId = useStore(store, state => state.audioStreamId);
+  return <InputStream inputId={props.inputId} muted={audioStreamId !== props.inputId} />;
+}
+
+function GridLayout() {
+  const inputs = useInputStreams();
+  return (
+    <Tiles transition={{ durationMs: 300 }}>
+      {Object.values(inputs).map(input => (
+        <Input key={input.inputId} inputId={input.inputId} />
+      ))}
+    </Tiles>
+  );
+}
+
+function PrimaryOnLeftLayout() {
+  const connectedStreamIds = useStore(store, state => state.connectedStreamIds);
+  const firstStreamId = connectedStreamIds[0];
+  if (!firstStreamId) {
+    return <View />;
+  }
+  const inputs = useInputStreams();
+  return (
+    <View style={{ direction: 'row' }}>
+      <Rescaler style={{ width: 1500 }}>
+        <Input inputId={firstStreamId} />
+      </Rescaler>
+      <Tiles transition={{ durationMs: 300 }}>
+        {Object.values(inputs)
+          .filter(input => input.inputId != firstStreamId)
+          .map(input => (
+            <Input key={input.inputId} inputId={input.inputId} />
+          ))}
       </Tiles>
     </View>
   );
 }
 
-function Instructions() {
+function PrimaryOnTopLayout() {
+  const connectedStreamIds = useStore(store, state => state.connectedStreamIds);
+  const firstStreamId = connectedStreamIds[0];
+  if (!firstStreamId) {
+    return <View />;
+  }
+  const inputs = useInputStreams();
   return (
-    <View style={{ direction: 'column', paddingLeft: 100 }}>
-      <View />
-      <Text style={{ fontSize: 50 }}>Open index.ts and get started.</Text>
-      <View style={{ height: 20 }} />
-      <Text style={{ width: 860, fontSize: 30, wrap: 'word' }}>
-        This example renders static text and sends the output stream via RTP to local port 8001.
-        Generated code includes helpers in smelterFfplayHelper.ts that display the output stream
-        using ffplay, make sure to remove them for any real production use.
-      </Text>
-      <View style={{ height: 20 }} />
-      <Text style={{ fontSize: 50 }}>Where to go next?</Text>
-      <Text style={{ width: 860, fontSize: 30, wrap: 'word' }}>
-        - ./src/App.tsx defines content of the streams.
-      </Text>
-      <Text style={{ width: 860, fontSize: 30, wrap: 'word' }}>
-        - ./src/routes.ts controls HTTP API that can be used to interact with this example.
-      </Text>
-      <Text style={{ width: 860, fontSize: 30, wrap: 'word' }}>
-        - ./smelter.tsx exposes Smelter instance that can be used to add/remove new
-        streams/images/shader.
-      </Text>
-      <Text style={{ width: 860, fontSize: 30, wrap: 'word' }}>
-        - ./store.ts implements global store using Zustand, enabling express API and React to share
-        common settings.
-      </Text>
-      <View />
+    <View style={{ direction: 'column' }}>
+      <Rescaler style={{ height: 800 }}>
+        <InputStream inputId={firstStreamId} />
+      </Rescaler>
+      <Tiles transition={{ durationMs: 300 }}>
+        {Object.values(inputs)
+          .filter(input => input.inputId != firstStreamId)
+          .map(input => (
+            <InputStream key={input.inputId} inputId={input.inputId} />
+          ))}
+      </Tiles>
+    </View>
+  );
+}
+
+function SecondaryInCornerLayout() {
+  const connectedStreamIds = useStore(store, state => state.connectedStreamIds);
+  const firstStreamId = connectedStreamIds[0];
+  const secondStreamId = connectedStreamIds[1];
+  if (!firstStreamId) {
+    return <View />;
+  }
+  return (
+    <View style={{ direction: 'column' }}>
+      <Rescaler>
+        <Input inputId={firstStreamId} />
+      </Rescaler>
+      {secondStreamId ? (
+        <Rescaler style={{ top: 80, right: 80, width: 640, height: 320 }}>
+          <Input inputId={secondStreamId} />
+        </Rescaler>
+      ) : null}
     </View>
   );
 }

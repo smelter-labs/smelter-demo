@@ -16,6 +16,7 @@
                 pnpm
                 nodejs
                 ffmpeg-full
+                streamlink
               ];
             };
           };
