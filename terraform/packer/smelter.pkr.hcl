@@ -7,20 +7,10 @@ packer {
   }
 }
 
-variable "region" {
-  type    = string
-  default = "us-east-1"
-}
-
-variable "with-gpu" {
-  type    = bool
-  default = false
-}
-
 source "amazon-ebs" "image" {
-  ami_name      = var.with-gpu ? "smelter_with_gpu_ubuntu_24.04_{{timestamp}}" : "smelter_ubuntu_24.04_{{timestamp}}"
-  instance_type = var.with-gpu ? "g4dn.xlarge" : "c5.4xlarge"
-  region        = var.region
+  ami_name      = "smelter_demo_{{timestamp}}"
+  instance_type = "g4dn.xlarge"
+  region        = "us-east-1" 
   source_ami_filter {
     filters = {
       name                = "ubuntu/images/*ubuntu-noble-24.04-amd64-server-*"
@@ -42,10 +32,32 @@ source "amazon-ebs" "image" {
 build {
   sources = ["source.amazon-ebs.image"]
 
+  provisioner "file" {
+    source = "../../app"
+    destination = "/home/ubuntu/project"
+  }
+
+  provisioner "file" {
+    source = "./smelter.service"
+    destination = "/tmp/smelter.service"
+  }
+
+  provisioner "file" {
+    source = "./nextjs.service"
+    destination = "/tmp/nextjs.service"
+  }
+
+  provisioner "file" {
+    source = "./broadcaster.service"
+    destination = "/tmp/broadcaster.service"
+  }
+  
+  provisioner "file" {
+    source = "./proxy.conf"
+    destination = "/tmp/proxy.conf"
+  }
+
   provisioner "shell" {
     script = "./standalone_setup.sh"
-    env = {
-      ENABLE_GPU = var.with-gpu ? "1" : "0"
-    }
   }
 }

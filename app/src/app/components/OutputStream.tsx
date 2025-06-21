@@ -6,7 +6,12 @@ export default function OutputStream() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    connect('http://127.0.0.1:8080/api/whep', 'example').then((stream) => {
+    connect(
+      process.env.NODE_ENV === 'development'
+        ? 'http://127.0.0.1:8080/api/whep'
+        : 'https://demo.smelter.live/api/whep',
+      'example',
+    ).then((stream) => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -21,6 +26,8 @@ export default function OutputStream() {
       controls
       autoPlay
       autoFocus
+      width={1920}
+      height={1080}
     />
   );
 }

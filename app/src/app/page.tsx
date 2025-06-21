@@ -17,24 +17,12 @@ import StatusLabel from '@/components/status-label';
 import { motion } from 'framer-motion';
 import { staggerContainer } from '@/utils/animations';
 
-// Mock stream data
-const AVAILABLE_STREAMS = [
-  { id: 'stream-1', label: 'Camera 1' },
-  { id: 'stream-2', label: 'Screen Share' },
-  { id: 'stream-3', label: 'Camera 2' },
-  { id: 'stream-4', label: 'Mobile Feed' },
-  { id: 'stream-5', label: 'External Input' },
-];
-
 export default function Home() {
-  // const [layoutIndex, setLayout] = useState(0);
-  const [activeLayoutId, setActiveLayoutId] = useState<Layout>(
-    'secondary-in-corner',
-  );
+  const [activeLayoutId, setActiveLayoutId] = useState<Layout>('grid');
   const [smelterState, setSmelterState] = useState<StreamOptions>({
-    availableStreams: [...AVAILABLE_STREAMS],
+    availableStreams: [],
     connectedStreamIds: [],
-    layout: 'primary-on-left',
+    layout: 'grid',
     audioStreamId: undefined,
   });
 
