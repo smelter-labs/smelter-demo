@@ -8,11 +8,17 @@ export type ExtendedStreamInfo = StreamInfo & {
   isConnected: boolean;
 };
 
+type ControlPanelProps = {
+  availableStreams: ExtendedStreamInfo[];
+  toggleStream: (streamId: string) => void;
+  toggleStreamAudio: (streamId: string) => void;
+};
+
 export default function ControlPanel({
   availableStreams,
-}: {
-  availableStreams: ExtendedStreamInfo[];
-}) {
+  toggleStream,
+  toggleStreamAudio,
+}: ControlPanelProps) {
   return (
     <Card className='flex-1 flex flex-col min-h-0 bg-black-90 border-black-50'>
       <CardHeader className='pb-3'>
@@ -25,7 +31,7 @@ export default function ControlPanel({
           {availableStreams.map((stream) => (
             <div
               key={stream.id}
-              className={`p-2 rounded border bg-black-75 ${stream.isConnected && !stream.isMuted ? 'border-green-600' : 'border-gray-500'}`}>
+              className={`p-2 rounded border bg-black-75 border-gray-500/50`}>
               <div className='flex items-center justify-between mb-2'>
                 <div>
                   <div className='text-xs font-medium text-white-100'>
@@ -37,9 +43,8 @@ export default function ControlPanel({
                   <Button
                     size='sm'
                     variant='ghost'
-                    className='h-6 w-6 p-0'
-                    // onClick={() => toggleMute(stream.id)}
-                  >
+                    className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+                    onClick={() => toggleStreamAudio(stream.id)}>
                     {stream.isMuted ? (
                       <MicOff className='w-3 h-3 text-red-40' />
                     ) : (
@@ -50,9 +55,8 @@ export default function ControlPanel({
               </div>
               <Button
                 size='sm'
-                className={`w-full h-6 text-xs text-white-100 ${stream.isConnected ? 'bg-red-80' : 'bg-green-100'}`}
-                // onClick={() => toggleConnection(stream.id)}
-              >
+                className={`w-full h-6 text-xs text-white-100 hover:opacity-55 cursor-pointer ${stream.isConnected ? 'bg-red-80 hover:bg-red-80' : 'bg-green-100 hover:bg-green-100'}`}
+                onClick={() => toggleStream(stream.id)}>
                 {stream.isConnected ? 'Disconnect' : 'Connect'}
               </Button>
             </div>

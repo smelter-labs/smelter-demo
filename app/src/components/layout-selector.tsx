@@ -52,45 +52,31 @@ export default function LayoutSelector({
       case 'grid':
         return (
           <div className='w-full h-full grid grid-cols-2 gap-0.5'>
-            {Array.from({ length: Math.min(4, streamCount) }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className='rounded-md border border-white-25 bg-purple-40'
+                className={`transition-all duration-300 ease-in-out rounded-sm
+                              ${i < streamCount ? 'bg-purple-80 border border-white-25' : 'border border-dashed border-white-25'}`}
               />
             ))}
-            {Array.from({ length: 4 - Math.min(4, streamCount) }).map(
-              (_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className='rounded-md border border-dashed border-white-25'
-                />
-              ),
-            )}
           </div>
         );
       case 'primary-on-left':
         return (
           <div className='w-full h-full flex gap-0.5'>
             <div
-              className={`w-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
+              className={`transition-all duration-300 ease-in-out w-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
             />
             <div className='w-1/3 flex flex-col gap-0.5'>
-              {Array.from({
-                length: Math.min(3, Math.max(0, streamCount - 1)),
-              }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 rounded-md border border-white-25 bg-purple-40`}
-                />
-              ))}
-              {Array.from({
-                length: 3 - Math.min(3, Math.max(0, streamCount - 1)),
-              }).map((_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className='flex-1 rounded-md border border-dashed border-white-25'
-                />
-              ))}
+              {Array.from({ length: 3 }).map((_, i) => {
+                const isActive = i < streamCount - 1;
+                return (
+                  <div
+                    key={i}
+                    className={`transition-all duration-300 ease-in-out flex-1 rounded-sm border ${isActive ? 'border-white-25 bg-purple-80' : 'border-dashed border-white-25'}`}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -98,25 +84,18 @@ export default function LayoutSelector({
         return (
           <div className='w-full h-full flex flex-col gap-0.5'>
             <div
-              className={`h-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
+              className={`transition-all duration-300 ease-in-out h-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
             />
             <div className='h-1/3 flex gap-0.5'>
-              {Array.from({
-                length: Math.min(3, Math.max(0, streamCount - 1)),
-              }).map((_, i) => (
-                <div
-                  key={i}
-                  className='flex-1 rounded-md border border-white-25 bg-purple-40'
-                />
-              ))}
-              {Array.from({
-                length: 3 - Math.min(3, Math.max(0, streamCount - 1)),
-              }).map((_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className='flex-1 rounded-md border border-dashed border-white-25'
-                />
-              ))}
+              {Array.from({ length: 3 }).map((_, i) => {
+                const isActive = i < Math.max(0, streamCount - 1);
+                return (
+                  <div
+                    key={i}
+                    className={`transition-all duration-300 ease-in-out flex-1 rounded-sm border ${isActive ? 'border-white-25 bg-purple-80' : 'border-dashed border-white-25'}`}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -124,16 +103,15 @@ export default function LayoutSelector({
         return (
           <div className='w-full h-full relative'>
             <div
-              className={`w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
-            />
+              className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}></div>
             {streamCount > 1 && (
-              <div className='absolute top-0.5 right-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
+              <div className='transition-all duration-300 ease-in-out absolute top-1.5 right-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
             )}
             {streamCount > 2 && (
-              <div className='absolute bottom-0.5 right-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
+              <div className='transition-all duration-300 ease-in-out absolute bottom-1.5 right-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
             )}
             {streamCount > 3 && (
-              <div className='absolute bottom-0.5 left-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
+              <div className='transition-all duration-300 ease-in-out absolute bottom-1.5 left-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
             )}
           </div>
         );
@@ -158,7 +136,7 @@ export default function LayoutSelector({
               <button
                 key={layout.id}
                 onClick={() => changeLayout(layout.id)}
-                className={`p-2 rounded-md border transition-colors cursor-pointer ${isActive ? 'bg-purple-100 border-purple-60' : 'bg-black-75 border-black-50'}`}>
+                className={`duration-300 ease-in-out p-2 rounded-md border transition-colors  cursor-pointer ${isActive ? 'bg-purple-100 border-purple-60' : 'bg-black-75 border-black-50 hover:bg-purple-100/50'}`}>
                 <div className='aspect-video mb-1 text-xs'>
                   {renderLayoutPreview(layout.id)}
                 </div>

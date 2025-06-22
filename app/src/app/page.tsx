@@ -1,6 +1,13 @@
 'use client';
 
-import { Layout, StreamOptions } from '@/app/actions';
+import {
+  addStream,
+  Layout,
+  removeStream,
+  selectAudioStream,
+  StreamOptions,
+  updateLayout,
+} from '@/app/actions';
 import { useState } from 'react';
 import LayoutSelector from '@/components/layout-selector';
 import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
@@ -35,6 +42,32 @@ export default function Home() {
     // await updateLayout(LayoutValues[newLayout]);
   };
 
+  const toggleStream = async (streamId: string) => {
+    setSmelterState((prev) => {
+      const isConnected = prev.connectedStreamIds.includes(streamId);
+      const newConnectedStreamIds = isConnected
+        ? prev.connectedStreamIds.filter((id) => id !== streamId)
+        : [...prev.connectedStreamIds, streamId];
+
+      return { ...prev, connectedStreamIds: newConnectedStreamIds };
+    });
+
+    if (smelterState.connectedStreamIds.includes(streamId)) {
+      await removeStream(streamId);
+    } else {
+      await addStream(streamId);
+    }
+  };
+
+  const toggleStreamAudio = async (streamId: string) => {
+    const isMuted = smelterState.audioStreamId !== streamId;
+    setSmelterState((prev) => {
+      return { ...prev, audioStreamId: isMuted ? streamId : undefined };
+    });
+
+    await selectAudioStream(isMuted ? streamId : '');
+  };
+
   // const refreshState = async () => {
   //   const state = await getSmelterState();
   //   console.log(state);
@@ -63,7 +96,11 @@ export default function Home() {
         <VideoPreview />
 
         <div className='flex flex-col gap-4 min-h-0'>
-          <ControlPanel availableStreams={availableStreams} />
+          <ControlPanel
+            availableStreams={availableStreams}
+            toggleStream={toggleStream}
+            toggleStreamAudio={toggleStreamAudio}
+          />
           <LayoutSelector
             changeLayout={changeLayout}
             activeLayoutId={activeLayoutId}
