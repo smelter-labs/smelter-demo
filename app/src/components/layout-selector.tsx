@@ -1,4 +1,3 @@
-import { COLORS } from '@/app/page';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Grid3X3, Layers, LayoutGrid, LucideIcon, Square } from 'lucide-react';
 
@@ -56,19 +55,14 @@ export default function LayoutSelector({
             {Array.from({ length: Math.min(4, streamCount) }).map((_, i) => (
               <div
                 key={i}
-                className='rounded-md border'
-                style={{
-                  borderColor: COLORS.white25,
-                  backgroundColor: COLORS.purple40,
-                }}
+                className='rounded-md border border-white-25 bg-purple-40'
               />
             ))}
             {Array.from({ length: 4 - Math.min(4, streamCount) }).map(
               (_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className='rounded-md border border-dashed'
-                  style={{ borderColor: COLORS.white25 }}
+                  className='rounded-md border border-dashed border-white-25'
                 />
               ),
             )}
@@ -77,27 +71,16 @@ export default function LayoutSelector({
       case 'primary-on-left':
         return (
           <div className='w-full h-full flex gap-0.5'>
-            {/* Primary stream on left (2/3 width) */}
             <div
-              className='w-2/3 rounded-md border'
-              style={{
-                borderColor: COLORS.white25,
-                backgroundColor:
-                  streamCount > 0 ? COLORS.purple40 : 'transparent',
-              }}
+              className={`w-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
             />
-            {/* Secondary streams on right */}
             <div className='w-1/3 flex flex-col gap-0.5'>
               {Array.from({
                 length: Math.min(3, Math.max(0, streamCount - 1)),
               }).map((_, i) => (
                 <div
                   key={i}
-                  className='flex-1 rounded-md border'
-                  style={{
-                    borderColor: COLORS.white25,
-                    backgroundColor: COLORS.purple40,
-                  }}
+                  className={`flex-1 rounded-md border border-white-25 bg-purple-40`}
                 />
               ))}
               {Array.from({
@@ -105,8 +88,7 @@ export default function LayoutSelector({
               }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className='flex-1 rounded-md border border-dashed'
-                  style={{ borderColor: COLORS.white25 }}
+                  className='flex-1 rounded-md border border-dashed border-white-25'
                 />
               ))}
             </div>
@@ -115,27 +97,16 @@ export default function LayoutSelector({
       case 'primary-on-top':
         return (
           <div className='w-full h-full flex flex-col gap-0.5'>
-            {/* Primary stream on top (2/3 height) */}
             <div
-              className='h-2/3 rounded-md border'
-              style={{
-                borderColor: COLORS.white25,
-                backgroundColor:
-                  streamCount > 0 ? COLORS.purple40 : 'transparent',
-              }}
+              className={`h-2/3 rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
             />
-            {/* Secondary streams on bottom */}
             <div className='h-1/3 flex gap-0.5'>
               {Array.from({
                 length: Math.min(3, Math.max(0, streamCount - 1)),
               }).map((_, i) => (
                 <div
                   key={i}
-                  className='flex-1 rounded-md border'
-                  style={{
-                    borderColor: COLORS.white25,
-                    backgroundColor: COLORS.purple40,
-                  }}
+                  className='flex-1 rounded-md border border-white-25 bg-purple-40'
                 />
               ))}
               {Array.from({
@@ -143,8 +114,7 @@ export default function LayoutSelector({
               }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className='flex-1 rounded-md border border-dashed'
-                  style={{ borderColor: COLORS.white25 }}
+                  className='flex-1 rounded-md border border-dashed border-white-25'
                 />
               ))}
             </div>
@@ -153,42 +123,17 @@ export default function LayoutSelector({
       case 'secondary-in-corner':
         return (
           <div className='w-full h-full relative'>
-            {/* Primary stream (full background) */}
             <div
-              className='w-full h-full rounded-md border'
-              style={{
-                borderColor: COLORS.white25,
-                backgroundColor:
-                  streamCount > 0 ? COLORS.purple40 : 'transparent',
-              }}
+              className={`w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-40' : 'bg-transparent'}`}
             />
-            {/* Secondary streams in corners */}
             {streamCount > 1 && (
-              <div
-                className='absolute top-0.5 right-0.5 w-1/4 h-1/4 rounded-md border'
-                style={{
-                  borderColor: COLORS.white25,
-                  backgroundColor: COLORS.purple40,
-                }}
-              />
+              <div className='absolute top-0.5 right-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
             )}
             {streamCount > 2 && (
-              <div
-                className='absolute bottom-0.5 right-0.5 w-1/4 h-1/4 rounded-md border'
-                style={{
-                  borderColor: COLORS.white25,
-                  backgroundColor: COLORS.purple40,
-                }}
-              />
+              <div className='absolute bottom-0.5 right-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
             )}
             {streamCount > 3 && (
-              <div
-                className='absolute bottom-0.5 left-0.5 w-1/4 h-1/4 rounded-md border'
-                style={{
-                  borderColor: COLORS.white25,
-                  backgroundColor: COLORS.purple40,
-                }}
-              />
+              <div className='absolute bottom-0.5 left-0.5 w-1/4 h-1/4 rounded-md border border-white-25 bg-purple-40' />
             )}
           </div>
         );
@@ -198,15 +143,9 @@ export default function LayoutSelector({
   };
 
   return (
-    <Card
-      style={{
-        backgroundColor: COLORS.black90,
-        borderColor: COLORS.black50,
-      }}>
+    <Card className='bg-black-90 border-black-50'>
       <CardHeader className='pb-3'>
-        <CardTitle
-          className='text-sm font-medium'
-          style={{ color: COLORS.white75 }}>
+        <CardTitle className='text-sm font-medium text-white-75'>
           Layout
         </CardTitle>
       </CardHeader>
@@ -219,19 +158,13 @@ export default function LayoutSelector({
               <button
                 key={layout.id}
                 onClick={() => changeLayout(layout.id)}
-                className='p-2 rounded-md border transition-colors cursor-pointer'
-                style={{
-                  backgroundColor: isActive ? COLORS.purple100 : COLORS.black75,
-                  borderColor: isActive ? COLORS.purple60 : COLORS.black50,
-                }}>
+                className={`p-2 rounded-md border transition-colors cursor-pointer ${isActive ? 'bg-purple-100 border-purple-60' : 'bg-black-75 border-black-50'}`}>
                 <div className='aspect-video mb-1 text-xs'>
                   {renderLayoutPreview(layout.id)}
                 </div>
                 <div className='flex items-center justify-center gap-1'>
-                  <Icon className='w-3 h-3' style={{ color: COLORS.white75 }} />
-                  <span className='text-xs' style={{ color: COLORS.white75 }}>
-                    {layout.name}
-                  </span>
+                  <Icon className='w-3 h-3 text-white-75' />
+                  <span className='text-xs text-white-75'>{layout.name}</span>
                 </div>
               </button>
             );
