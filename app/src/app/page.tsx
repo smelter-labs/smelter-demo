@@ -93,12 +93,12 @@ export default function Home() {
   return (
     <motion.div
       variants={staggerContainer}
-      className='h-screen flex flex-col p-4 bg-black-100'>
+      className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
       <StatusLabel smelterState={smelterState} />
 
       <motion.div
         variants={staggerContainer}
-        className='flex-1 grid grid-cols-4 gap-4 min-h-0'>
+        className='flex-1 md:grid grid-cols-4 gap-4 min-h-0'>
         <VideoPreview />
 
         <motion.div className='flex flex-col gap-4 min-h-0' layout>

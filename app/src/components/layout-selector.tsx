@@ -26,7 +26,7 @@ export const LAYOUT_CONFIGS = [
   { id: 'primary-on-top', name: 'Primary Top', icon: Square, maxStreams: 4 },
   {
     id: 'secondary-in-corner',
-    name: 'Corner PiP',
+    name: 'Secondary Corner',
     icon: Layers,
     maxStreams: 4,
   },
@@ -137,7 +137,7 @@ export default function LayoutSelector({
               <button
                 key={layout.id}
                 onClick={() => changeLayout(layout.id)}
-                className={`duration-300 ease-in-out p-2 rounded-md border transition-colors  cursor-pointer ${isActive ? 'bg-purple-100 border-purple-60' : 'bg-black-75 border-black-50 hover:bg-purple-100/50'}`}>
+                className={`duration-300 ease-in-out p-2 rounded-md border transition-colors cursor-pointer ${isActive ? 'bg-purple-100 border-purple-60' : 'bg-black-75 border-black-50 hover:bg-purple-100/50'}`}>
                 <div className='aspect-video mb-1 text-xs'>
                   {renderLayoutPreview(layout.id)}
                 </div>
