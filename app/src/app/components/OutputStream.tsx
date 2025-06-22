@@ -16,7 +16,8 @@ export default function OutputStream() {
   return (
     <video
       ref={videoRef}
-      src={'example-video.mp4'}
+      className='rounded-md'
+      src='example-video.mp4'
       controls
       autoPlay
       autoFocus

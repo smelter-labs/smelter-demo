@@ -1,108 +1,104 @@
 'use client';
 
-import {
-  addStream,
-  getSmelterState,
-  removeStream,
-  selectAudioStream,
-  StreamOptions,
-  updateLayout,
-} from '@/app/actions';
-import OutputStream from '@/app/components/OutputStream';
-import { useEffect, useState } from 'react';
+import { StreamOptions } from '@/app/actions';
+import { useState } from 'react';
+import LayoutSelector from '@/components/layout-selector';
+import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
+import VideoPreview from '@/components/video-preview';
+import StatusLabel from '@/components/status-label';
 
-const LayoutValues = [
-  'grid',
-  'primary-on-left',
-  'primary-on-top',
-  'secondary-in-corner',
-] as const;
+export const COLORS = {
+  black100: '#161127',
+  black90: '#161127E6',
+  black75: '#161127BF',
+  black50: '#16112780',
+  black25: '#16112740',
+  white100: '#FFFFFFFF',
+  white75: '#FFFFFFBF',
+  white50: '#FFFFFF80',
+  white25: '#FFFFFF40',
+  red100: '#86081E',
+  red80: '#BF0D2A',
+  red60: '#EF193E',
+  red40: '#F24664',
+  red20: '#F78D9E',
+  red0: '#FBC6CF',
+  purple100: '#302555',
+  purple80: '#493880',
+  purple60: '#624BAA',
+  purple40: '#8471C1',
+  purple20: '#C2B1E0',
+  gray50: '#424242',
+  green100: '#0C662F',
+  green60: '#3DA362',
+  green20: '#A4D7AF',
+  react100: '#61DAFB',
+} as const;
+
+// Mock stream data
+const AVAILABLE_STREAMS = [
+  { id: 'stream-1', label: 'Camera 1' },
+  { id: 'stream-2', label: 'Screen Share' },
+  { id: 'stream-3', label: 'Camera 2' },
+  { id: 'stream-4', label: 'Mobile Feed' },
+  { id: 'stream-5', label: 'External Input' },
+];
 
 export default function Home() {
-  const [layoutIndex, setLayout] = useState(0);
+  // const [layoutIndex, setLayout] = useState(0);
+  const [activeLayoutId, setActiveLayoutId] = useState('single');
   const [smelterState, setSmelterState] = useState<StreamOptions>({
-    availableStreams: [],
+    availableStreams: [...AVAILABLE_STREAMS],
     connectedStreamIds: [],
     layout: 'grid',
+    audioStreamId: undefined,
   });
-  const changeLayout = async () => {
-    const newLayout = (layoutIndex + 1) % LayoutValues.length;
-    setLayout(newLayout);
-    await updateLayout(LayoutValues[newLayout]);
+
+  const changeLayout = async (layoutId: Layout) => {
+    console.log('TEST');
+    setActiveLayoutId(layoutId);
+
+    // await updateLayout(LayoutValues[newLayout]);
   };
 
-  const refreshState = async () => {
-    const state = await getSmelterState();
-    console.log(state);
-    setSmelterState(state);
-  };
+  // const refreshState = async () => {
+  //   const state = await getSmelterState();
+  //   console.log(state);
+  //   setSmelterState(state);
+  // };
 
-  useEffect(() => {
-    const timeout = setInterval(refreshState, 5000);
-    return () => clearInterval(timeout);
-  }, []);
+  // useEffect(() => {
+  //   const timeout = setInterval(refreshState, 5000);
+  //   return () => clearInterval(timeout);
+  // }, []);
+
+  const availableStreams = smelterState.availableStreams.map(
+    (stream) =>
+      ({
+        ...stream,
+        isMuted: smelterState.audioStreamId !== stream.id,
+        isConnected: smelterState.connectedStreamIds.includes(stream.id),
+      }) as ExtendedStreamInfo,
+  );
 
   return (
-    <div className='grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]'>
-      <main className='flex flex-col gap-[32px] row-start-2 items-center sm:items-start'>
-        <OutputStream />
-        <div className='flex row'>
-          <p className='text-lg m-2 p-2'>
-            Change layout (current: {LayoutValues[layoutIndex]}):
-          </p>
-          <button
-            onClick={() => changeLayout().then(refreshState)}
-            className='btn bg-blue-500 m-2  p-2 text-white'>
-            next layout: (
-            {LayoutValues[(layoutIndex + 1) % LayoutValues.length]})
-          </button>
-        </div>
+    <div
+      className='h-screen flex flex-col p-4'
+      style={{ backgroundColor: COLORS.black100 }}>
+      <StatusLabel smelterState={smelterState} />
 
-        {smelterState.availableStreams
-          .filter(
-            (stream) => !smelterState.connectedStreamIds.includes(stream.id),
-          )
-          .map((stream) => (
-            <div className='flex row' key={stream.id}>
-              <p className='text-lg m-2 p-2'>{stream.label}</p>
-              <button
-                onClick={() => addStream(stream.id).then(refreshState)}
-                className='btn border border-2 text-green-500 border-green m-2 p-2'>
-                connect
-              </button>
-            </div>
-          ))}
-        {smelterState.availableStreams
-          .filter((stream) =>
-            smelterState.connectedStreamIds.includes(stream.id),
-          )
-          .map((stream) => (
-            <div className='flex row' key={stream.id}>
-              <p className='text-lg m-2 p-2'>{stream.label}</p>
-              <button
-                onClick={() => removeStream(stream.id).then(refreshState)}
-                key={stream.id}
-                className='btn border border-2 border-red m-2  p-2'>
-                disconnect
-              </button>
-              <button
-                onClick={() =>
-                  selectAudioStream(
-                    stream.id === smelterState.audioStreamId
-                      ? undefined
-                      : stream.id,
-                  ).then(refreshState)
-                }
-                className={
-                  stream.id === smelterState.audioStreamId
-                    ? 'btn bg-red-500 m-2 p-2 text-white'
-                    : 'btn bg-green-500 m-2 p-2 text-white'
-                }>
-                {stream.id === smelterState.audioStreamId ? 'mute' : 'unmute'}
-              </button>
-            </div>
-          ))}
-      </main>
+      <div className='flex-1 grid grid-cols-4 gap-4 min-h-0'>
+        <VideoPreview />
+
+        <div className='flex flex-col gap-4 min-h-0'>
+          <ControlPanel availableStreams={availableStreams} />
+          <LayoutSelector
+            changeLayout={changeLayout}
+            activeLayoutId={activeLayoutId}
+            connectedStreamsLength={smelterState.connectedStreamIds.length}
+          />
+        </div>
+      </div>
     </div>
   );
 }
