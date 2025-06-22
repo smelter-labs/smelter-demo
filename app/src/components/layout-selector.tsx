@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fadeIn2 } from '@/utils/animations';
 import { Grid3X3, Layers, LayoutGrid, LucideIcon, Square } from 'lucide-react';
 
 export type Layout =
@@ -121,7 +122,7 @@ export default function LayoutSelector({
   };
 
   return (
-    <Card className='bg-black-90 border-black-50'>
+    <Card animation={fadeIn2} className='bg-black-90 border-black-50'>
       <CardHeader className='pb-3'>
         <CardTitle className='text-sm font-medium text-white-75'>
           Layout

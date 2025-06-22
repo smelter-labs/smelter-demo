@@ -1,17 +1,24 @@
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+function Card({
+  className,
+  animation,
+  ...props
+}: React.ComponentProps<'div'> & { animation?: any }) {
   return (
-    <div
-      data-slot='card'
-      className={cn(
-        'bg-card text-card-foreground flex flex-col gap-1 rounded-xl border py-6 shadow-sm',
-        className,
-      )}
-      {...props}
-    />
+    <motion.div {...animation}>
+      <div
+        data-slot='card'
+        className={cn(
+          'bg-card text-card-foreground flex flex-col gap-1 rounded-xl border py-6 shadow-sm',
+          className,
+        )}
+        {...props}
+      />
+    </motion.div>
   );
 }
 

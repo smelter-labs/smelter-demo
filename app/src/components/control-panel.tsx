@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, MicOff } from 'lucide-react';
 import { StreamInfo } from '@/app/actions';
+import { motion } from 'framer-motion';
+import { fadeIn, fadeInUp } from '@/utils/animations';
 
 export type ExtendedStreamInfo = StreamInfo & {
   isMuted: boolean;
@@ -20,7 +22,9 @@ export default function ControlPanel({
   toggleStreamAudio,
 }: ControlPanelProps) {
   return (
-    <Card className='flex-1 flex flex-col min-h-0 bg-black-90 border-black-50'>
+    <Card
+      animation={fadeIn}
+      className='flex-1 flex flex-col min-h-0 bg-black-90 border-black-50'>
       <CardHeader className='pb-3'>
         <CardTitle className='text-sm font-medium text-white-75'>
           Streams

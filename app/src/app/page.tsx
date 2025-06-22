@@ -13,6 +13,8 @@ import LayoutSelector from '@/components/layout-selector';
 import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
 import VideoPreview from '@/components/video-preview';
 import StatusLabel from '@/components/status-label';
+import { motion } from 'framer-motion';
+import { staggerContainer } from '@/utils/animations';
 
 // Mock stream data
 const AVAILABLE_STREAMS = [
@@ -89,13 +91,17 @@ export default function Home() {
   );
 
   return (
-    <div className='h-screen flex flex-col p-4 bg-black-100'>
+    <motion.div
+      variants={staggerContainer}
+      className='h-screen flex flex-col p-4 bg-black-100'>
       <StatusLabel smelterState={smelterState} />
 
-      <div className='flex-1 grid grid-cols-4 gap-4 min-h-0'>
+      <motion.div
+        variants={staggerContainer}
+        className='flex-1 grid grid-cols-4 gap-4 min-h-0'>
         <VideoPreview />
 
-        <div className='flex flex-col gap-4 min-h-0'>
+        <motion.div className='flex flex-col gap-4 min-h-0' layout>
           <ControlPanel
             availableStreams={availableStreams}
             toggleStream={toggleStream}
@@ -106,8 +112,8 @@ export default function Home() {
             activeLayoutId={activeLayoutId}
             connectedStreamsLength={smelterState.connectedStreamIds.length}
           />
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
