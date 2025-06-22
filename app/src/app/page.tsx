@@ -43,17 +43,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+    <div className='grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]'>
+      <main className='flex flex-col gap-[32px] row-start-2 items-center sm:items-start'>
         <OutputStream />
-        <div className="flex row">
-          <p className="text-lg m-2 p-2">
+        <div className='flex row'>
+          <p className='text-lg m-2 p-2'>
             Change layout (current: {LayoutValues[layoutIndex]}):
           </p>
           <button
             onClick={() => changeLayout().then(refreshState)}
-            className="btn bg-blue-500 m-2  p-2 text-white"
-          >
+            className='btn bg-blue-500 m-2  p-2 text-white'>
             next layout: (
             {LayoutValues[(layoutIndex + 1) % LayoutValues.length]})
           </button>
@@ -64,12 +63,11 @@ export default function Home() {
             (stream) => !smelterState.connectedStreamIds.includes(stream.id),
           )
           .map((stream) => (
-            <div className="flex row" key={stream.id}>
-              <p className="text-lg m-2 p-2">{stream.label}</p>
+            <div className='flex row' key={stream.id}>
+              <p className='text-lg m-2 p-2'>{stream.label}</p>
               <button
                 onClick={() => addStream(stream.id).then(refreshState)}
-                className="btn border border-2 text-green-500 border-green m-2 p-2"
-              >
+                className='btn border border-2 text-green-500 border-green m-2 p-2'>
                 connect
               </button>
             </div>
@@ -79,13 +77,12 @@ export default function Home() {
             smelterState.connectedStreamIds.includes(stream.id),
           )
           .map((stream) => (
-            <div className="flex row" key={stream.id}>
-              <p className="text-lg m-2 p-2">{stream.label}</p>
+            <div className='flex row' key={stream.id}>
+              <p className='text-lg m-2 p-2'>{stream.label}</p>
               <button
                 onClick={() => removeStream(stream.id).then(refreshState)}
                 key={stream.id}
-                className="btn border border-2 border-red m-2  p-2"
-              >
+                className='btn border border-2 border-red m-2  p-2'>
                 disconnect
               </button>
               <button
@@ -100,8 +97,7 @@ export default function Home() {
                   stream.id === smelterState.audioStreamId
                     ? 'btn bg-red-500 m-2 p-2 text-white'
                     : 'btn bg-green-500 m-2 p-2 text-white'
-                }
-              >
+                }>
                 {stream.id === smelterState.audioStreamId ? 'mute' : 'unmute'}
               </button>
             </div>
