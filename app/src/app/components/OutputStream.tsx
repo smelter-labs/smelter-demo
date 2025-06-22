@@ -6,11 +6,11 @@ export default function OutputStream() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // connect('http://127.0.0.1:8080/api/whep', 'example').then((stream) => {
-    //   if (videoRef.current) {
-    //     videoRef.current.srcObject = stream;
-    //   }
-    // });
+    connect('http://127.0.0.1:8080/api/whep', 'example').then((stream) => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    });
   }, []);
 
   return (
