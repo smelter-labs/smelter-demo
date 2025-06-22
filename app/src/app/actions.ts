@@ -1,3 +1,5 @@
+'use server';
+
 export type StreamInfo = {
   id: string;
   label: string;
@@ -15,46 +17,6 @@ export type StreamOptions = {
   audioStreamId?: string;
   layout: Layout;
 };
-
-// Mock sendSmelterRequest to simulate backend responses
-async function sendSmelterRequest(
-  method: 'get' | 'post',
-  route: string,
-  body?: any,
-): Promise<any> {
-  // Simulate different server responses based on the endpoint and method
-  switch (route) {
-    case '/update-layout':
-      // Simulate successful layout update
-      console.log(`Layout updated to: ${body?.layout}`);
-      return Promise.resolve();
-    case '/add-stream':
-      // Simulate successful stream addition
-      console.log(`Stream added with ID: ${body?.streamId}`);
-      return Promise.resolve();
-    case '/remove-stream':
-      // Simulate successful stream removal
-      console.log(`Stream removed with ID: ${body?.streamId}`);
-      return Promise.resolve();
-    case '/select-audio':
-      // Simulate successful audio stream selection
-      console.log(`Audio stream selected with ID: ${body?.streamId}`);
-      return Promise.resolve();
-    case '/state':
-      // Simulate fetching state from backend
-      return Promise.resolve({
-        availableStreams: [
-          { id: 'streamingourzoo', label: 'Zoo Camera' },
-          { id: 'naturerelax_24h', label: 'Water Camera' },
-        ],
-        connectedStreamIds: ['streamingourzoo'],
-        audioStreamId: 'streamingourzoo',
-        layout: 'primary-on-top',
-      });
-    default:
-      throw new Error('Unknown route');
-  }
-}
 
 export async function updateLayout(layout: Layout): Promise<void> {
   return await sendSmelterRequest('post', '/update-layout', { layout });
@@ -74,4 +36,31 @@ export async function selectAudioStream(streamId?: string): Promise<void> {
 
 export async function getSmelterState(): Promise<StreamOptions> {
   return await sendSmelterRequest('get', '/state');
+}
+
+async function sendSmelterRequest(
+  method: 'get' | 'post',
+  route: string,
+  body?: object,
+): Promise<any> {
+  const response = await fetch(`http://127.0.0.1:3001${route}`, {
+    method,
+    body: body && JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.status >= 400) {
+    const err = new Error(`Request to Smelter server failed.`) as any;
+    err.response = response;
+    err.body = await response.text();
+    try {
+      err.body = JSON.parse(err.body);
+    } catch (err) {
+      console.error('Failed to parse response');
+    }
+    throw err;
+  }
+  return (await response.json()) as object;
 }

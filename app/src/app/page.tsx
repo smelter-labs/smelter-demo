@@ -2,13 +2,14 @@
 
 import {
   addStream,
+  getSmelterState,
   Layout,
   removeStream,
   selectAudioStream,
   StreamOptions,
   updateLayout,
 } from '@/app/actions';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LayoutSelector from '@/components/layout-selector';
 import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
 import VideoPreview from '@/components/video-preview';
@@ -33,15 +34,14 @@ export default function Home() {
   const [smelterState, setSmelterState] = useState<StreamOptions>({
     availableStreams: [...AVAILABLE_STREAMS],
     connectedStreamIds: [],
-    layout: 'grid',
+    layout: 'primary-on-left',
     audioStreamId: undefined,
   });
 
   const changeLayout = async (layoutId: Layout) => {
-    console.log('TEST');
     setActiveLayoutId(layoutId);
 
-    // await updateLayout(LayoutValues[newLayout]);
+    await updateLayout(layoutId);
   };
 
   const toggleStream = async (streamId: string) => {
@@ -70,16 +70,16 @@ export default function Home() {
     await selectAudioStream(isMuted ? streamId : '');
   };
 
-  // const refreshState = async () => {
-  //   const state = await getSmelterState();
-  //   console.log(state);
-  //   setSmelterState(state);
-  // };
+  const refreshState = async () => {
+    const state = await getSmelterState();
+    console.log(state);
+    setSmelterState(state);
+  };
 
-  // useEffect(() => {
-  //   const timeout = setInterval(refreshState, 5000);
-  //   return () => clearInterval(timeout);
-  // }, []);
+  useEffect(() => {
+    const timeout = setInterval(refreshState, 5000);
+    return () => clearInterval(timeout);
+  }, []);
 
   const availableStreams = smelterState.availableStreams.map(
     (stream) =>

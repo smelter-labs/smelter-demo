@@ -16,13 +16,13 @@ type LayoutConfig = {
 };
 
 export const LAYOUT_CONFIGS = [
-  { id: 'grid', name: 'Grid', icon: Grid3X3, maxStreams: 4 },
   {
     id: 'primary-on-left',
     name: 'Primary Left',
     icon: LayoutGrid,
     maxStreams: 4,
   },
+  { id: 'grid', name: 'Grid', icon: Grid3X3, maxStreams: 4 },
   { id: 'primary-on-top', name: 'Primary Top', icon: Square, maxStreams: 4 },
   {
     id: 'secondary-in-corner',
