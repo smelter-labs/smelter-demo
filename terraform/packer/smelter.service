@@ -1,0 +1,16 @@
+[Unit]
+Description=Node.js smelter
+[Service]
+Type=Simple
+RestartSec=5
+User=ubuntu
+ExecStart=/bin/bash -c "pnpm start"
+WorkingDirectory=/home/ubuntu/smelter/ts/examples/smelter-app
+Environment="SMELTER_LOGGER_FORMAT=compact"
+Environment="SMELTER_PATH=/home/ubuntu/smelter/target/release/main_process"
+Environment="SMELTER_API_PORT=3002"
+Environment="PNPM_HOME=/home/ubuntu/.local/share/pnpm"
+Environment="PATH=/home/ubuntu/.local/share/pnpm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/snap/bin"
+Environment="ENVIRONMENT=production"
+[Install]
+WantedBy=multi-user.target

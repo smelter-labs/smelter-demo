@@ -49,6 +49,12 @@ resource "aws_security_group" "demo_sg" {
     protocol        = "tcp"
     security_groups = [aws_security_group.demo_elb_sg.id]
   }
+  ingress {
+    from_port       = 1
+    to_port         = 65535
+    protocol        = "udp"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
@@ -142,13 +148,13 @@ resource "aws_elb" "demo_elb" {
     lb_port            = 443
     lb_protocol        = "https"
     ssl_certificate_id = "arn:aws:acm:us-east-1:105239478464:certificate/8e68591f-e332-46cd-a5e8-495b95f7155c"
-  }
+  } 
 
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 3
-    target              = "HTTP:8000/"
+    target              = "HTTP:3000/"
     interval            = 30
   }
 
@@ -164,13 +170,10 @@ resource "aws_elb" "demo_elb" {
 }
 
 resource "aws_instance" "demo_instance" {
-  # packer build  -var 'with-gpu=true' standalone.pkr.hcl
-  ami = "ami-0bdc49fe81f2600c1"
+  ami = "ami-035a9148608f7ba1b"
 
-  # 8vCPU 32GB NVIDIA T4 GPU
-  # $0.752
-  #instance_type = "g4dn.2xlarge"
-  instance_type = "t3.micro"
+  instance_type = "g4dn.xlarge"
+  #instance_type = "t3.micro"
 
   key_name = "wojtek-compositor-demo"
 

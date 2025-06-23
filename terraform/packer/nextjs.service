@@ -1,0 +1,12 @@
+[Unit]
+Description=Next.js server
+[Service]
+Type=Simple
+RestartSec=5
+User=ubuntu
+ExecStart=/bin/bash -c "pnpm start"
+WorkingDirectory=/home/ubuntu/project
+Environment="PNPM_HOME=/home/ubuntu/.local/share/pnpm"
+Environment="PATH=/home/ubuntu/.local/share/pnpm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/snap/bin"
+[Install]
+WantedBy=multi-user.target
