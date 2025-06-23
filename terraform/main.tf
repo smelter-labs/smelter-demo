@@ -170,11 +170,8 @@ resource "aws_elb" "demo_elb" {
 }
 
 resource "aws_instance" "demo_instance" {
-  # packer build  -var 'with-gpu=true' standalone.pkr.hcl
-  ami = "ami-0197eb815850ce47b"
+  ami = "ami-035a9148608f7ba1b"
 
-  # 8vCPU 32GB NVIDIA T4 GPU
-  # $0.752
   instance_type = "g4dn.xlarge"
   #instance_type = "t3.micro"
 

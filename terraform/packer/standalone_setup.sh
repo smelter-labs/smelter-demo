@@ -14,7 +14,7 @@ sudo apt-get install -y \
   libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev \
   ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libavdevice-dev libopus-dev \
   curl git build-essential libssl-dev pkg-config libclang-dev \
-  nginx golang
+  nginx golang streamlink
 
 sudo cp /tmp/smelter.service /etc/systemd/system/smelter.service
 sudo cp /tmp/nextjs.service /etc/systemd/system/nextjs.service

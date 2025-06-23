@@ -7,5 +7,6 @@ User=ubuntu
 ExecStart=/bin/bash -c ./broadcast-box
 WorkingDirectory=/home/ubuntu/broadcast-box
 Environment="DISABLE_FRONTEND=1"
+Environment="INCLUDE_PUBLIC_IP_IN_NAT_1_TO_1_IP=yes"
 [Install]
 WantedBy=multi-user.target

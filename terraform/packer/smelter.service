@@ -1,5 +1,5 @@
 [Unit]
-Description=Live Compositor example
+Description=Node.js smelter
 [Service]
 Type=Simple
 RestartSec=5
