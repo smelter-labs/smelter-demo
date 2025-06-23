@@ -13,7 +13,16 @@ export default function OutputStream() {
     });
   }, []);
 
-  return <video ref={videoRef} controls autoPlay />;
+  return (
+    <video
+      ref={videoRef}
+      className='rounded-md'
+      src='example-video.mp4'
+      controls
+      autoPlay
+      autoFocus
+    />
+  );
 }
 
 async function connect(
