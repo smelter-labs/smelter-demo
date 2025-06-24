@@ -14,6 +14,7 @@ export default function OutputStream() {
     ).then((stream) => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(console.error);
       }
     });
   }, []);
@@ -25,6 +26,7 @@ export default function OutputStream() {
       src='example-video.mp4'
       controls
       autoPlay
+      muted
       autoFocus
       width={1920}
       height={1080}
