@@ -12,5 +12,7 @@ Environment="SMELTER_API_PORT=3002"
 Environment="PNPM_HOME=/home/ubuntu/.local/share/pnpm"
 Environment="PATH=/home/ubuntu/.local/share/pnpm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/snap/bin"
 Environment="ENVIRONMENT=production"
+Environment="TWITCH_CLIENT_ID=ll68roj4ysp5fryzykj4l3ti0un5kt"
+Environment="TWITCH_CLIENT_SECRET=bbc6jp72qvheiss1razy9juwii5ebx"
 [Install]
 WantedBy=multi-user.target

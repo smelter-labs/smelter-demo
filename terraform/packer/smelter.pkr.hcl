@@ -9,7 +9,7 @@ packer {
 
 source "amazon-ebs" "image" {
   ami_name      = "smelter_demo_{{timestamp}}"
-  instance_type = "g4dn.xlarge"
+  instance_type = "g4dn.4xlarge"
   region        = "us-east-1" 
   source_ami_filter {
     filters = {
