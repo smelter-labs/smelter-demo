@@ -57,6 +57,16 @@ build {
     destination = "/tmp/proxy.conf"
   }
 
+  provisioner "file" {
+    source = "../../nba_gameplay.mp4"
+    destination = "/tmp/nba_gameplay.mp4"
+  }
+
+  provisioner "file" {
+    source = "../../fc_25_gameplay.mp4"
+    destination = "/tmp/fc_25_gameplay.mp4"
+  }
+
   provisioner "shell" {
     script = "./standalone_setup.sh"
   }

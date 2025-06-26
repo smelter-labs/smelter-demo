@@ -31,8 +31,7 @@ sudo curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/node-v$NOD
   && sudo tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
   && sudo ln -s /usr/local/bin/node /usr/local/bin/nodejs \
   && node --version \
-  && npm --version \
-  && sudo rm -rf /tmp/*
+  && npm --version
 
 wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
 export PNPM_HOME="/home/ubuntu/.local/share/pnpm"
@@ -66,4 +65,5 @@ cd /home/ubuntu/project
 pnpm install
 pnpm build
 
-
+cp /tmp/fc_25_gameplay.mp4 /home/ubuntu/smelter/ts/examples/smelter-app/fc_25_gameplay.mp4
+cp /tmp/nba_gameplay.mp4 /home/ubuntu/smelter/ts/examples/smelter-app/nba_gameplay.mp4
