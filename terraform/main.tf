@@ -170,10 +170,9 @@ resource "aws_elb" "demo_elb" {
 }
 
 resource "aws_instance" "demo_instance" {
-  ami = "ami-022876f7e38a6b064"
+  ami = "ami-07aefffc5de6e96a0"
 
-  instance_type = "g4dn.4xlarge"
-  #instance_type = "t3.micro"
+  instance_type = "g4dn.2xlarge"
 
   key_name = "wojtek-compositor-demo"
 
