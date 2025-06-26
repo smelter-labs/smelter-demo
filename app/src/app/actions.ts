@@ -1,5 +1,8 @@
 'use server';
 
+import type { ChildProcess, SpawnOptions } from 'node:child_process';
+import { spawn as nodeSpawn } from 'node:child_process';
+
 export type StreamInfo = {
   id: string;
   label: string;
@@ -38,6 +41,15 @@ export async function getSmelterState(): Promise<StreamOptions> {
   return await sendSmelterRequest('get', '/state');
 }
 
+export async function restartService(): Promise<void> {
+  try {
+    await spawn('bash', ['-c', 'sudo systemctl restart smelter.service'], {});
+  } catch {}
+  await new Promise<void>((res) => {
+    setTimeout(() => res(), 2000);
+  });
+}
+
 async function sendSmelterRequest(
   method: 'get' | 'post',
   route: string,
@@ -63,4 +75,28 @@ async function sendSmelterRequest(
     throw err;
   }
   return (await response.json()) as object;
+}
+
+function spawn(
+  command: string,
+  args: string[],
+  options: SpawnOptions,
+): Promise<void> {
+  console.log('spawn', command, args);
+  const child = nodeSpawn(command, args, {
+    stdio: 'inherit',
+    ...options,
+  });
+  return new Promise<void>((res, rej) => {
+    child.on('error', (err) => {
+      rej(err);
+    });
+    child.on('exit', (code) => {
+      if (code === 0) {
+        res();
+      } else {
+        rej(new Error(`Exit with exit code ${code}`));
+      }
+    });
+  });
 }
