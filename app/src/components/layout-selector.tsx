@@ -108,12 +108,6 @@ export default function LayoutSelector({
             {streamCount > 1 && (
               <div className='transition-all duration-300 ease-in-out absolute top-1.5 right-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
             )}
-            {streamCount > 2 && (
-              <div className='transition-all duration-300 ease-in-out absolute bottom-1.5 right-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
-            )}
-            {streamCount > 3 && (
-              <div className='transition-all duration-300 ease-in-out absolute bottom-1.5 left-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
-            )}
           </div>
         );
       default:
