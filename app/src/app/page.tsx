@@ -62,6 +62,7 @@ export default function Home() {
     const state = await getSmelterState();
     console.log(state);
     setSmelterState(state);
+    setActiveLayoutId(state.layout);
   };
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use server';
 
-import type { ChildProcess, SpawnOptions } from 'node:child_process';
+import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 
 export type StreamInfo = {
@@ -46,7 +46,7 @@ export async function restartService(): Promise<void> {
     await spawn('bash', ['-c', 'sudo systemctl restart smelter.service'], {});
   } catch {}
   await new Promise<void>((res) => {
-    setTimeout(() => res(), 2000);
+    setTimeout(() => res(), 5000);
   });
 }
 

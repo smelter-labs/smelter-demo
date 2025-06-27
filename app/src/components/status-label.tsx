@@ -1,9 +1,8 @@
 import { restartService, StreamOptions } from '@/app/actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/spinner';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function StatusLabel({
@@ -11,7 +10,6 @@ export default function StatusLabel({
 }: {
   smelterState: StreamOptions;
 }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   return (
     <div className='flex items-center justify-between mb-4 px-4 py-2'>
@@ -30,13 +28,13 @@ export default function StatusLabel({
             setLoading(true);
             try {
               await restartService();
-              router.refresh();
+              global.window.location.reload();
             } finally {
               setLoading(false);
             }
           }}>
           Restart service
-          {loading ? <LoaderCircle /> : null}
+          {loading ? <LoadingSpinner size='sm' variant='spinner' /> : null}
         </Button>
         <Badge
           variant='outline'
