@@ -170,7 +170,7 @@ resource "aws_elb" "demo_elb" {
 }
 
 resource "aws_instance" "demo_instance" {
-  ami = "ami-07aefffc5de6e96a0"
+  ami = "ami-0a9f65249ee016515"
 
   instance_type = "g4dn.2xlarge"
 
