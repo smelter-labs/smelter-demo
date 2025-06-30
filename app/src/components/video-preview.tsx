@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import { VideoOff } from 'lucide-react';
+import { RefObject } from 'react';
 
-export default function VideoPreview() {
+export default function VideoPreview({
+  videoRef,
+}: {
+  videoRef: RefObject<HTMLVideoElement | null>;
+}) {
   const activeStream = true;
   return (
     <motion.div className='col-span-3' {...(fadeInUp as any)}>
@@ -18,7 +23,7 @@ export default function VideoPreview() {
           <div className='flex-1 rounded border flex items-center justify-center border-black-50 bg-black-75'>
             {activeStream ? (
               <div>
-                <OutputStream />
+                <OutputStream videoRef={videoRef} />
               </div>
             ) : (
               <div className='text-center'>
