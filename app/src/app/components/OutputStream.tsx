@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Ref, RefObject, useEffect, useRef } from 'react';
 
-export default function OutputStream() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
+export default function OutputStream({
+  videoRef,
+}: {
+  videoRef: RefObject<HTMLVideoElement | null>;
+}) {
   useEffect(() => {
     connect(
       process.env.NODE_ENV === 'development'
@@ -17,10 +19,11 @@ export default function OutputStream() {
         videoRef.current.play().catch(console.error);
       }
     });
-  }, []);
+  }, [videoRef]);
 
   return (
     <video
+      id='videoPlayer'
       ref={videoRef}
       className='rounded-md'
       src='example-video.mp4'

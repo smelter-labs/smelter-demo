@@ -9,7 +9,7 @@ import {
   StreamOptions,
   updateLayout,
 } from '@/app/actions';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LayoutSelector from '@/components/layout-selector';
 import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
 import VideoPreview from '@/components/video-preview';
@@ -25,6 +25,8 @@ export default function Home() {
     layout: 'grid',
     audioStreamId: undefined,
   });
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [shouldAutoUnmute, setShouldAutoUnmute] = useState(true);
 
   const changeLayout = async (layoutId: Layout) => {
     setActiveLayoutId(layoutId);
@@ -51,6 +53,16 @@ export default function Home() {
 
   const toggleStreamAudio = async (streamId: string) => {
     const isMuted = smelterState.audioStreamId !== streamId;
+
+    if (videoRef.current && shouldAutoUnmute) {
+      try {
+        videoRef.current.muted = false;
+        setShouldAutoUnmute(true);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
     setSmelterState((prev) => {
       return { ...prev, audioStreamId: isMuted ? streamId : undefined };
     });
@@ -88,9 +100,11 @@ export default function Home() {
       <motion.div
         variants={staggerContainer}
         className='flex-1 md:grid grid-cols-4 gap-4 min-h-0'>
-        <VideoPreview />
+        <VideoPreview videoRef={videoRef} />
 
-        <motion.div className='flex flex-col gap-4 min-h-0' layout>
+        <motion.div
+          className='flex flex-col gap-4 min-h-0 h-full max-h-full'
+          layout>
           <ControlPanel
             availableStreams={availableStreams}
             toggleStream={toggleStream}
