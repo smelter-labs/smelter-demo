@@ -26,6 +26,7 @@ export default function Home() {
     audioStreamId: undefined,
   });
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [shouldAutoUnmute, setShouldAutoUnmute] = useState(true);
 
   const changeLayout = async (layoutId: Layout) => {
     setActiveLayoutId(layoutId);
@@ -52,13 +53,14 @@ export default function Home() {
 
   const toggleStreamAudio = async (streamId: string) => {
     const isMuted = smelterState.audioStreamId !== streamId;
-    const allStreamsMuted = !smelterState.audioStreamId;
-    const videoPlayer = document.getElementById(
-      'videoPlayer',
-    ) as HTMLVideoElement;
 
-    if (allStreamsMuted && videoRef.current) {
-      videoRef.current.muted = !isMuted;
+    if (videoRef.current && shouldAutoUnmute) {
+      try {
+        videoRef.current.muted = false;
+        setShouldAutoUnmute(true);
+      } catch (err) {
+        console.log(err);
+      }
     }
 
     setSmelterState((prev) => {
