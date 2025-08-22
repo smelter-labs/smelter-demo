@@ -6,8 +6,10 @@ import { VideoOff } from 'lucide-react';
 import { RefObject } from 'react';
 
 export default function VideoPreview({
+  whepUrl,
   videoRef,
 }: {
+  whepUrl: string;
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   const activeStream = true;
@@ -23,7 +25,7 @@ export default function VideoPreview({
           <div className='flex-1 rounded border flex items-center justify-center border-black-50 bg-black-75'>
             {activeStream ? (
               <div>
-                <OutputStream videoRef={videoRef} />
+                <OutputStream videoRef={videoRef} whepUrl={whepUrl} />
               </div>
             ) : (
               <div className='text-center'>

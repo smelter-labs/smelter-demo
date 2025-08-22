@@ -3,9 +3,23 @@
 import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 
-export type StreamInfo = {
-  id: string;
-  label: string;
+export type Input = {
+  inputId: string;
+  title: string;
+  description: string;
+  volume: number;
+  sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
+  status: 'disconnected' | 'pending' | 'connected';
+
+  // only set if this is input from twitch
+  twitchChannelId?: string;
+};
+
+export type RoomState = {
+  inputs: Input[];
+  layout: Layout;
+  whepUrl: string;
+  pendingDelete?: boolean;
 };
 
 export type Layout =
@@ -14,31 +28,112 @@ export type Layout =
   | 'primary-on-top'
   | 'secondary-in-corner';
 
-export type StreamOptions = {
-  availableStreams: StreamInfo[];
-  connectedStreamIds: string[];
-  audioStreamId?: string;
-  layout: Layout;
+export interface TwitchChannelSuggestion {
+  streamId: string;
+  displayName: string;
+  title: string;
+  category: string;
+}
+
+export type InputSuggestions = {
+  twitch: TwitchChannelSuggestion[];
 };
 
-export async function updateLayout(layout: Layout): Promise<void> {
-  return await sendSmelterRequest('post', '/update-layout', { layout });
+export async function createNewRoom(): Promise<{
+  roomId: string;
+  whepUrl: string;
+}> {
+  return await sendSmelterRequest('post', '/room', {});
 }
 
-export async function addStream(streamId: string): Promise<void> {
-  return await sendSmelterRequest('post', '/add-stream', { streamId });
+export type UpdateRoomOptions = {
+  inputOrder?: string[];
+  layout?: Layout;
+};
+
+export async function updateRoom(
+  roomId: string,
+  opts: UpdateRoomOptions,
+): Promise<{
+  roomId: string;
+  whepUrl: string;
+}> {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}`,
+    opts,
+  );
 }
 
-export async function removeStream(streamId: string): Promise<void> {
-  return await sendSmelterRequest('post', '/remove-stream', { streamId });
+export async function getRoomInfo(
+  roomId: string,
+): Promise<RoomState | 'not-found'> {
+  try {
+    return await sendSmelterRequest(
+      'get',
+      `/room/${encodeURIComponent(roomId)}`,
+    );
+  } catch (err: any) {
+    if (err.status === 404) {
+      return 'not-found';
+    }
+    throw err;
+  }
 }
 
-export async function selectAudioStream(streamId?: string): Promise<void> {
-  return await sendSmelterRequest('post', '/select-audio', { streamId });
+export async function getInputSuggestions(): Promise<InputSuggestions> {
+  return await sendSmelterRequest('get', `/suggestions`);
 }
 
-export async function getSmelterState(): Promise<StreamOptions> {
-  return await sendSmelterRequest('get', '/state');
+export async function addInput(roomId: string, twitchChannelId: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    {
+      type: 'twitch-channel',
+      twitchChannelId,
+    },
+  );
+}
+
+export async function removeInput(roomId: string, inputId: string) {
+  return await sendSmelterRequest(
+    'delete',
+    `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
+    {},
+  );
+}
+
+export type UpdateInputOptions = {
+  volume: number;
+};
+
+export async function updateInput(
+  roomId: string,
+  inputId: string,
+  opts: Partial<UpdateInputOptions>,
+) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
+    opts,
+  );
+}
+
+export async function disconnectInput(roomId: string, inputId: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}/disconnect`,
+    {},
+  );
+}
+
+export async function connectInput(roomId: string, inputId: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}/connect`,
+    {},
+  );
 }
 
 export async function restartService(): Promise<void> {
@@ -51,7 +146,7 @@ export async function restartService(): Promise<void> {
 }
 
 async function sendSmelterRequest(
-  method: 'get' | 'post',
+  method: 'get' | 'delete' | 'post',
   route: string,
   body?: object,
 ): Promise<any> {
@@ -69,6 +164,7 @@ async function sendSmelterRequest(
     err.body = await response.text();
     try {
       err.body = JSON.parse(err.body);
+      err.status = response.status;
     } catch (err) {
       console.error('Failed to parse response');
     }

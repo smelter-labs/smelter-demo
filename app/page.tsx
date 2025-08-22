@@ -1,122 +1,95 @@
 'use client';
 
-import {
-  addStream,
-  getSmelterState,
-  Layout,
-  removeStream,
-  selectAudioStream,
-  StreamOptions,
-  updateLayout,
-} from '@/app/actions';
-import { useEffect, useRef, useState } from 'react';
-import ControlPanel, { ExtendedStreamInfo } from '@/components/control-panel';
-import VideoPreview from '@/components/video-preview';
 import StatusLabel from '@/components/status-label';
 import { motion } from 'framer-motion';
 import { staggerContainer } from '@/utils/animations';
-import LayoutSelector from '@/components/layout-selector';
+import { Button } from '@/components/ui/button';
+import { createNewRoom, getRoomInfo } from '@/app/actions';
+import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/ui/spinner';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 export default function Home() {
-  const [activeLayoutId, setActiveLayoutId] = useState<Layout>('grid');
-  const [smelterState, setSmelterState] = useState<StreamOptions>({
-    availableStreams: [],
-    connectedStreamIds: [],
-    layout: 'grid',
-    audioStreamId: undefined,
-  });
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [shouldAutoUnmute, setShouldAutoUnmute] = useState(true);
-
-  const changeLayout = async (layoutId: Layout) => {
-    setActiveLayoutId(layoutId);
-
-    await updateLayout(layoutId);
-  };
-
-  const toggleStream = async (streamId: string) => {
-    setSmelterState((prev) => {
-      const isConnected = prev.connectedStreamIds.includes(streamId);
-      const newConnectedStreamIds = isConnected
-        ? prev.connectedStreamIds.filter((id) => id !== streamId)
-        : [...prev.connectedStreamIds, streamId];
-
-      return { ...prev, connectedStreamIds: newConnectedStreamIds };
-    });
-
-    if (smelterState.connectedStreamIds.includes(streamId)) {
-      await removeStream(streamId);
-    } else {
-      await addStream(streamId);
-    }
-  };
-
-  const toggleStreamAudio = async (streamId: string) => {
-    const isMuted = smelterState.audioStreamId !== streamId;
-
-    if (videoRef.current && shouldAutoUnmute) {
-      try {
-        videoRef.current.muted = false;
-        setShouldAutoUnmute(true);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    setSmelterState((prev) => {
-      return { ...prev, audioStreamId: isMuted ? streamId : undefined };
-    });
-
-    await selectAudioStream(isMuted ? streamId : '');
-  };
-
-  const refreshState = async () => {
-    const state = await getSmelterState();
-    console.log(state);
-    setSmelterState(state);
-    setActiveLayoutId(state.layout);
-  };
-
-  useEffect(() => {
-    const timeout = setInterval(refreshState, 5000);
-    return () => clearInterval(timeout);
-  }, []);
-
-  const availableStreams = smelterState.availableStreams.map(
-    (stream) =>
-      ({
-        ...stream,
-        isMuted: smelterState.audioStreamId !== stream.id,
-        isConnected: smelterState.connectedStreamIds.includes(stream.id),
-      }) as ExtendedStreamInfo,
-  );
+  const router = useRouter();
+  const [loadingNew, setLoadingNew] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  const [roomIdOrUrl, setRoomIdOrUrl] = useState('');
 
   return (
     <motion.div
       variants={staggerContainer}
       className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
-      <StatusLabel smelterState={smelterState} />
+      <StatusLabel />
 
       <motion.div
         variants={staggerContainer}
-        className='flex-1 md:grid grid-cols-4 gap-4 min-h-0'>
-        <VideoPreview videoRef={videoRef} />
-
+        className='flex-1 flex justify-center min-h-0'>
         <motion.div
-          className='flex flex-col gap-4 min-h-0 h-full max-h-full'
+          className='flex flex-col min-h-0 h-full max-h-full text-center w-1/2 justify-self-center justify-center'
           layout>
-          <ControlPanel
-            availableStreams={availableStreams}
-            toggleStream={toggleStream}
-            toggleStreamAudio={toggleStreamAudio}
-          />
-          <LayoutSelector
-            changeLayout={changeLayout}
-            activeLayoutId={activeLayoutId}
-            connectedStreamsLength={smelterState.connectedStreamIds.length}
-          />
+          <Button
+            size='lg'
+            variant='outline'
+            className='border-purple-40 text-purple-40 bg-transparent p-2 m-4'
+            onClick={async () => {
+              setLoadingNew(true);
+              try {
+                const room = await createNewRoom();
+                router.push(`room/${room.roomId}`);
+              } finally {
+                setLoadingNew(false);
+              }
+            }}>
+            Create a new room
+            {loadingNew ? <LoadingSpinner size='sm' variant='spinner' /> : null}
+          </Button>
+          <p className='text-white text-[20px] m-2'>or</p>
+          <div className='flex flex-row'>
+            <input
+              className='p-2 m-4 border-purple-40 border text-purple-20 bg-transparent rounded-md bg-purple-40/30 flex-1'
+              placeholder='URL or Room UUID'
+              onChange={(event) => setRoomIdOrUrl(event.target.value)}
+            />
+            <Button
+              size='lg'
+              variant='outline'
+              className='border-purple-40 text-purple-40 bg-transparent m-4'
+              onClick={async () => {
+                setLoadingExisting(true);
+                const roomId = getRoomIdFromUserEntry(roomIdOrUrl);
+                try {
+                  await getRoomInfo(roomId);
+                } catch (err) {
+                  toast.error(`Room ${roomId} does not exist.`);
+                  return;
+                } finally {
+                  setLoadingExisting(false);
+                }
+                router.push(`room/${roomId}`);
+              }}>
+              Join existing
+              {loadingExisting ? (
+                <LoadingSpinner size='sm' variant='spinner' />
+              ) : null}
+            </Button>
+          </div>
         </motion.div>
       </motion.div>
     </motion.div>
   );
+}
+
+function getRoomIdFromUserEntry(urlOrId: string): string {
+  try {
+    const url = URL.parse(urlOrId);
+    const segments = url?.pathname.split('/');
+    if (!segments || segments.length == 0) {
+      return urlOrId;
+    }
+    const lastSegment = segments[segments?.length - 1];
+    return lastSegment;
+  } catch {
+    return urlOrId;
+  }
 }
