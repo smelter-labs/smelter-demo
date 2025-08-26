@@ -1,35 +1,30 @@
 'use client';
 
-import { Ref, RefObject, useEffect, useRef } from 'react';
+import { RefObject, useEffect } from 'react';
 
 export default function OutputStream({
+  whepUrl,
   videoRef,
 }: {
+  whepUrl: string;
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   useEffect(() => {
-    connect(
-      process.env.NODE_ENV === 'development'
-        ? 'http://127.0.0.1:8080/api/whep'
-        : 'https://demo.smelter.live/api/whep',
-      'example',
-    ).then((stream) => {
+    connect(whepUrl).then((stream) => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(console.error);
       }
     });
-  }, [videoRef]);
+  }, [videoRef, whepUrl]);
 
   return (
     <video
       id='videoPlayer'
       ref={videoRef}
       className='rounded-md'
-      src='example-video.mp4'
       controls
       autoPlay
-      muted
       autoFocus
       width={1920}
       height={1080}
@@ -37,10 +32,7 @@ export default function OutputStream({
   );
 }
 
-async function connect(
-  endpointUrl: string,
-  token: string,
-): Promise<MediaStream> {
+async function connect(endpointUrl: string): Promise<MediaStream> {
   const pc = new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     bundlePolicy: 'max-bundle',
@@ -72,7 +64,7 @@ async function connect(
   pc.addTransceiver('audio', { direction: 'recvonly' });
 
   console.log('establish WHEP connection');
-  await establishWhipConnection(pc, endpointUrl, token);
+  await establishWhipConnection(pc, endpointUrl);
 
   const tracks = await tracksPromise;
 
