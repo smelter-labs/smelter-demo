@@ -13,6 +13,7 @@
               packages = with pkgs; [
                 pnpm
                 nodejs
+                nodePackages.vercel
               ];
             };
           };
