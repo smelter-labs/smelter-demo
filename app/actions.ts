@@ -2,6 +2,7 @@
 
 import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
+import { assert } from 'node:console';
 
 export type Input = {
   inputId: string;
@@ -145,12 +146,15 @@ export async function restartService(): Promise<void> {
   });
 }
 
+const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+assert(BASE_URL);
+
 async function sendSmelterRequest(
   method: 'get' | 'delete' | 'post',
   route: string,
   body?: object,
 ): Promise<any> {
-  const response = await fetch(`http://127.0.0.1:3001${route}`, {
+  const response = await fetch(`${BASE_URL}${route}`, {
     method,
     body: body && JSON.stringify(body),
     headers: {
