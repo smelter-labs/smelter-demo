@@ -147,7 +147,7 @@ export async function restartService(): Promise<void> {
   });
 }
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
 assert(BASE_URL);
 
 async function sendSmelterRequest(
