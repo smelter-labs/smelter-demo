@@ -20,7 +20,7 @@ export default function AutoplayModal({ onAllow, onDeny }: AutoplayModalProps) {
         className='bg-gray-800 border border-gray-600 rounded-lg p-6 max-w-md mx-4 '>
         <h3 className='text-white text-lg font-semibold mb-4'>Play Video?</h3>
         <p className='text-gray-300 mb-6'>
-          Browsers don't allow videos to play automatically. If you want to
+          Browsers don&apos;t allow videos to play automatically. If you want to
           start the video now, please confirm.
         </p>
         <div className='flex gap-3 justify-end'>

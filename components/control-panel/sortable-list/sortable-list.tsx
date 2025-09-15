@@ -62,7 +62,7 @@ export function SortableList<T extends BaseItem>({
     {
       eventName: 'onPointerDown' as const,
       handler: (
-        //@ts-expect-error
+        //@ts-expect-error todo for laters
         { nativeEvent: event }: PointerEvent<Element>,
         { onActivation }: PointerSensorOptions,
       ) => customHandleEvent(event.target as HTMLElement),

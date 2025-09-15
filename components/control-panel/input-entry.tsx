@@ -55,15 +55,14 @@ export default function InputEntry({
     input.sourceState !== 'offline' && (
       <Button
         data-no-dnd
-        size="sm"
-        variant="ghost"
-        className="transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer"
-        onClick={handleMuteToggle}
-      >
+        size='sm'
+        variant='ghost'
+        className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+        onClick={handleMuteToggle}>
         {muted ? (
-          <MicOff className="w-3 h-3 text-red-40" />
+          <MicOff className='w-3 h-3 text-red-40' />
         ) : (
-          <Mic className="w-3 h-3 text-green-60" />
+          <Mic className='w-3 h-3 text-green-60' />
         )}
       </Button>
     );
@@ -71,18 +70,17 @@ export default function InputEntry({
   const renderDeleteButton = () => (
     <Button
       data-no-dnd
-      size="sm"
-      variant="ghost"
-      className="transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer"
-      onClick={handleDelete}
-    >
-      <X className="w-3 h-3 text-red-40" />
+      size='sm'
+      variant='ghost'
+      className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      onClick={handleDelete}>
+      <X className='w-3 h-3 text-red-40' />
     </Button>
   );
 
   const getStatusLabel = () => {
     if (input.status === 'pending' || connectionStateLoading) {
-      return <LoadingSpinner size="sm" variant="spinner" />;
+      return <LoadingSpinner size='sm' variant='spinner' />;
     }
     if (input.status === 'connected') return 'Disconnect';
     if (input.status === 'disconnected') return 'Connect';
@@ -91,7 +89,8 @@ export default function InputEntry({
 
   const getStatusColor = () => {
     if (input.status === 'connected') return 'bg-red-80 hover:bg-red-80';
-    if (input.status === 'disconnected') return 'bg-green-100 hover:bg-green-100';
+    if (input.status === 'disconnected')
+      return 'bg-green-100 hover:bg-green-100';
     return '';
   };
 
@@ -110,30 +109,28 @@ export default function InputEntry({
   return (
     <div
       key={input.inputId}
-      className="p-2 mb-2 last:mb-0 rounded-md bg-transparent border-2 border-gray-700"
-    >
-      <div className="flex items-center mb-3">
+      className='p-2 mb-2 last:mb-0 rounded-md bg-transparent border-2 border-gray-700'>
+      <div className='flex items-center mb-3'>
         <span
           className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
           aria-label={getSourceStateLabel()}
         />
-        <div className="text-s font-medium text-white-100 truncate">
+        <div className='text-s font-medium text-white-100 truncate'>
           {input.title}
         </div>
       </div>
-      <div className="flex flex-row items-center">
-        <div className="flex-1 flex">
+      <div className='flex flex-row items-center'>
+        <div className='flex-1 flex'>
           <Button
             data-no-dnd
-            size="sm"
+            size='sm'
             style={{ width: '100%' }}
             className={`text-xs text-white-100 hover:opacity-55 cursor-pointer ${getStatusColor()}`}
-            onClick={handleConnectionToggle}
-          >
+            onClick={handleConnectionToggle}>
             {getStatusLabel()}
           </Button>
         </div>
-        <div className="flex flex-row items-center justify-end flex-1 gap-1">
+        <div className='flex flex-row items-center justify-end flex-1 gap-1'>
           {renderMuteButton()}
           {renderDeleteButton()}
         </div>

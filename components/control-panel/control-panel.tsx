@@ -9,7 +9,7 @@ import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
 import AddInputForm from '@/components/control-panel/add-input-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
 import Accordion from '@/components/ui/accordion';
@@ -30,55 +30,62 @@ export default function ControlPanel({
   roomState,
   suggestions,
 }: ControlPanelProps) {
-  const [inputs, setInputs] = useState(roomState.inputs);
-  // Helper to wrap inputs with an id for sorting
-  const getInputWrappers = (): InputWrapper[] => {
-    return inputs.map((input: Input, index: number) => ({
-      id: index,
-      inputId: input.inputId,
-    }));
-  };
+  const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
 
-  const [inputWrappers, setInputWrappers] =
-    useState<InputWrapper[]>(getInputWrappers);
+  // Helper to wrap inputs with an id for sorting
+  const getInputWrappers = useCallback(
+    (inputsArg: Input[] = inputs): InputWrapper[] =>
+      inputsArg.map((input, index) => ({
+        id: index,
+        inputId: input.inputId,
+      })),
+    [inputs],
+  );
+
+  const [inputWrappers, setInputWrappers] = useState<InputWrapper[]>(() =>
+    getInputWrappers(roomState.inputs),
+  );
 
   // Keep inputWrappers in sync with inputs
   useEffect(() => {
-    setInputWrappers(getInputWrappers());
-  }, [inputs.length, inputs]);
+    setInputWrappers(getInputWrappers(inputs));
+  }, [inputs, getInputWrappers]);
 
+  // Keep inputs in sync with roomState.inputs
   useEffect(() => {
     setInputs(roomState.inputs);
-  }, [roomState.inputs, roomState.inputs.length]);
+  }, [roomState.inputs]);
 
   // Update the order in the backend
-  const updateOrder = async (newInputWrappers: InputWrapper[]) => {
-    let newInputs = [];
-    newInputs = newInputWrappers.map((inputWrapper) => {
-      return (
-        inputs.find((input) => input.inputId === inputWrapper.inputId) ?? null
-      );
-    });
-    // @ts-ignore
-    setInputs(newInputs);
-    setInputWrappers(getInputWrappers());
-    await updateRoom(roomId, {
-      inputOrder: newInputWrappers.map((item) => item.inputId),
-    });
-  };
+  const updateOrder = useCallback(
+    async (newInputWrappers: InputWrapper[]) => {
+      const newInputs = newInputWrappers
+        .map((inputWrapper) =>
+          inputs.find((input) => input.inputId === inputWrapper.inputId),
+        )
+        .filter(Boolean) as Input[];
+      setInputs(newInputs);
+      setInputWrappers(getInputWrappers(newInputs));
+      await updateRoom(roomId, {
+        inputOrder: newInputWrappers.map((item) => item.inputId),
+      });
+    },
+    [inputs, roomId, getInputWrappers],
+  );
 
-  const changeLayout = async (layout: Layout) => {
-    await updateRoom(roomId, {
-      layout,
-    });
-    await refreshState();
-  };
+  const changeLayout = useCallback(
+    async (layout: Layout) => {
+      await updateRoom(roomId, { layout });
+      await refreshState();
+    },
+    [roomId, refreshState],
+  );
 
   // Refresh state handler
-  const handleRefreshState = async () => {
-    setInputWrappers(getInputWrappers());
+  const handleRefreshState = useCallback(async () => {
+    setInputWrappers(getInputWrappers(inputs));
     await refreshState();
-  };
+  }, [getInputWrappers, inputs, refreshState]);
 
   return (
     <motion.div
@@ -99,14 +106,14 @@ export default function ControlPanel({
           <SortableList
             items={inputWrappers}
             renderItem={(item) => {
-              const inputIndex = inputs.findIndex(
+              const input = inputs.find(
                 (input) => input.inputId === item.inputId,
               );
               return (
                 <SortableItem id={item.id}>
-                  {inputIndex !== -1 && (
+                  {input && (
                     <InputEntry
-                      input={inputs[inputIndex]}
+                      input={input}
                       refreshState={handleRefreshState}
                       roomId={roomId}
                     />
