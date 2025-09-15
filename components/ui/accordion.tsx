@@ -53,7 +53,7 @@ export default function Accordion({
               collapsed: { height: 0, opacity: 0, marginTop: 0 },
             }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}>
+            style={{ overflow: 'visible' }}>
             <div className='p-2'>{children}</div>
           </motion.div>
         )}
