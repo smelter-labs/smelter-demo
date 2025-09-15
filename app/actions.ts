@@ -5,6 +5,7 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
 export type Input = {
+  id: number;
   inputId: string;
   title: string;
   description: string;
@@ -146,7 +147,7 @@ export async function restartService(): Promise<void> {
   });
 }
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+const BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 async function sendSmelterRequest(
