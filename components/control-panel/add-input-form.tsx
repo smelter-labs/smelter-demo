@@ -37,7 +37,7 @@ export default function AddInputForm({
       }}>
       <input
         className='p-2 border-purple-40 border text-purple-20 bg-transparent rounded-md flex-1 min-w-0 text-sm sm:text-base
-          sm:p-2 sm:mr-3 mr-2
+          sm:p-2 
           '
         list='suggestions'
         value={currentSuggestion}
@@ -65,7 +65,7 @@ export default function AddInputForm({
       <Button
         size='lg'
         variant='default'
-        className='bg-purple-80 hover:bg-purple-100 text-white-100 font-bold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
+        className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
         type='submit'>
         {loading ? <LoadingSpinner size='sm' variant='spinner' /> : 'Add input'}
       </Button>

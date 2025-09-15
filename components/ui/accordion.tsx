@@ -14,10 +14,10 @@ export default function Accordion({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className='border-b border-gray-700 border-1 rounded-lg mb-2'>
+    <div className='border-b border-[#414154]  border-1 rounded-lg mb-2'>
       <button
         type='button'
-        className='flex items-center w-full px-2 py-2 focus:outline-none select-none bg-purple-100 rounded-t-lg border-gray-700 border-1 cursor-pointer mb-2'
+        className='flex items-center w-full px-2 py-2 focus:outline-none select-none bg-purple-100 rounded-t-lg border-[#414154] border-b-1 cursor-pointer mb-2'
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}>
         <span

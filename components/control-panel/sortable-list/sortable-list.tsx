@@ -8,7 +8,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { Active, UniqueIdentifier } from '@dnd-kit/core';
+import type { Active, UniqueIdentifier, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
@@ -69,33 +69,48 @@ export function SortableList<T extends BaseItem>({
     },
   ];
 
+
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    console.log('handleDragStart', active);
+    setActive(active);
+  };
+
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over?.id) {
+      const activeIndex = items.findIndex(({ id }) => id === active.id);
+      const overIndex = items.findIndex(({ id }) => id === over.id);
+
+      const newItems = arrayMove(items, activeIndex, overIndex);
+      if (onOrderChange) {
+        onOrderChange(newItems);
+      }
+    }
+    setActive(null);
+  };
+
   return (
     <DndContext
       sensors={sensors}
-      onDragStart={({ active }) => {
-        setActive(active);
-      }}
-      onDragEnd={({ active, over }) => {
-        if (over && active.id !== over?.id) {
-          const activeIndex = items.findIndex(({ id }) => id === active.id);
-          const overIndex = items.findIndex(({ id }) => id === over.id);
-
-          const newItems = arrayMove(items, activeIndex, overIndex);
-          console.log(newItems);
-          if (onOrderChange) {
-            onOrderChange(newItems);
-          }
-        }
-        setActive(null);
-      }}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragCancel={() => {
         setActive(null);
       }}>
       <SortableContext items={items}>
         <ul className='SortableList' role='application'>
-          {items.map((item) => (
-            <React.Fragment key={item.id}>{renderItem(item)}</React.Fragment>
-          ))}
+          {items.map((item) => {
+            // If this item is being dragged, apply opacity 0.5
+            const isActive = active?.id === item.id;
+            return (
+              <li
+                key={item.id}
+                style={isActive ? { opacity: 0.5 } : undefined}
+              >
+                {renderItem(item)}
+              </li>
+            );
+          })}
         </ul>
       </SortableContext>
       <SortableOverlay>

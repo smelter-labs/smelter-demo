@@ -58,7 +58,7 @@ export default function Home() {
         variants={staggerContainer}
         className='flex-1 flex justify-center min-h-0 h-full items-center'>
         <motion.div
-          className='border-1 rounded-xl border-gray-400 h-[424px] text-center justify-center items-center w-[600px] p-4 shadow-xl/25 shadow-white-100'
+          className='border-1 rounded-xl border-gray-400 text-center justify-center items-center w-[600px] p-8 shadow-xl/25 shadow-white-100'
           layout>
           <div>
             <StatusLabel />
@@ -79,35 +79,11 @@ export default function Home() {
               className='text-white-100 font-bold w-full bg-red-40 border-0 hover:bg-red-60 cursor-pointer'
               onClick={handleCreateRoom}
               disabled={loadingNew}>
-              Create new room
+              Let's go!
               {loadingNew && <LoadingSpinner size='sm' variant='spinner' />}
             </Button>
           </div>
 
-          <p className='text-sm line-clamp-3 mt-6 text-white-100'>
-            or join existing one
-          </p>
-
-          <div className='flex flex-row mt-6'>
-            <input
-              className='p-2 mr-3 border-purple-40 border text-purple-20 bg-transparent rounded-md flex-1'
-              placeholder='URL or Room UUID'
-              onChange={handleInputChange}
-              value={roomIdOrUrl}
-              disabled={loadingExisting}
-            />
-            <Button
-              disabled={isJoinDisabled}
-              size='lg'
-              variant='default'
-              className='bg-purple-80 hover:bg-purple-100 text-white-100 font-bold cursor-pointer'
-              onClick={handleJoinRoom}>
-              Join room
-              {loadingExisting && (
-                <LoadingSpinner size='sm' variant='spinner' />
-              )}
-            </Button>
-          </div>
         </motion.div>
       </motion.div>
     </motion.div>
