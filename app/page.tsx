@@ -79,11 +79,10 @@ export default function Home() {
               className='text-white-100 font-bold w-full bg-red-40 border-0 hover:bg-red-60 cursor-pointer'
               onClick={handleCreateRoom}
               disabled={loadingNew}>
-              Let's go!
+              Let&apos;s go!
               {loadingNew && <LoadingSpinner size='sm' variant='spinner' />}
             </Button>
           </div>
-
         </motion.div>
       </motion.div>
     </motion.div>

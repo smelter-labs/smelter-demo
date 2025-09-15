@@ -8,7 +8,12 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { Active, UniqueIdentifier, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
+import type {
+  Active,
+  UniqueIdentifier,
+  DragStartEvent,
+  DragEndEvent,
+} from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
@@ -69,12 +74,10 @@ export function SortableList<T extends BaseItem>({
     },
   ];
 
-
   const handleDragStart = ({ active }: DragStartEvent) => {
     console.log('handleDragStart', active);
     setActive(active);
   };
-
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (over && active.id !== over?.id) {
@@ -103,10 +106,7 @@ export function SortableList<T extends BaseItem>({
             // If this item is being dragged, apply opacity 0.5
             const isActive = active?.id === item.id;
             return (
-              <li
-                key={item.id}
-                style={isActive ? { opacity: 0.5 } : undefined}
-              >
+              <li key={item.id} style={isActive ? { opacity: 0.5 } : undefined}>
                 {renderItem(item)}
               </li>
             );
