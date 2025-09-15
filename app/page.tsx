@@ -1,14 +1,15 @@
 'use client';
 
-import StatusLabel from '@/components/status-label';
-import { motion } from 'framer-motion';
-import { staggerContainer } from '@/utils/animations';
-import { Button } from '@/components/ui/button';
-import { createNewRoom, getRoomInfo } from '@/app/actions';
+import { useState, ChangeEvent, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import LoadingSpinner from '@/components/ui/spinner';
-import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+
+import StatusLabel from '@/components/ui/status-label';
+import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/ui/spinner';
+import { createNewRoom, getRoomInfo } from '@/app/actions';
+import { staggerContainer } from '@/utils/animations';
 
 export default function Home() {
   const router = useRouter();
@@ -16,62 +17,95 @@ export default function Home() {
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [roomIdOrUrl, setRoomIdOrUrl] = useState('');
 
+  const handleCreateRoom = useCallback(async () => {
+    setLoadingNew(true);
+    try {
+      const room = await createNewRoom();
+      router.push(`room/${room.roomId}`);
+    } finally {
+      setLoadingNew(false);
+    }
+  }, [router]);
+
+  const handleJoinRoom = useCallback(async () => {
+    setLoadingExisting(true);
+    const roomId = getRoomIdFromUserEntry(roomIdOrUrl);
+
+    try {
+      await getRoomInfo(roomId);
+      router.push(`room/${roomId}`);
+    } catch (err) {
+      toast.error(`Room ${roomId} does not exist.`);
+    } finally {
+      setLoadingExisting(false);
+    }
+  }, [roomIdOrUrl, router]);
+
+  const handleInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setRoomIdOrUrl(event.target.value);
+    },
+    [],
+  );
+
+  const isJoinDisabled = roomIdOrUrl.trim() === '' || loadingExisting;
+
   return (
     <motion.div
       variants={staggerContainer}
       className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
-      <StatusLabel />
-
       <motion.div
         variants={staggerContainer}
-        className='flex-1 flex justify-center min-h-0'>
+        className='flex-1 flex justify-center min-h-0 h-full items-center'>
         <motion.div
-          className='flex flex-col min-h-0 h-full max-h-full text-center w-1/2 justify-self-center justify-center'
+          className='border-1 rounded-xl border-gray-400 h-[424px] text-center justify-center items-center w-[600px] p-4 shadow-xl/25 shadow-white-100'
           layout>
-          <Button
-            size='lg'
-            variant='outline'
-            className='border-purple-40 text-purple-40 bg-transparent p-2 m-4'
-            onClick={async () => {
-              setLoadingNew(true);
-              try {
-                const room = await createNewRoom();
-                router.push(`room/${room.roomId}`);
-              } finally {
-                setLoadingNew(false);
-              }
-            }}>
-            Create a new room
-            {loadingNew ? <LoadingSpinner size='sm' variant='spinner' /> : null}
-          </Button>
-          <p className='text-white text-[20px] m-2'>or</p>
-          <div className='flex flex-row'>
-            <input
-              className='p-2 m-4 border-purple-40 border text-purple-20 bg-transparent rounded-md bg-purple-40/30 flex-1'
-              placeholder='URL or Room UUID'
-              onChange={(event) => setRoomIdOrUrl(event.target.value)}
-            />
+          <div>
+            <StatusLabel />
+          </div>
+
+          <div className='text-white-100 justify-center'>
+            <h2 className='text-3xl font-bold w-full'>Try Live Demo</h2>
+            <p className='text-sm line-clamp-3 mt-6'>
+              Try our low-latency video toolkit – perfect for streaming,
+              broadcasting and video conferencing.
+            </p>
+          </div>
+
+          <div className='mt-6'>
             <Button
               size='lg'
-              variant='outline'
-              className='border-purple-40 text-purple-40 bg-transparent m-4'
-              onClick={async () => {
-                setLoadingExisting(true);
-                const roomId = getRoomIdFromUserEntry(roomIdOrUrl);
-                try {
-                  await getRoomInfo(roomId);
-                } catch (err) {
-                  toast.error(`Room ${roomId} does not exist.`);
-                  return;
-                } finally {
-                  setLoadingExisting(false);
-                }
-                router.push(`room/${roomId}`);
-              }}>
-              Join existing
-              {loadingExisting ? (
+              variant='default'
+              className='text-white-100 font-bold w-full bg-red-40 border-0 hover:bg-red-60 cursor-pointer'
+              onClick={handleCreateRoom}
+              disabled={loadingNew}>
+              Create new room
+              {loadingNew && <LoadingSpinner size='sm' variant='spinner' />}
+            </Button>
+          </div>
+
+          <p className='text-sm line-clamp-3 mt-6 text-white-100'>
+            or join existing one
+          </p>
+
+          <div className='flex flex-row mt-6'>
+            <input
+              className='p-2 mr-3 border-purple-40 border text-purple-20 bg-transparent rounded-md flex-1'
+              placeholder='URL or Room UUID'
+              onChange={handleInputChange}
+              value={roomIdOrUrl}
+              disabled={loadingExisting}
+            />
+            <Button
+              disabled={isJoinDisabled}
+              size='lg'
+              variant='default'
+              className='bg-purple-80 hover:bg-purple-100 text-white-100 font-bold cursor-pointer'
+              onClick={handleJoinRoom}>
+              Join room
+              {loadingExisting && (
                 <LoadingSpinner size='sm' variant='spinner' />
-              ) : null}
+              )}
             </Button>
           </div>
         </motion.div>
@@ -82,13 +116,9 @@ export default function Home() {
 
 function getRoomIdFromUserEntry(urlOrId: string): string {
   try {
-    const url = URL.parse(urlOrId);
-    const segments = url?.pathname.split('/');
-    if (!segments || segments.length == 0) {
-      return urlOrId;
-    }
-    const lastSegment = segments[segments?.length - 1];
-    return lastSegment;
+    const url = new URL(urlOrId);
+    const segments = url.pathname.split('/').filter(Boolean);
+    return segments.length > 0 ? segments[segments.length - 1] : urlOrId;
   } catch {
     return urlOrId;
   }

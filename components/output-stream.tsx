@@ -11,7 +11,7 @@ export default function OutputStream({
 }) {
   useEffect(() => {
     connect(whepUrl).then((stream) => {
-      if (videoRef.current) {
+      if (videoRef.current && videoRef.current.srcObject !== stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(console.error);
       }

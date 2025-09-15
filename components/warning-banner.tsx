@@ -1,4 +1,4 @@
-export function WarningBanner(props: { message: string }) {
+export function WarningBanner(props: any) {
   return (
     <div className='text-center py-4 lg:px-4'>
       <div
@@ -8,7 +8,7 @@ export function WarningBanner(props: { message: string }) {
           Warning
         </span>
         <span className='font-semibold mr-2 text-left flex-auto'>
-          {props.message}
+          {props.children}
         </span>
       </div>
     </div>

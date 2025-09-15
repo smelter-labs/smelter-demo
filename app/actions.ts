@@ -5,6 +5,7 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
 export type Input = {
+  id: number;
   inputId: string;
   title: string;
   description: string;

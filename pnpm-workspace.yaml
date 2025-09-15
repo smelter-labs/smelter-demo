@@ -1,3 +1,0 @@
-publicHoistPattern:
-  - "@next/eslint-plugin-next"
-  - "*eslint*"

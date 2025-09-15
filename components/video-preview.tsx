@@ -8,11 +8,14 @@ import { RefObject } from 'react';
 export default function VideoPreview({
   whepUrl,
   videoRef,
+  tryToPlay,
 }: {
   whepUrl: string;
   videoRef: RefObject<HTMLVideoElement | null>;
+  tryToPlay?(): void;
 }) {
   const activeStream = true;
+
   return (
     <motion.div className='col-span-3' {...(fadeInUp as any)}>
       <Card className='h-full flex flex-col bg-black-90 border-black-50'>
