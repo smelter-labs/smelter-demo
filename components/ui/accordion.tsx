@@ -14,10 +14,10 @@ export default function Accordion({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className='border-b border-gray-700 border-1 rounded-lg mb-2'>
+    <div className='border-b border-[#414154]  border-1 rounded-lg mb-2'>
       <button
         type='button'
-        className='flex items-center w-full px-2 py-2 focus:outline-none select-none bg-purple-100 rounded-t-lg border-gray-700 border-1 cursor-pointer mb-2'
+        className='flex items-center w-full px-2 py-2 focus:outline-none select-none bg-purple-100 rounded-t-lg border-[#414154] border-b-1 cursor-pointer mb-2'
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}>
         <span
@@ -53,7 +53,7 @@ export default function Accordion({
               collapsed: { height: 0, opacity: 0, marginTop: 0 },
             }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}>
+            style={{ overflow: 'visible' }}>
             <div className='p-2'>{children}</div>
           </motion.div>
         )}

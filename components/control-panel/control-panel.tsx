@@ -101,8 +101,8 @@ export default function ControlPanel({
       </Accordion>
 
       <Accordion title='Streams' defaultOpen>
-        <div className='flex-1 overflow-auto pr-2 relative'>
-          <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 bg-gradient-to-b from-black-75 to-transparent z-40' />
+        <div className='flex-1 overflow-auto relative'>
+          <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
           <SortableList
             items={inputWrappers}
             renderItem={(item) => {

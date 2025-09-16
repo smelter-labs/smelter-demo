@@ -109,7 +109,7 @@ export default function InputEntry({
   return (
     <div
       key={input.inputId}
-      className='p-2 mb-2 last:mb-0 rounded-md bg-transparent border-2 border-gray-700'>
+      className='p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154] '>
       <div className='flex items-center mb-3'>
         <span
           className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
