@@ -8,12 +8,17 @@ import {
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
-import AddInputForm from '@/components/control-panel/add-input-form';
+import AddInputForm, {
+  AddMP4InputForm,
+} from '@/components/control-panel/add-input-form';
 import { useEffect, useState, useCallback } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
+import { addMP4Input } from '@/app/actions';
+import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/ui/spinner';
 
 type ControlPanelProps = {
   roomId: string;
@@ -95,6 +100,14 @@ export default function ControlPanel({
         <AddInputForm
           inputs={inputs}
           suggestions={suggestions}
+          roomId={roomId}
+          refreshState={handleRefreshState}
+        />
+      </Accordion>
+
+      <Accordion title='Add new MP4' defaultOpen>
+        <AddMP4InputForm
+          inputs={inputs}
           roomId={roomId}
           refreshState={handleRefreshState}
         />

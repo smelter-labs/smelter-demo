@@ -66,9 +66,9 @@ export default function RoomView({
 
       <motion.div
         variants={staggerContainer}
-        className='flex-1 md:grid grid-cols-1 xl:grid-cols-4 gap-4 min-h-0'>
+        className='flex-1 md:grid grid-cols-1 gap-0 xl:grid-cols-4 xl:gap-4 min-h-0'>
         <VideoPreview videoRef={videoRef} whepUrl={roomState.whepUrl} />
-        <motion.div className='flex flex-col gap-4 min-h-0 h-full max-h-full'>
+        <motion.div className='flex flex-col xl:gap-4 min-h-0 h-full max-h-full'>
           <ControlPanel
             roomState={roomState}
             suggestions={suggestions}

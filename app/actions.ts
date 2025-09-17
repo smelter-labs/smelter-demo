@@ -10,6 +10,7 @@ export type Input = {
   title: string;
   description: string;
   volume: number;
+  type?: string;
   sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
   status: 'disconnected' | 'pending' | 'connected';
 
@@ -39,6 +40,9 @@ export interface TwitchChannelSuggestion {
 
 export type InputSuggestions = {
   twitch: TwitchChannelSuggestion[];
+};
+export type MP4Suggestions = {
+  mp4s: string[];
 };
 
 export async function createNewRoom(): Promise<{
@@ -84,7 +88,11 @@ export async function getRoomInfo(
 }
 
 export async function getInputSuggestions(): Promise<InputSuggestions> {
-  return await sendSmelterRequest('get', `/suggestions`);
+  return await sendSmelterRequest('get', `/suggestions/twitch`);
+}
+
+export async function getMP4Suggestions(): Promise<MP4Suggestions> {
+  return await sendSmelterRequest('get', `/suggestions/mp4s`);
 }
 
 export async function addInput(roomId: string, twitchChannelId: string) {
@@ -103,6 +111,14 @@ export async function removeInput(roomId: string, inputId: string) {
     'delete',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
     {},
+  );
+}
+
+export async function addMP4Input(roomId: string, mp4FileName: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'local-mp4', source: { fileName: mp4FileName, url: '' } },
   );
 }
 
