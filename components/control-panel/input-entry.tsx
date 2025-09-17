@@ -30,7 +30,6 @@ export default function InputEntry({
   };
 
   const handleDelete = async () => {
-    console.log('remove input');
     await removeInput(roomId, input.inputId);
     await refreshState();
   };

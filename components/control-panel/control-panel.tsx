@@ -8,12 +8,17 @@ import {
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
-import AddInputForm from '@/components/control-panel/add-input-form';
+import AddInputForm, {
+  AddMP4InputForm,
+} from '@/components/control-panel/add-input-form';
 import { useEffect, useState, useCallback } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
+import { addMP4Input } from '@/app/actions';
+import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/ui/spinner';
 
 type ControlPanelProps = {
   roomId: string;
@@ -87,6 +92,53 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, inputs, refreshState]);
 
+  // AddMP4Button: just a button, no input
+  function AddMP4Button({
+    roomId,
+    refreshState,
+  }: {
+    roomId: string;
+    refreshState: () => Promise<void>;
+  }) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAdd = async () => {
+      setError(null);
+      setLoading(true);
+      try {
+        await addMP4Input(roomId, 'random');
+        await refreshState();
+      } catch (err) {
+        setError('Failed to add MP4. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div className='flex flex-col gap-1 w-full'>
+        <div className='flex gap-2 items-center w-full'>
+          <Button
+            type='button'
+            size='lg'
+            variant='default'
+            className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
+            disabled={loading}
+            tabIndex={0}
+            onClick={handleAdd}>
+            {loading ? (
+              <LoadingSpinner size='sm' variant='spinner' />
+            ) : (
+              'Add MP4'
+            )}
+          </Button>
+        </div>
+        {error && <div className='text-red-400 text-xs mt-1 px-1'>{error}</div>}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       {...(fadeIn as any)}
@@ -95,6 +147,14 @@ export default function ControlPanel({
         <AddInputForm
           inputs={inputs}
           suggestions={suggestions}
+          roomId={roomId}
+          refreshState={handleRefreshState}
+        />
+      </Accordion>
+
+      <Accordion title='Add new MP4' defaultOpen>
+        <AddMP4InputForm
+          inputs={inputs}
           roomId={roomId}
           refreshState={handleRefreshState}
         />

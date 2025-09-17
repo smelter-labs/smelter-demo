@@ -82,7 +82,7 @@ export default function RoomPage() {
       {loading ? (
         <motion.div
           variants={staggerContainer}
-          className='flex-1 md:grid min-h-0 justify-center content-center'>
+          className='flex-1 grid min-h-0 justify-center content-center'>
           <LoadingSpinner size='lg' variant='spinner' />
         </motion.div>
       ) : (

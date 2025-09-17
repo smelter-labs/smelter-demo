@@ -10,6 +10,7 @@ export type Input = {
   title: string;
   description: string;
   volume: number;
+  type?: string;
   sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
   status: 'disconnected' | 'pending' | 'connected';
 
@@ -39,6 +40,9 @@ export interface TwitchChannelSuggestion {
 
 export type InputSuggestions = {
   twitch: TwitchChannelSuggestion[];
+};
+export type MP4Suggestions = {
+  mp4s: string[];
 };
 
 export async function createNewRoom(): Promise<{
@@ -87,6 +91,10 @@ export async function getInputSuggestions(): Promise<InputSuggestions> {
   return await sendSmelterRequest('get', `/suggestions`);
 }
 
+export async function getMP4Suggestions(): Promise<MP4Suggestions> {
+  return await sendSmelterRequest('get', `/resources/mp4s`);
+}
+
 export async function addInput(roomId: string, twitchChannelId: string) {
   return await sendSmelterRequest(
     'post',
@@ -103,6 +111,14 @@ export async function removeInput(roomId: string, inputId: string) {
     'delete',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
     {},
+  );
+}
+
+export async function addMP4Input(roomId: string, mp4Url: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'local-mp4', mp4Url },
   );
 }
 
