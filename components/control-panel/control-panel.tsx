@@ -92,53 +92,6 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, inputs, refreshState]);
 
-  // AddMP4Button: just a button, no input
-  function AddMP4Button({
-    roomId,
-    refreshState,
-  }: {
-    roomId: string;
-    refreshState: () => Promise<void>;
-  }) {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleAdd = async () => {
-      setError(null);
-      setLoading(true);
-      try {
-        await addMP4Input(roomId, 'random');
-        await refreshState();
-      } catch (err) {
-        setError('Failed to add MP4. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div className='flex flex-col gap-1 w-full'>
-        <div className='flex gap-2 items-center w-full'>
-          <Button
-            type='button'
-            size='lg'
-            variant='default'
-            className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
-            disabled={loading}
-            tabIndex={0}
-            onClick={handleAdd}>
-            {loading ? (
-              <LoadingSpinner size='sm' variant='spinner' />
-            ) : (
-              'Add MP4'
-            )}
-          </Button>
-        </div>
-        {error && <div className='text-red-400 text-xs mt-1 px-1'>{error}</div>}
-      </div>
-    );
-  }
-
   return (
     <motion.div
       {...(fadeIn as any)}

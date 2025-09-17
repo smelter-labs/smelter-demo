@@ -88,11 +88,11 @@ export async function getRoomInfo(
 }
 
 export async function getInputSuggestions(): Promise<InputSuggestions> {
-  return await sendSmelterRequest('get', `/suggestions`);
+  return await sendSmelterRequest('get', `/suggestions/twitch`);
 }
 
 export async function getMP4Suggestions(): Promise<MP4Suggestions> {
-  return await sendSmelterRequest('get', `/resources/mp4s`);
+  return await sendSmelterRequest('get', `/suggestions/mp4s`);
 }
 
 export async function addInput(roomId: string, twitchChannelId: string) {
@@ -114,11 +114,11 @@ export async function removeInput(roomId: string, inputId: string) {
   );
 }
 
-export async function addMP4Input(roomId: string, mp4Url: string) {
+export async function addMP4Input(roomId: string, mp4FileName: string) {
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
-    { type: 'local-mp4', mp4Url },
+    { type: 'local-mp4', source: { fileName: mp4FileName, url: '' } },
   );
 }
 
