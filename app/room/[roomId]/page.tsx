@@ -69,8 +69,14 @@ export default function RoomPage() {
     <motion.div
       variants={staggerContainer}
       className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
-      <SmelterLogo />
-
+      <div
+        style={{
+          display: 'inline-block',
+          width: `${162.5 / 1.2}px`,
+          height: `${21.25 / 1.2}px`,
+        }}>
+        <SmelterLogo />
+      </div>
       {roomState.pendingDelete && (
         <Link href='/'>
           <WarningBanner>
