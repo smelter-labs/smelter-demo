@@ -143,10 +143,9 @@ export async function removeInput(roomId: string, inputId: string) {
 
 export async function getAllRooms(): Promise<any> {
   const rooms = await sendSmelterRequest('get', `/rooms`);
-  console.log("Rooms info:", rooms);
+  console.log('Rooms info:', rooms);
   return rooms;
 }
-
 
 export type UpdateInputOptions = {
   volume: number;

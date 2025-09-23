@@ -1,9 +1,4 @@
-import {
-  Input,
-  Layout,
-  RoomState,
-  updateRoom,
-} from '@/app/actions';
+import { Input, Layout, RoomState, updateRoom } from '@/app/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
