@@ -112,26 +112,6 @@ export default function IntroView() {
                             {loadingNew && <LoadingSpinner size='sm' variant='spinner' />}
                         </Button>
                     </div>
-                    {/* Example: You can add a join room input/button here if needed */}
-                    {/* <div className='mt-6 flex gap-2'>
-                        <input
-                            type="text"
-                            value={roomIdOrUrl}
-                            onChange={handleInputChange}
-                            className="rounded px-2 py-1 border"
-                            placeholder="Enter room ID or URL"
-                        />
-                        <Button
-                            size='lg'
-                            variant='default'
-                            className='text-white-100 font-bold bg-blue-40 border-0 hover:bg-blue-60 cursor-pointer'
-                            onClick={handleJoinRoom}
-                            disabled={isJoinDisabled}
-                        >
-                            Join Room
-                            {loadingExisting && <LoadingSpinner size='sm' variant='spinner' />}
-                        </Button>
-                    </div> */}
                 </motion.div>
             </motion.div>
         </motion.div>
