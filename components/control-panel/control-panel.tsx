@@ -1,29 +1,20 @@
-import {
-  Input,
-  InputSuggestions,
-  Layout,
-  RoomState,
-  updateRoom,
-} from '@/app/actions';
+import { Input, Layout, RoomState, updateRoom } from '@/app/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
-import AddInputForm, {
-  AddMP4InputForm,
-} from '@/components/control-panel/add-input-form';
 import { useEffect, useState, useCallback } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
-import { addMP4Input } from '@/app/actions';
-import { Button } from '@/components/ui/button';
-import LoadingSpinner from '@/components/ui/spinner';
+import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
+import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
+import { KickAddInputForm } from './add-input-form/kick-add-input-form';
+import { usePathname } from 'next/navigation';
 
 type ControlPanelProps = {
   roomId: string;
   roomState: RoomState;
-  suggestions: InputSuggestions;
   refreshState: () => Promise<void>;
 };
 
@@ -33,9 +24,12 @@ export default function ControlPanel({
   refreshState,
   roomId,
   roomState,
-  suggestions,
 }: ControlPanelProps) {
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
+
+  // Get the current pathname to determine which add input forms to show
+  const pathname = usePathname();
+  const isKick = pathname?.toLowerCase().includes('kick');
 
   // Helper to wrap inputs with an id for sorting
   const getInputWrappers = useCallback(
@@ -96,17 +90,29 @@ export default function ControlPanel({
     <motion.div
       {...(fadeIn as any)}
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
-      <Accordion title='Add new Twitch stream' defaultOpen>
-        <AddInputForm
-          inputs={inputs}
-          suggestions={suggestions}
-          roomId={roomId}
-          refreshState={handleRefreshState}
-        />
-      </Accordion>
+      {/* Show only one of Twitch or Kick add input forms based on pathname */}
+      {!isKick && (
+        <Accordion title='Add new Twitch stream' defaultOpen>
+          <TwitchAddInputForm
+            inputs={inputs}
+            roomId={roomId}
+            refreshState={handleRefreshState}
+          />
+        </Accordion>
+      )}
+
+      {isKick && (
+        <Accordion title='Add new Kick Channel' defaultOpen>
+          <KickAddInputForm
+            inputs={inputs}
+            roomId={roomId}
+            refreshState={handleRefreshState}
+          />
+        </Accordion>
+      )}
 
       <Accordion title='Add new MP4' defaultOpen>
-        <AddMP4InputForm
+        <Mp4AddInputForm
           inputs={inputs}
           roomId={roomId}
           refreshState={handleRefreshState}
