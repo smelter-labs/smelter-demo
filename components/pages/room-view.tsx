@@ -9,14 +9,12 @@ import ControlPanel from '@/components/control-panel/control-panel';
 interface RoomViewProps {
   roomId: string;
   roomState: RoomState;
-  suggestions: InputSuggestions;
   refreshState: () => Promise<void>;
 }
 
 export default function RoomView({
   roomId,
   roomState,
-  suggestions,
   refreshState,
 }: RoomViewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -71,7 +69,6 @@ export default function RoomView({
         <motion.div className='flex flex-col xl:gap-4 min-h-0 h-full max-h-full'>
           <ControlPanel
             roomState={roomState}
-            suggestions={suggestions}
             roomId={roomId}
             refreshState={refreshState}
           />
