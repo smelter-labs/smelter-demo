@@ -64,11 +64,6 @@ export default function ControlPanel({
     async (newInputWrappers: InputWrapper[]) => {
       // Reorder the inputs array according to the new order
       const newOrderIds = newInputWrappers.map((item) => item.inputId);
-      // const newInputs = newOrderIds
-      //   .map((inputId) => inputsRef.current.find((input) => input.inputId === inputId))
-      //   .filter(Boolean) as Input[];
-      // setInputs(newInputs);
-      // setInputWrappers(getInputWrappers(newInputs));
       await updateRoom(roomId, {
         inputOrder: newOrderIds,
       });
