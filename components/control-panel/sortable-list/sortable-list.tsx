@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
   DndContext,
@@ -13,6 +13,7 @@ import type {
   UniqueIdentifier,
   DragStartEvent,
   DragEndEvent,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -38,11 +39,20 @@ export function SortableList<T extends BaseItem>({
   renderItem,
   onOrderChange,
 }: Props<T>) {
+  // Maintain a local state for the order of items
+  const [orderedItems, setOrderedItems] = useState<T[]>(items);
   const [active, setActive] = useState<Active | null>(null);
+
+  // Keep local orderedItems in sync with props.items if they change externally
+  useEffect(() => {
+    setOrderedItems(items);
+  }, [items]);
+
   const activeItem = useMemo(
-    () => items.find((item) => item.id === active?.id),
-    [active, items],
+    () => orderedItems.find((item) => item.id === active?.id),
+    [active, orderedItems],
   );
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -75,34 +85,41 @@ export function SortableList<T extends BaseItem>({
   ];
 
   const handleDragStart = ({ active }: DragStartEvent) => {
-    console.log('handleDragStart', active);
+    const activeIndex = orderedItems.findIndex(({ id }) => id === active.id);
+
     setActive(active);
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (over && active.id !== over?.id) {
-      const activeIndex = items.findIndex(({ id }) => id === active.id);
-      const overIndex = items.findIndex(({ id }) => id === over.id);
+    onOrderChange(orderedItems);
+    setActive(null);
+  };
 
-      const newItems = arrayMove(items, activeIndex, overIndex);
-      if (onOrderChange) {
-        onOrderChange(newItems);
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (over && active.id !== over?.id) {
+      const activeIndex = orderedItems.findIndex(({ id }) => id === active.id);
+      const overIndex = orderedItems.findIndex(({ id }) => id === over.id);
+
+      if (activeIndex !== -1 && overIndex !== -1) {
+        const newItems = arrayMove(orderedItems, activeIndex, overIndex);
+        setOrderedItems(newItems);
+        //  onOrderChange(newItems);
       }
     }
-    setActive(null);
   };
 
   return (
     <DndContext
       sensors={sensors}
+      onDragOver={handleDragOver}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => {
         setActive(null);
       }}>
-      <SortableContext items={items}>
+      <SortableContext items={orderedItems}>
         <ul className='SortableList' role='application'>
-          {items.map((item) => {
+          {orderedItems.map((item) => {
             // If this item is being dragged, apply opacity 0.5
             const isActive = active?.id === item.id;
             return (
