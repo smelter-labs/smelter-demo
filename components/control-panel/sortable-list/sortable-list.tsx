@@ -103,7 +103,6 @@ export function SortableList<T extends BaseItem>({
       if (activeIndex !== -1 && overIndex !== -1) {
         const newItems = arrayMove(orderedItems, activeIndex, overIndex);
         setOrderedItems(newItems);
-        
       }
     }
   };
