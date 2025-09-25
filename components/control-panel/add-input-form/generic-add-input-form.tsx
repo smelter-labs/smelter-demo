@@ -8,13 +8,13 @@ import {
   getTwitchSuggestions,
   // --- Add your Kick input action here when available ---
   // addKickInput,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MP4Suggestions } from '@/app/actions';
+import type { MP4Suggestions } from '@/app/actions/actions';
 import { SuggestionBox } from './suggestion-box';
 
 // --- GenericAddInputForm ---

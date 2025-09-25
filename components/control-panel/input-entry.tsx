@@ -1,31 +1,39 @@
 import { useState } from 'react';
 import {
+  AvailableShader,
   connectInput,
   disconnectInput,
   Input,
   removeInput,
   updateInput,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, X } from 'lucide-react';
+import { Mic, MicOff, X, SlidersHorizontal } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 
 interface InputEntryProps {
   roomId: string;
   input: Input;
   refreshState: () => Promise<void>;
+  availableShaders?: AvailableShader[];
 }
 
 export default function InputEntry({
   roomId,
   input,
   refreshState,
+  availableShaders,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
+  const [showSliders, setShowSliders] = useState(false);
+  const [shaderLoading, setShaderLoading] = useState<string | null>(null);
   const muted = input.volume === 0;
 
   const handleMuteToggle = async () => {
-    await updateInput(roomId, input.inputId, { volume: muted ? 1 : 0 });
+    await updateInput(roomId, input.inputId, {
+      volume: muted ? 1 : 0,
+      shaders: input.shaders,
+    });
     await refreshState();
   };
 
@@ -47,6 +55,50 @@ export default function InputEntry({
       await refreshState();
     } finally {
       setConnectionStateLoading(false);
+    }
+  };
+
+  // Ensure shadersConfig is initialized and all available shaders are present
+  availableShaders?.forEach((availableShader) => {
+    if (!input.shaders) {
+      input.shaders = [];
+    }
+    if (!input.shaders?.find((s) => s.shaderId === availableShader.id)) {
+      input.shaders?.push({
+        shaderName: availableShader.name,
+        shaderId: availableShader.id,
+        enabled: false,
+        params:
+          availableShader.params?.map((param) => ({
+            paramName: param.name,
+            paramValue: param.defaultValue ?? 0,
+          })) || [],
+      });
+    }
+  });
+
+  const handleSlidersToggle = () => {
+    setShowSliders((prev) => !prev);
+  };
+
+  const handleShaderToggle = async (shaderId: string) => {
+    if (!input.shaders) return;
+    setShaderLoading(shaderId);
+    try {
+      // Find the shader config and toggle its enabled state
+      const newShadersConfig = input.shaders.map((shader) =>
+        shader.shaderId === shaderId
+          ? { ...shader, enabled: !shader.enabled }
+          : shader,
+      );
+      console.log(newShadersConfig);
+      await updateInput(roomId, input.inputId, {
+        shaders: newShadersConfig,
+        volume: input.volume,
+      });
+      await refreshState();
+    } finally {
+      setShaderLoading(null);
     }
   };
 
@@ -74,6 +126,18 @@ export default function InputEntry({
       className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
       onClick={handleDelete}>
       <X className='w-3 h-3 text-red-40' />
+    </Button>
+  );
+
+  const renderSlidersButton = () => (
+    <Button
+      data-no-dnd
+      size='sm'
+      variant='ghost'
+      className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      aria-label='Show sliders'
+      onClick={handleSlidersToggle}>
+      <SlidersHorizontal className='w-3 h-3 text-purple-60' />
     </Button>
   );
 
@@ -105,6 +169,13 @@ export default function InputEntry({
     return 'Unknown';
   };
 
+  // Helper to get enabled state for a shader
+  const isShaderEnabled = (shaderId: string) => {
+    return (
+      input.shaders?.find((s) => s.shaderId === shaderId)?.enabled ?? false
+    );
+  };
+
   return (
     <div
       key={input.inputId}
@@ -131,9 +202,44 @@ export default function InputEntry({
         </div>
         <div className='flex flex-row items-center justify-end flex-1 gap-1'>
           {renderMuteButton()}
+          {renderSlidersButton()}
           {renderDeleteButton()}
         </div>
       </div>
+      {showSliders && (
+        <div className='mt-2'>
+          {availableShaders?.map((shader) => {
+            const enabled = isShaderEnabled(shader.id);
+            return (
+              <div key={shader.name} className='mb-3 p-2 rounded bg-purple-80'>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <h3 className='font-semibold'>{shader.name}</h3>
+                    <p className='text-xs text-white-80'>
+                      {shader.description}
+                    </p>
+                  </div>
+                  <Button
+                    data-no-dnd
+                    size='sm'
+                    variant={enabled ? 'default' : 'outline'}
+                    className={`ml-4 cursor-pointer ${enabled ? 'bg-green-60 text-white-100' : ''}`}
+                    disabled={shaderLoading === shader.id}
+                    onClick={() => handleShaderToggle(shader.id)}>
+                    {shaderLoading === shader.id ? (
+                      <LoadingSpinner size='sm' variant='spinner' />
+                    ) : enabled ? (
+                      'Disable'
+                    ) : (
+                      'Enable'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

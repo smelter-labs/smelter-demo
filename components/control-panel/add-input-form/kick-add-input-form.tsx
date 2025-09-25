@@ -1,4 +1,4 @@
-import { addKickInput, getKickSuggestions, Input } from '@/app/actions';
+import { addKickInput, getKickSuggestions, Input } from '@/app/actions/actions';
 import { GenericAddInputForm } from './generic-add-input-form';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';

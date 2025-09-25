@@ -8,10 +8,10 @@ import { toast } from 'react-toastify';
 import StatusLabel from '@/components/ui/status-label';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
-import { createNewRoom, getRoomInfo } from '@/app/actions';
+import { createNewRoom, getRoomInfo } from '@/app/actions/actions';
 import { staggerContainer } from '@/utils/animations';
 import { useEffect } from 'react';
-import { getAllRooms } from '@/app/actions';
+import { getAllRooms } from '@/app/actions/actions';
 
 function getBasePath(pathname: string): string {
   // Remove trailing slash if present

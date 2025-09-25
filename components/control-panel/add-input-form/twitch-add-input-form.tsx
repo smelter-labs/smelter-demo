@@ -4,7 +4,7 @@ import {
   getTwitchSuggestions,
   Input,
   InputSuggestions,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import { useCallback, useEffect, useState } from 'react';
 import { GenericAddInputForm } from './generic-add-input-form';
 import { toast } from 'react-toastify';

@@ -11,7 +11,7 @@ import {
   getRoomInfo,
   InputSuggestions,
   RoomState,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import LoadingSpinner from '@/components/ui/spinner';
 import { WarningBanner } from '@/components/warning-banner';
 import SmelterLogo from '@/components/ui/smelter-logo';

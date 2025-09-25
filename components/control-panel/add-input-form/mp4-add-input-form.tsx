@@ -3,7 +3,7 @@ import {
   getMP4Suggestions,
   Input,
   MP4Suggestions,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import { useEffect, useState } from 'react';
 import { GenericAddInputForm } from './generic-add-input-form';
 import { toast } from 'react-toastify';

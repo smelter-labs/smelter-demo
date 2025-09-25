@@ -1,4 +1,10 @@
-import { Input, Layout, RoomState, updateRoom } from '@/app/actions';
+import {
+  Input,
+  Layout,
+  RoomState,
+  updateRoom,
+  getAvailableShaders,
+} from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
@@ -28,7 +34,7 @@ export default function ControlPanel({
   // Use a ref to always get the latest inputs in callbacks
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
-
+  //console.log(inputs);
   // Get the current pathname to determine which add input forms to show
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
@@ -59,6 +65,22 @@ export default function ControlPanel({
     inputsRef.current = roomState.inputs;
   }, [roomState.inputs]);
 
+  // --- Fetch available shaders and store in state ---
+  const [availableShaders, setAvailableShaders] = useState<any[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    getAvailableShaders()
+      .then((shaders) => {
+        if (mounted) setAvailableShaders(shaders);
+      })
+      .catch(() => {
+        if (mounted) setAvailableShaders([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Update the order in the backend
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
@@ -68,7 +90,7 @@ export default function ControlPanel({
         inputOrder: newOrderIds,
       });
     },
-    [roomId, getInputWrappers],
+    [roomId],
   );
 
   const changeLayout = useCallback(
@@ -84,6 +106,21 @@ export default function ControlPanel({
     setInputWrappers(getInputWrappers(inputsRef.current));
     await refreshState();
   }, [getInputWrappers, refreshState]);
+
+  // Prepare slider params for InputEntry from availableShaders
+  const getSlidersParams = useCallback(() => {
+    // If availableShaders is an array of shader objects, map to slider param format
+    // This assumes each shader has a name and min/max/default values
+    // Adjust as needed based on actual shader object structure
+    if (!Array.isArray(availableShaders)) return [];
+    return availableShaders.map((shader) => ({
+      shaderName: shader.name,
+      shaderId: shader.id,
+      minValue: shader.minValue ?? 0,
+      maxValue: shader.maxValue ?? 1,
+      defaultValue: shader.defaultValue,
+    }));
+  }, [availableShaders]);
 
   return (
     <motion.div
@@ -135,6 +172,7 @@ export default function ControlPanel({
                       input={input}
                       refreshState={handleRefreshState}
                       roomId={roomId}
+                      availableShaders={availableShaders}
                     />
                   )}
                 </SortableItem>

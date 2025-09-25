@@ -4,6 +4,40 @@ import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
+const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+assert(BASE_URL);
+
+type ShaderParam = {
+  name: string;
+  type: string;
+  minValue?: number;
+  maxValue?: number;
+  defaultValue?: number;
+};
+
+export type AvailableShader = {
+  id: string;
+  name: string;
+  description: string;
+  shaderFile: string;
+  minValue: number;
+  maxValue: number;
+  defaultValue: number;
+  params: ShaderParam[];
+};
+
+export type ShaderParamConfig = {
+  paramName: string;
+  paramValue: number;
+};
+
+export type ShaderConfig = {
+  shaderName: string;
+  shaderId: string;
+  enabled: boolean;
+  params: ShaderParamConfig[];
+};
+
 export type Input = {
   id: number;
   inputId: string;
@@ -16,6 +50,7 @@ export type Input = {
 
   // only set if this is input from twitch
   twitchChannelId?: string;
+  shaders: ShaderConfig[];
 };
 
 export type RoomState = {
@@ -149,6 +184,7 @@ export async function getAllRooms(): Promise<any> {
 
 export type UpdateInputOptions = {
   volume: number;
+  shaders?: ShaderConfig[];
 };
 
 export async function updateInput(
@@ -156,6 +192,7 @@ export async function updateInput(
   inputId: string,
   opts: Partial<UpdateInputOptions>,
 ) {
+  console.log(opts);
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
@@ -188,8 +225,10 @@ export async function restartService(): Promise<void> {
   });
 }
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
-assert(BASE_URL);
+export async function getAvailableShaders(): Promise<AvailableShader[]> {
+  const shaders = await sendSmelterRequest('get', `/shaders`);
+  return (shaders?.shaders as AvailableShader[]) || [];
+}
 
 async function sendSmelterRequest(
   method: 'get' | 'delete' | 'post',
