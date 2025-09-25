@@ -2,7 +2,7 @@ import { Input, Layout, RoomState, updateRoom } from '@/app/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import InputEntry from '@/components/control-panel/input-entry';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
 import Accordion from '@/components/ui/accordion';
@@ -25,6 +25,8 @@ export default function ControlPanel({
   roomId,
   roomState,
 }: ControlPanelProps) {
+  // Use a ref to always get the latest inputs in callbacks
+  const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
 
   // Get the current pathname to determine which add input forms to show
@@ -33,12 +35,12 @@ export default function ControlPanel({
 
   // Helper to wrap inputs with an id for sorting
   const getInputWrappers = useCallback(
-    (inputsArg: Input[] = inputs): InputWrapper[] =>
+    (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
       inputsArg.map((input, index) => ({
         id: index,
         inputId: input.inputId,
       })),
-    [inputs],
+    [],
   );
 
   const [inputWrappers, setInputWrappers] = useState<InputWrapper[]>(() =>
@@ -48,28 +50,25 @@ export default function ControlPanel({
   // Keep inputWrappers in sync with inputs
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
+    inputsRef.current = inputs;
   }, [inputs, getInputWrappers]);
 
   // Keep inputs in sync with roomState.inputs
   useEffect(() => {
     setInputs(roomState.inputs);
+    inputsRef.current = roomState.inputs;
   }, [roomState.inputs]);
 
   // Update the order in the backend
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
-      const newInputs = newInputWrappers
-        .map((inputWrapper) =>
-          inputs.find((input) => input.inputId === inputWrapper.inputId),
-        )
-        .filter(Boolean) as Input[];
-      setInputs(newInputs);
-      setInputWrappers(getInputWrappers(newInputs));
+      // Reorder the inputs array according to the new order
+      const newOrderIds = newInputWrappers.map((item) => item.inputId);
       await updateRoom(roomId, {
-        inputOrder: newInputWrappers.map((item) => item.inputId),
+        inputOrder: newOrderIds,
       });
     },
-    [inputs, roomId, getInputWrappers],
+    [roomId, getInputWrappers],
   );
 
   const changeLayout = useCallback(
@@ -82,9 +81,9 @@ export default function ControlPanel({
 
   // Refresh state handler
   const handleRefreshState = useCallback(async () => {
-    setInputWrappers(getInputWrappers(inputs));
+    setInputWrappers(getInputWrappers(inputsRef.current));
     await refreshState();
-  }, [getInputWrappers, inputs, refreshState]);
+  }, [getInputWrappers, refreshState]);
 
   return (
     <motion.div
@@ -125,6 +124,7 @@ export default function ControlPanel({
           <SortableList
             items={inputWrappers}
             renderItem={(item) => {
+              // Find the input by inputId in the current order
               const input = inputs.find(
                 (input) => input.inputId === item.inputId,
               );
