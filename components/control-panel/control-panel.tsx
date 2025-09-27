@@ -11,6 +11,7 @@ import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
 import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
 import { KickAddInputForm } from './add-input-form/kick-add-input-form';
 import { usePathname } from 'next/navigation';
+import LoadingSpinner from '@/components/ui/spinner';
 
 type ControlPanelProps = {
   roomId: string;
@@ -28,6 +29,12 @@ export default function ControlPanel({
   // Use a ref to always get the latest inputs in callbacks
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
+
+  // Spinner state for streams accordion
+  const [showStreamsSpinner, setShowStreamsSpinner] = useState(
+    roomState.inputs.length === 0
+  );
+  const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get the current pathname to determine which add input forms to show
   const pathname = usePathname();
@@ -58,6 +65,30 @@ export default function ControlPanel({
     setInputs(roomState.inputs);
     inputsRef.current = roomState.inputs;
   }, [roomState.inputs]);
+
+  // Spinner logic: show spinner for up to 10s or until at least one stream appears
+  useEffect(() => {
+    if (inputs.length === 0) {
+      setShowStreamsSpinner(true);
+      if (spinnerTimeoutRef.current) clearTimeout(spinnerTimeoutRef.current);
+      spinnerTimeoutRef.current = setTimeout(() => {
+        setShowStreamsSpinner(false);
+      }, 10000);
+    } else {
+      setShowStreamsSpinner(false);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    }
+    // Clean up on unmount
+    return () => {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    };
+  }, [inputs]);
 
   // Update the order in the backend
   const updateOrder = useCallback(
@@ -121,27 +152,33 @@ export default function ControlPanel({
       <Accordion title='Streams' defaultOpen>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
-          <SortableList
-            items={inputWrappers}
-            renderItem={(item) => {
-              // Find the input by inputId in the current order
-              const input = inputs.find(
-                (input) => input.inputId === item.inputId,
-              );
-              return (
-                <SortableItem id={item.id}>
-                  {input && (
-                    <InputEntry
-                      input={input}
-                      refreshState={handleRefreshState}
-                      roomId={roomId}
-                    />
-                  )}
-                </SortableItem>
-              );
-            }}
-            onOrderChange={updateOrder}
-          />
+          {showStreamsSpinner ? (
+            <div className="flex items-center justify-center h-32">
+              <LoadingSpinner size="lg" variant="spinner" />
+            </div>
+          ) : (
+            <SortableList
+              items={inputWrappers}
+              renderItem={(item) => {
+                // Find the input by inputId in the current order
+                const input = inputs.find(
+                  (input) => input.inputId === item.inputId,
+                );
+                return (
+                  <SortableItem id={item.id}>
+                    {input && (
+                      <InputEntry
+                        input={input}
+                        refreshState={handleRefreshState}
+                        roomId={roomId}
+                      />
+                    )}
+                  </SortableItem>
+                );
+              }}
+              onOrderChange={updateOrder}
+            />
+          )}
         </div>
       </Accordion>
 
