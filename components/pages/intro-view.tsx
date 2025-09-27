@@ -10,7 +10,6 @@ import LoadingSpinner from '@/components/ui/spinner';
 import { createNewRoom, getRoomInfo } from '@/app/actions';
 import { staggerContainer } from '@/utils/animations';
 
-
 function getBasePath(pathname: string): string {
   // Remove trailing slash if present
   let path = pathname.replace(/\/$/, '');
@@ -57,7 +56,6 @@ export default function IntroView() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, basePath, pathname]);
-
 
   return (
     <motion.div

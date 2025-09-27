@@ -32,7 +32,7 @@ export default function ControlPanel({
 
   // Spinner state for streams accordion
   const [showStreamsSpinner, setShowStreamsSpinner] = useState(
-    roomState.inputs.length === 0
+    roomState.inputs.length === 0,
   );
   const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -153,8 +153,8 @@ export default function ControlPanel({
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
           {showStreamsSpinner ? (
-            <div className="flex items-center justify-center h-32">
-              <LoadingSpinner size="lg" variant="spinner" />
+            <div className='flex items-center justify-center h-32'>
+              <LoadingSpinner size='lg' variant='spinner' />
             </div>
           ) : (
             <SortableList
