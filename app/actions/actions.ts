@@ -53,6 +53,8 @@ export type Input = {
   shaders: ShaderConfig[];
 };
 
+export type RoomInitType = 'twitch' | 'kick' | 'mp4';
+
 export type RoomState = {
   inputs: Input[];
   layout: Layout;
@@ -85,11 +87,11 @@ export type MP4Suggestions = {
   mp4s: string[];
 };
 
-export async function createNewRoom(): Promise<{
+export async function createNewRoom(initType: RoomInitType): Promise<{
   roomId: string;
   whepUrl: string;
 }> {
-  return await sendSmelterRequest('post', '/room', {});
+  return await sendSmelterRequest('post', '/room', { initType });
 }
 
 export type UpdateRoomOptions = {
