@@ -218,10 +218,14 @@ export default function InputEntry({
       data-no-dnd
       size='sm'
       variant='ghost'
-      className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      className={`transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer ${
+        showSliders ? 'text-red-40' : ''
+      }`}
       aria-label='Show sliders'
       onClick={handleSlidersToggle}>
-      <SlidersHorizontal className='w-3 h-3 text-purple-60' />
+      <SlidersHorizontal
+        className={`w-3 h-3 ${showSliders ? 'text-red-40' : 'text-purple-60'}`}
+      />
     </Button>
   );
 

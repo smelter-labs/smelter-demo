@@ -190,28 +190,6 @@ export default function ControlPanel({
       <Accordion title='Streams' defaultOpen>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
-          <SortableList
-            items={inputWrappers}
-            renderItem={(item) => {
-              // Find the input by inputId in the current order
-              const input = inputs.find(
-                (input) => input.inputId === item.inputId,
-              );
-              return (
-                <SortableItem id={item.id}>
-                  {input && (
-                    <InputEntry
-                      input={input}
-                      refreshState={handleRefreshState}
-                      roomId={roomId}
-                      availableShaders={availableShaders}
-                    />
-                  )}
-                </SortableItem>
-              );
-            }}
-            onOrderChange={updateOrder}
-          />
           {showStreamsSpinner ? (
             <div className='flex items-center justify-center h-32'>
               <LoadingSpinner size='lg' variant='spinner' />
@@ -231,6 +209,7 @@ export default function ControlPanel({
                         input={input}
                         refreshState={handleRefreshState}
                         roomId={roomId}
+                        availableShaders={availableShaders}
                       />
                     )}
                   </SortableItem>
