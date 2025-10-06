@@ -90,6 +90,7 @@ export default function ControlPanel({
       mounted = false;
     };
   }, []);
+
   // Spinner logic: show spinner for up to 10s or until at least one stream appears,
   // but never show spinner if there was ever any input added
   useEffect(() => {
