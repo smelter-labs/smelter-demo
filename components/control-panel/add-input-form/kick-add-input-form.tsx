@@ -53,6 +53,12 @@ export function KickAddInputForm({
     return () => clearInterval(interval);
   }, [refreshSuggestions]);
 
+  const usedKickChannelIds = new Set(
+    inputs
+      .filter((input) => input.channelId)
+      .map((input) => input.channelId?.toLowerCase()),
+  );
+
   return (
     <GenericAddInputForm
       inputs={inputs}
@@ -61,13 +67,10 @@ export function KickAddInputForm({
       suggestions={kickSuggestions}
       filterSuggestions={(kickSuggestions, currentSuggestion, inputs) =>
         kickSuggestions
+          // Remove suggestions for streams already in use
           .filter((suggestion) => {
-            for (const input of inputs) {
-              if ((input as any).kickChannelId === suggestion.streamId) {
-                return false;
-              }
-            }
-            return true;
+            // Use the precomputed set for efficiency
+            return !usedKickChannelIds.has(suggestion.streamId.toLowerCase());
           })
           .filter((suggestion) => {
             if (!currentSuggestion) return true;

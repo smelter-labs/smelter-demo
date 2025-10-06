@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, ChangeEvent, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import StatusLabel from '@/components/ui/status-label';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
-import { createNewRoom, getRoomInfo } from '@/app/actions/actions';
+import {
+  createNewRoom,
+  RegisterInputOptions,
+  getTwitchSuggestions,
+  getKickSuggestions,
+} from '@/app/actions/actions';
 import { staggerContainer } from '@/utils/animations';
-import { useEffect } from 'react';
-import { getAllRooms } from '@/app/actions/actions';
 
 function getBasePath(pathname: string): string {
   // Remove trailing slash if present
@@ -31,6 +34,32 @@ export default function IntroView() {
   const pathname = usePathname();
   const [loadingNew, setLoadingNew] = useState(false);
 
+  // Suggestions state
+  const [twitchSuggestions, setTwitchSuggestions] = useState<any[]>([]);
+  const [kickSuggestions, setKickSuggestions] = useState<any[]>([]);
+
+  // Load suggestions on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [twitch, kick] = await Promise.all([
+          getTwitchSuggestions(),
+          getKickSuggestions(),
+        ]);
+        if (mounted) {
+          setTwitchSuggestions(twitch.twitch || []);
+          setKickSuggestions(kick.kick || []);
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const basePath = getBasePath(pathname);
 
   const getRoomRoute = (roomId: string) => {
@@ -42,22 +71,31 @@ export default function IntroView() {
   const handleCreateRoom = useCallback(async () => {
     setLoadingNew(true);
     try {
-      let initType: 'kick' | 'twitch' | 'mp4';
+      let initInputs: RegisterInputOptions[] = [];
       const lowerPath = pathname.toLowerCase();
       if (lowerPath.includes('kick')) {
-        initType = 'kick';
+        // Use first two kick suggestions if available
+        initInputs = (kickSuggestions.slice(0, 2) || []).map((s) => ({
+          type: 'kick-channel',
+          channelId: s.streamId,
+        }));
       } else if (lowerPath.includes('twitch')) {
-        initType = 'twitch';
+        // Use first two twitch suggestions if available
+        initInputs = (twitchSuggestions.slice(0, 2) || []).map((s) => ({
+          type: 'twitch-channel',
+          channelId: s.streamId,
+        }));
       } else {
-        initType = 'mp4';
+        // No initial inputs
+        initInputs = [];
       }
-      const room = await createNewRoom(initType);
+      const room = await createNewRoom(initInputs);
       router.push(getRoomRoute(room.roomId));
     } finally {
       setLoadingNew(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, basePath, pathname]);
+  }, [router, basePath, pathname, twitchSuggestions, kickSuggestions]);
 
   return (
     <motion.div

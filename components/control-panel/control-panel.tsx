@@ -36,13 +36,15 @@ export default function ControlPanel({
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
 
+  // Track if there was ever any input added
+  const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
+
   // Spinner state for streams accordion
   const [showStreamsSpinner, setShowStreamsSpinner] = useState(
     roomState.inputs.length === 0,
   );
   const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  //console.log(inputs);
   // Get the current pathname to determine which add input forms to show
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
@@ -89,8 +91,22 @@ export default function ControlPanel({
     };
   }, []);
 
-  // Spinner logic: show spinner for up to 10s or until at least one stream appears
+  // Spinner logic: show spinner for up to 10s or until at least one stream appears,
+  // but never show spinner if there was ever any input added
   useEffect(() => {
+    if (inputs.length > 0) {
+      everHadInputRef.current = true;
+    }
+
+    if (everHadInputRef.current) {
+      setShowStreamsSpinner(false);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      return;
+    }
+
     if (inputs.length === 0) {
       setShowStreamsSpinner(true);
       if (spinnerTimeoutRef.current) clearTimeout(spinnerTimeoutRef.current);
@@ -139,20 +155,6 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
-  // Prepare slider params for InputEntry from availableShaders
-  const getSlidersParams = useCallback(() => {
-    // If availableShaders is an array of shader objects, map to slider param format
-    // This assumes each shader has a name and min/max/default values
-    // Adjust as needed based on actual shader object structure
-    if (!Array.isArray(availableShaders)) return [];
-    return availableShaders.map((shader) => ({
-      shaderName: shader.name,
-      shaderId: shader.id,
-      minValue: shader.minValue ?? 0,
-      maxValue: shader.maxValue ?? 1,
-      defaultValue: shader.defaultValue,
-    }));
-  }, [availableShaders]);
 
   return (
     <motion.div

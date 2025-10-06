@@ -59,7 +59,7 @@ export default function TwitchAddInputForm({
         twitchSuggestions
           .filter((suggestion) => {
             for (const input of inputs) {
-              if (input.twitchChannelId === suggestion.streamId) {
+              if (input.channelId === suggestion.streamId) {
                 return false;
               }
             }

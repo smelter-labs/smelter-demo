@@ -47,13 +47,26 @@ export type Input = {
   type?: string;
   sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
   status: 'disconnected' | 'pending' | 'connected';
-
-  // only set if this is input from twitch
-  twitchChannelId?: string;
+  channelId?: string;
   shaders: ShaderConfig[];
 };
 
-export type RoomInitType = 'twitch' | 'kick' | 'mp4';
+export type RegisterInputOptions =
+  | {
+      type: 'twitch-channel';
+      channelId: string;
+    }
+  | {
+      type: 'kick-channel';
+      channelId: string;
+    }
+  | {
+      type: 'local-mp4';
+      source: {
+        fileName?: string;
+        url?: string;
+      };
+    };
 
 export type RoomState = {
   inputs: Input[];
@@ -87,11 +100,13 @@ export type MP4Suggestions = {
   mp4s: string[];
 };
 
-export async function createNewRoom(initType: RoomInitType): Promise<{
+export async function createNewRoom(
+  initInputs: RegisterInputOptions[],
+): Promise<{
   roomId: string;
   whepUrl: string;
 }> {
-  return await sendSmelterRequest('post', '/room', { initType });
+  return await sendSmelterRequest('post', '/room', { initInputs });
 }
 
 export type UpdateRoomOptions = {
@@ -141,23 +156,23 @@ export async function getKickSuggestions(): Promise<KickSuggestions> {
   return await sendSmelterRequest('get', `/suggestions/kick`);
 }
 
-export async function addTwitchInput(roomId: string, twitchChannelId: string) {
+export async function addTwitchInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     {
       type: 'twitch-channel',
-      twitchChannelId,
+      channelId: channelId,
     },
   );
 }
-export async function addKickInput(roomId: string, kickChannelId: string) {
+export async function addKickInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     {
       type: 'kick-channel',
-      kickChannelId,
+      channelId: channelId,
     },
   );
 }
