@@ -33,7 +33,7 @@ export default function ShaderPanel({
   getShaderButtonClass,
 }: ShaderPanelProps) {
   return (
-    <div className='mt-2' data-no-dnd>
+    <div className='mt-2 cursor-default' data-no-dnd>
       {availableShaders.map((shader) => {
         const enabled =
           input.shaders?.find((s) => s.shaderId === shader.id)?.enabled ??
@@ -53,7 +53,7 @@ export default function ShaderPanel({
                 <h3 className='font-semibold text-white-100 text-lg drop-shadow-sm'>
                   {shader.name}
                 </h3>
-                <p className='text-xs text-white-80 opacity-80'>
+                <p className='text-xs text-white opacity-80'>
                   {shader.description}
                 </p>
               </div>
