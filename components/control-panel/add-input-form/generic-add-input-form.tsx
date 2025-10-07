@@ -1,23 +1,10 @@
-import {
-  addTwitchInput,
-  connectInput,
-  addMP4Input,
-  Input,
-  InputSuggestions,
-  getMP4Suggestions,
-  getTwitchSuggestions,
-  // --- Add your Kick input action here when available ---
-  // addKickInput,
-} from '@/app/actions/actions';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { MP4Suggestions } from '@/app/actions/actions';
 import { SuggestionBox } from './suggestion-box';
+import type { Input } from '@/app/actions/actions';
 
-// --- GenericAddInputForm ---
 export type GenericAddInputFormProps<T> = {
   inputs: Input[];
   roomId: string;
@@ -38,7 +25,7 @@ export type GenericAddInputFormProps<T> = {
   getSuggestionValue: (suggestion: T) => string;
   buttonText: string;
   loadingText?: string;
-  validateInput?: (value: string) => string | undefined; // returns error message if invalid
+  validateInput?: (value: string) => string | undefined;
 };
 
 export function GenericAddInputForm<T>({
@@ -58,28 +45,29 @@ export function GenericAddInputForm<T>({
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionBoxRef = useRef<HTMLDivElement | null>(null);
 
-  // Track window width for responsive suggestion box alignment
-  const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
-
   useEffect(() => {
-    function handleResize() {
-      setWindowWidth(window.innerWidth);
-    }
+    const handleResize = () => setWindowWidth(window.innerWidth);
     setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Filter suggestions if filterSuggestions is provided
   const filteredSuggestions = filterSuggestions
     ? filterSuggestions(suggestions, currentSuggestion, inputs)
     : suggestions;
 
-  // Hide suggestions on outside click
   useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [filteredSuggestions.length, showSuggestions, currentSuggestion]);
+
+  useEffect(() => {
+    if (!showSuggestions) return;
     function handleClickOutside(event: MouseEvent) {
       if (
         suggestionBoxRef.current &&
@@ -90,22 +78,11 @@ export function GenericAddInputForm<T>({
         setShowSuggestions(false);
       }
     }
-    if (showSuggestions) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
 
-  // Keyboard navigation for suggestions
-  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
-
-  useEffect(() => {
-    setHighlightedIndex(-1);
-  }, [filteredSuggestions.length, showSuggestions, currentSuggestion]);
-
-  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || filteredSuggestions.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -132,53 +109,51 @@ export function GenericAddInputForm<T>({
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
     }
-  }
+  };
 
-  // Responsive suggestion box style
   const suggestionBoxClass =
     windowWidth !== undefined && windowWidth < 1280
       ? 'absolute z-30 left-0 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-0 w-full overflow-y-auto text-sm sm:text-base'
       : 'absolute z-30 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-[320px] sm:min-w-[400px] w-[120%] sm:w-[140%] overflow-y-auto text-sm sm:text-base';
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = currentSuggestion.trim();
+    if (validateInput) {
+      const error = validateInput(value);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    }
+    setLoading(true);
+    try {
+      await onSubmit(value);
+      await refreshState();
+      setCurrentSuggestion('');
+    } catch {
+      // onSubmit should handle toast error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <form
       className='flex flex-row w-full gap-2 sm:gap-3 items-center relative'
       autoComplete='off'
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const value = currentSuggestion.trim();
-        if (validateInput) {
-          const error = validateInput(value);
-          if (error) {
-            toast.error(error);
-            return;
-          }
-        }
-        setLoading(true);
-        try {
-          await onSubmit(value);
-          await refreshState();
-          setCurrentSuggestion('');
-        } catch (err) {
-          // onSubmit should handle toast error
-        } finally {
-          setLoading(false);
-        }
-      }}>
+      onSubmit={handleSubmit}>
       <div className='relative flex-1 min-w-0'>
         <input
           ref={inputRef}
           className='p-2 border-purple-40 border text-purple-20 bg-transparent rounded-md w-full min-w-0 text-sm sm:text-base sm:p-2 outline-none focus:ring-2 focus:ring-purple-60 transition-all'
           value={currentSuggestion}
-          onChange={(event) => {
-            setCurrentSuggestion(event.target.value);
+          onChange={(e) => {
+            setCurrentSuggestion(e.target.value);
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
-          onBlur={() => {
-            // Delay hiding to allow click
-            setTimeout(() => setShowSuggestions(false), 100);
-          }}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
           onKeyDown={handleInputKeyDown}
           placeholder={placeholder}
           autoComplete='off'

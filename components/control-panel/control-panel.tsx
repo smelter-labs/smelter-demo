@@ -7,10 +7,10 @@ import {
 } from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
-import InputEntry from '@/components/control-panel/input-entry';
+import InputEntry from '@/components/control-panel/input-entry/input-entry';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
-import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
+import { SortableItem } from '@/components/control-panel/sortable-list/sortable-item';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
 import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
@@ -32,24 +32,20 @@ export default function ControlPanel({
   roomId,
   roomState,
 }: ControlPanelProps) {
-  // Use a ref to always get the latest inputs in callbacks
+  // --- State and refs ---
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
-
-  // Track if there was ever any input added
   const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
 
-  // Spinner state for streams accordion
   const [showStreamsSpinner, setShowStreamsSpinner] = useState(
     roomState.inputs.length === 0,
   );
   const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get the current pathname to determine which add input forms to show
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
 
-  // Helper to wrap inputs with an id for sorting
+  // --- Input wrappers for sortable list ---
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
       inputsArg.map((input, index) => ({
@@ -63,13 +59,13 @@ export default function ControlPanel({
     getInputWrappers(roomState.inputs),
   );
 
-  // Keep inputWrappers in sync with inputs
+  // --- Keep inputWrappers in sync with inputs ---
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
     inputsRef.current = inputs;
   }, [inputs, getInputWrappers]);
 
-  // Keep inputs in sync with roomState.inputs
+  // --- Keep inputs in sync with roomState.inputs ---
   useEffect(() => {
     setInputs(roomState.inputs);
     inputsRef.current = roomState.inputs;
@@ -91,8 +87,7 @@ export default function ControlPanel({
     };
   }, []);
 
-  // Spinner logic: show spinner for up to 10s or until at least one stream appears,
-  // but never show spinner if there was ever any input added
+  // --- Spinner logic for streams section ---
   useEffect(() => {
     if (inputs.length > 0) {
       everHadInputRef.current = true;
@@ -120,7 +115,7 @@ export default function ControlPanel({
         spinnerTimeoutRef.current = null;
       }
     }
-    // Clean up on unmount
+
     return () => {
       if (spinnerTimeoutRef.current) {
         clearTimeout(spinnerTimeoutRef.current);
@@ -129,14 +124,11 @@ export default function ControlPanel({
     };
   }, [inputs]);
 
-  // Update the order in the backend
+  // --- Handlers ---
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
-      // Reorder the inputs array according to the new order
       const newOrderIds = newInputWrappers.map((item) => item.inputId);
-      await updateRoom(roomId, {
-        inputOrder: newOrderIds,
-      });
+      await updateRoom(roomId, { inputOrder: newOrderIds });
     },
     [roomId],
   );
@@ -149,18 +141,17 @@ export default function ControlPanel({
     [roomId, refreshState],
   );
 
-  // Refresh state handler
   const handleRefreshState = useCallback(async () => {
     setInputWrappers(getInputWrappers(inputsRef.current));
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
-
+  // --- Render ---
   return (
     <motion.div
       {...(fadeIn as any)}
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
-      {/* Show only one of Twitch or Kick add input forms based on pathname */}
+      {/* Add input forms */}
       {!isKick && (
         <Accordion title='Add new Twitch stream' defaultOpen>
           <TwitchAddInputForm
@@ -189,6 +180,7 @@ export default function ControlPanel({
         />
       </Accordion>
 
+      {/* Streams list */}
       <Accordion title='Streams' defaultOpen>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
@@ -200,7 +192,6 @@ export default function ControlPanel({
             <SortableList
               items={inputWrappers}
               renderItem={(item) => {
-                // Find the input by inputId in the current order
                 const input = inputs.find(
                   (input) => input.inputId === item.inputId,
                 );
@@ -223,6 +214,7 @@ export default function ControlPanel({
         </div>
       </Accordion>
 
+      {/* Layout selector */}
       <Accordion title='Layouts' defaultOpen>
         <LayoutSelector
           changeLayout={changeLayout}

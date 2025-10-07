@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
   DndContext,
@@ -22,7 +22,7 @@ import {
 } from '@dnd-kit/sortable';
 
 import './sortable-list.css';
-import { SortableOverlay } from '@/components/control-panel/sortable-overlay/sortable-overlay';
+import { SortableOverlay } from '@/components/control-panel/sortable-list/sortable-overlay';
 
 interface BaseItem {
   id: UniqueIdentifier;
@@ -85,8 +85,6 @@ export function SortableList<T extends BaseItem>({
   ];
 
   const handleDragStart = ({ active }: DragStartEvent) => {
-    const activeIndex = orderedItems.findIndex(({ id }) => id === active.id);
-
     setActive(active);
   };
 
@@ -107,6 +105,7 @@ export function SortableList<T extends BaseItem>({
     }
   };
 
+  // Prevent vertical scroll by setting overflowY: 'hidden' on the list
   return (
     <DndContext
       sensors={sensors}
@@ -117,7 +116,10 @@ export function SortableList<T extends BaseItem>({
         setActive(null);
       }}>
       <SortableContext items={orderedItems}>
-        <ul className='SortableList' role='application'>
+        <ul
+          className='SortableList'
+          role='application'
+          style={{ overflowY: 'hidden', maxHeight: 'none' }}>
           {orderedItems.map((item) => {
             // If this item is being dragged, apply opacity 0.5
             const isActive = active?.id === item.id;
