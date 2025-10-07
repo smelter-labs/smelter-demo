@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, ChangeEvent, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
 
 import StatusLabel from '@/components/ui/status-label';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
-import { createNewRoom, getRoomInfo } from '@/app/actions';
+import {
+  createNewRoom,
+  RegisterInputOptions,
+  getTwitchSuggestions,
+  getKickSuggestions,
+} from '@/app/actions/actions';
 import { staggerContainer } from '@/utils/animations';
-import { useEffect } from 'react';
-import { getAllRooms } from '@/app/actions';
 
 function getBasePath(pathname: string): string {
   // Remove trailing slash if present
@@ -31,10 +33,33 @@ export default function IntroView() {
   const router = useRouter();
   const pathname = usePathname();
   const [loadingNew, setLoadingNew] = useState(false);
-  const [loadingExisting, setLoadingExisting] = useState(false);
-  const [roomIdOrUrl, setRoomIdOrUrl] = useState('');
 
-  // Compute the base path prefix (e.g., '', 'kick', 'twitch')
+  // Suggestions state
+  const [twitchSuggestions, setTwitchSuggestions] = useState<any[]>([]);
+  const [kickSuggestions, setKickSuggestions] = useState<any[]>([]);
+
+  // Load suggestions on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [twitch, kick] = await Promise.all([
+          getTwitchSuggestions(),
+          getKickSuggestions(),
+        ]);
+        if (mounted) {
+          setTwitchSuggestions(twitch.twitch || []);
+          setKickSuggestions(kick.kick || []);
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const basePath = getBasePath(pathname);
 
   const getRoomRoute = (roomId: string) => {
@@ -46,37 +71,31 @@ export default function IntroView() {
   const handleCreateRoom = useCallback(async () => {
     setLoadingNew(true);
     try {
-      const room = await createNewRoom();
+      let initInputs: RegisterInputOptions[] = [];
+      const lowerPath = pathname.toLowerCase();
+      if (lowerPath.includes('kick')) {
+        // Use first two kick suggestions if available
+        initInputs = (kickSuggestions.slice(0, 2) || []).map((s) => ({
+          type: 'kick-channel',
+          channelId: s.streamId,
+        }));
+      } else if (lowerPath.includes('twitch')) {
+        // Use first two twitch suggestions if available
+        initInputs = (twitchSuggestions.slice(0, 2) || []).map((s) => ({
+          type: 'twitch-channel',
+          channelId: s.streamId,
+        }));
+      } else {
+        // No initial inputs
+        initInputs = [];
+      }
+      const room = await createNewRoom(initInputs);
       router.push(getRoomRoute(room.roomId));
     } finally {
       setLoadingNew(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, basePath]);
-
-  const handleJoinRoom = useCallback(async () => {
-    setLoadingExisting(true);
-    const roomId = getRoomIdFromUserEntry(roomIdOrUrl);
-
-    try {
-      await getRoomInfo(roomId);
-      router.push(getRoomRoute(roomId));
-    } catch (err) {
-      toast.error(`Room ${roomId} does not exist.`);
-    } finally {
-      setLoadingExisting(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomIdOrUrl, router, basePath]);
-
-  const handleInputChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setRoomIdOrUrl(event.target.value);
-    },
-    [],
-  );
-
-  const isJoinDisabled = roomIdOrUrl.trim() === '' || loadingExisting;
+  }, [router, basePath, pathname, twitchSuggestions, kickSuggestions]);
 
   return (
     <motion.div

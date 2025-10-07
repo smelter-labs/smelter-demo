@@ -4,6 +4,40 @@ import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
+const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+assert(BASE_URL);
+
+type ShaderParam = {
+  name: string;
+  type: string;
+  minValue?: number;
+  maxValue?: number;
+  defaultValue?: number;
+};
+
+export type AvailableShader = {
+  id: string;
+  name: string;
+  description: string;
+  shaderFile: string;
+  minValue: number;
+  maxValue: number;
+  defaultValue: number;
+  params: ShaderParam[];
+};
+
+export type ShaderParamConfig = {
+  paramName: string;
+  paramValue: number;
+};
+
+export type ShaderConfig = {
+  shaderName: string;
+  shaderId: string;
+  enabled: boolean;
+  params: ShaderParamConfig[];
+};
+
 export type Input = {
   id: number;
   inputId: string;
@@ -13,10 +47,26 @@ export type Input = {
   type?: string;
   sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
   status: 'disconnected' | 'pending' | 'connected';
-
-  // only set if this is input from twitch
-  twitchChannelId?: string;
+  channelId?: string;
+  shaders: ShaderConfig[];
 };
+
+export type RegisterInputOptions =
+  | {
+      type: 'twitch-channel';
+      channelId: string;
+    }
+  | {
+      type: 'kick-channel';
+      channelId: string;
+    }
+  | {
+      type: 'local-mp4';
+      source: {
+        fileName?: string;
+        url?: string;
+      };
+    };
 
 export type RoomState = {
   inputs: Input[];
@@ -50,11 +100,13 @@ export type MP4Suggestions = {
   mp4s: string[];
 };
 
-export async function createNewRoom(): Promise<{
+export async function createNewRoom(
+  initInputs: RegisterInputOptions[],
+): Promise<{
   roomId: string;
   whepUrl: string;
 }> {
-  return await sendSmelterRequest('post', '/room', {});
+  return await sendSmelterRequest('post', '/room', { initInputs });
 }
 
 export type UpdateRoomOptions = {
@@ -104,23 +156,23 @@ export async function getKickSuggestions(): Promise<KickSuggestions> {
   return await sendSmelterRequest('get', `/suggestions/kick`);
 }
 
-export async function addTwitchInput(roomId: string, twitchChannelId: string) {
+export async function addTwitchInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     {
       type: 'twitch-channel',
-      twitchChannelId,
+      channelId: channelId,
     },
   );
 }
-export async function addKickInput(roomId: string, kickChannelId: string) {
+export async function addKickInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     {
       type: 'kick-channel',
-      kickChannelId,
+      channelId: channelId,
     },
   );
 }
@@ -149,6 +201,7 @@ export async function getAllRooms(): Promise<any> {
 
 export type UpdateInputOptions = {
   volume: number;
+  shaders?: ShaderConfig[];
 };
 
 export async function updateInput(
@@ -156,6 +209,7 @@ export async function updateInput(
   inputId: string,
   opts: Partial<UpdateInputOptions>,
 ) {
+  console.log(opts);
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
@@ -188,8 +242,10 @@ export async function restartService(): Promise<void> {
   });
 }
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
-assert(BASE_URL);
+export async function getAvailableShaders(): Promise<AvailableShader[]> {
+  const shaders = await sendSmelterRequest('get', `/shaders`);
+  return (shaders?.shaders as AvailableShader[]) || [];
+}
 
 async function sendSmelterRequest(
   method: 'get' | 'delete' | 'post',

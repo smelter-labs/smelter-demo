@@ -4,7 +4,7 @@ import {
   getTwitchSuggestions,
   Input,
   InputSuggestions,
-} from '@/app/actions';
+} from '@/app/actions/actions';
 import { useCallback, useEffect, useState } from 'react';
 import { GenericAddInputForm } from './generic-add-input-form';
 import { toast } from 'react-toastify';
@@ -59,7 +59,7 @@ export default function TwitchAddInputForm({
         twitchSuggestions
           .filter((suggestion) => {
             for (const input of inputs) {
-              if (input.twitchChannelId === suggestion.streamId) {
+              if (input.channelId === suggestion.streamId) {
                 return false;
               }
             }

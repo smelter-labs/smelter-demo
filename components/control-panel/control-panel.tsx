@@ -1,16 +1,23 @@
-import { Input, Layout, RoomState, updateRoom } from '@/app/actions';
+import {
+  Input,
+  Layout,
+  RoomState,
+  updateRoom,
+  getAvailableShaders,
+} from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
-import InputEntry from '@/components/control-panel/input-entry';
+import InputEntry from '@/components/control-panel/input-entry/input-entry';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
-import { SortableItem } from '@/components/control-panel/sortable-item/sortable-item';
+import { SortableItem } from '@/components/control-panel/sortable-list/sortable-item';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
 import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
 import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
 import { KickAddInputForm } from './add-input-form/kick-add-input-form';
 import { usePathname } from 'next/navigation';
+import LoadingSpinner from '@/components/ui/spinner';
 
 type ControlPanelProps = {
   roomId: string;
@@ -25,15 +32,20 @@ export default function ControlPanel({
   roomId,
   roomState,
 }: ControlPanelProps) {
-  // Use a ref to always get the latest inputs in callbacks
+  // --- State and refs ---
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
+  const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
 
-  // Get the current pathname to determine which add input forms to show
+  const [showStreamsSpinner, setShowStreamsSpinner] = useState(
+    roomState.inputs.length === 0,
+  );
+  const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
 
-  // Helper to wrap inputs with an id for sorting
+  // --- Input wrappers for sortable list ---
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
       inputsArg.map((input, index) => ({
@@ -47,28 +59,78 @@ export default function ControlPanel({
     getInputWrappers(roomState.inputs),
   );
 
-  // Keep inputWrappers in sync with inputs
+  // --- Keep inputWrappers in sync with inputs ---
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
     inputsRef.current = inputs;
   }, [inputs, getInputWrappers]);
 
-  // Keep inputs in sync with roomState.inputs
+  // --- Keep inputs in sync with roomState.inputs ---
   useEffect(() => {
     setInputs(roomState.inputs);
     inputsRef.current = roomState.inputs;
   }, [roomState.inputs]);
 
-  // Update the order in the backend
+  // --- Fetch available shaders and store in state ---
+  const [availableShaders, setAvailableShaders] = useState<any[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    getAvailableShaders()
+      .then((shaders) => {
+        if (mounted) setAvailableShaders(shaders);
+      })
+      .catch(() => {
+        if (mounted) setAvailableShaders([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // --- Spinner logic for streams section ---
+  useEffect(() => {
+    if (inputs.length > 0) {
+      everHadInputRef.current = true;
+    }
+
+    if (everHadInputRef.current) {
+      setShowStreamsSpinner(false);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (inputs.length === 0) {
+      setShowStreamsSpinner(true);
+      if (spinnerTimeoutRef.current) clearTimeout(spinnerTimeoutRef.current);
+      spinnerTimeoutRef.current = setTimeout(() => {
+        setShowStreamsSpinner(false);
+      }, 10000);
+    } else {
+      setShowStreamsSpinner(false);
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    }
+
+    return () => {
+      if (spinnerTimeoutRef.current) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    };
+  }, [inputs]);
+
+  // --- Handlers ---
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
-      // Reorder the inputs array according to the new order
       const newOrderIds = newInputWrappers.map((item) => item.inputId);
-      await updateRoom(roomId, {
-        inputOrder: newOrderIds,
-      });
+      await updateRoom(roomId, { inputOrder: newOrderIds });
     },
-    [roomId, getInputWrappers],
+    [roomId],
   );
 
   const changeLayout = useCallback(
@@ -79,17 +141,17 @@ export default function ControlPanel({
     [roomId, refreshState],
   );
 
-  // Refresh state handler
   const handleRefreshState = useCallback(async () => {
     setInputWrappers(getInputWrappers(inputsRef.current));
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
+  // --- Render ---
   return (
     <motion.div
       {...(fadeIn as any)}
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
-      {/* Show only one of Twitch or Kick add input forms based on pathname */}
+      {/* Add input forms */}
       {!isKick && (
         <Accordion title='Add new Twitch stream' defaultOpen>
           <TwitchAddInputForm
@@ -118,33 +180,41 @@ export default function ControlPanel({
         />
       </Accordion>
 
+      {/* Streams list */}
       <Accordion title='Streams' defaultOpen>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
-          <SortableList
-            items={inputWrappers}
-            renderItem={(item) => {
-              // Find the input by inputId in the current order
-              const input = inputs.find(
-                (input) => input.inputId === item.inputId,
-              );
-              return (
-                <SortableItem id={item.id}>
-                  {input && (
-                    <InputEntry
-                      input={input}
-                      refreshState={handleRefreshState}
-                      roomId={roomId}
-                    />
-                  )}
-                </SortableItem>
-              );
-            }}
-            onOrderChange={updateOrder}
-          />
+          {showStreamsSpinner ? (
+            <div className='flex items-center justify-center h-32'>
+              <LoadingSpinner size='lg' variant='spinner' />
+            </div>
+          ) : (
+            <SortableList
+              items={inputWrappers}
+              renderItem={(item) => {
+                const input = inputs.find(
+                  (input) => input.inputId === item.inputId,
+                );
+                return (
+                  <SortableItem id={item.id}>
+                    {input && (
+                      <InputEntry
+                        input={input}
+                        refreshState={handleRefreshState}
+                        roomId={roomId}
+                        availableShaders={availableShaders}
+                      />
+                    )}
+                  </SortableItem>
+                );
+              }}
+              onOrderChange={updateOrder}
+            />
+          )}
         </div>
       </Accordion>
 
+      {/* Layout selector */}
       <Accordion title='Layouts' defaultOpen>
         <LayoutSelector
           changeLayout={changeLayout}
