@@ -4,6 +4,8 @@ import {
   RoomState,
   updateRoom,
   getAvailableShaders,
+  addCameraInput,
+  sendWhipOffer,
 } from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
@@ -24,6 +26,7 @@ type ControlPanelProps = {
   roomState: RoomState;
   refreshState: () => Promise<void>;
 };
+type AddInputResposne = { inputId: string; bearerToken: string };
 
 export type InputWrapper = { id: number; inputId: string };
 
@@ -146,6 +149,48 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
+  // --- Handler for adding WHIP input ---
+  let stream: MediaStream;
+  let pc: RTCPeerConnection;
+  let offer: RTCSessionDescriptionInit;
+  const [addingWhip, setAddingWhip] = useState(false);
+  const handleAddWhip = useCallback(async () => {
+    setAddingWhip(true);
+    try {
+      console.log('adding whip');
+      const response: AddInputResposne = await addCameraInput(roomId);
+      console.log('response', response);
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      console.log('stream', stream);
+      pc = new RTCPeerConnection();
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+      offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      console.log('offer', offer);
+
+      const whipOfferResponse = await sendWhipOffer(
+        response.inputId,
+        response.bearerToken,
+        offer.sdp!,
+      );
+      console.log('whipOfferResponse', whipOfferResponse);
+      await pc.setRemoteDescription({
+        type: 'answer',
+        sdp: whipOfferResponse.answer,
+      });
+
+      await handleRefreshState();
+    } catch (e) {
+      // Optionally handle error
+    } finally {
+      setAddingWhip(false);
+    }
+  }, [roomId, handleRefreshState]);
+
   // --- Render ---
   return (
     <motion.div
@@ -178,6 +223,26 @@ export default function ControlPanel({
           roomId={roomId}
           refreshState={handleRefreshState}
         />
+      </Accordion>
+
+      {/* Add new WHIP input */}
+      <Accordion title='Add new WHIP input' defaultOpen>
+        <div className='flex items-center justify-start p-2'>
+          <button
+            className='px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition disabled:opacity-50'
+            onClick={handleAddWhip}
+            disabled={addingWhip}
+            type='button'>
+            {addingWhip ? (
+              <span className='flex items-center gap-2'>
+                <LoadingSpinner size='sm' variant='spinner' />
+                Adding...
+              </span>
+            ) : (
+              'Add WHIP input'
+            )}
+          </button>
+        </div>
       </Accordion>
 
       {/* Streams list */}

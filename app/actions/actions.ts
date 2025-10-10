@@ -5,6 +5,8 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
 const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+const WHIP_URL = 'http://127.0.0.1:9000';
+
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -193,6 +195,16 @@ export async function removeInput(roomId: string, inputId: string) {
   );
 }
 
+export async function addCameraInput(roomId: string) {
+  const response = await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'whip' },
+  );
+  console.log('addCameraInput', response);
+  return response;
+}
+
 export async function getAllRooms(): Promise<any> {
   const rooms = await sendSmelterRequest('get', `/rooms`);
   console.log('Rooms info:', rooms);
@@ -246,7 +258,32 @@ export async function getAvailableShaders(): Promise<AvailableShader[]> {
   const shaders = await sendSmelterRequest('get', `/shaders`);
   return (shaders?.shaders as AvailableShader[]) || [];
 }
+const sendWhipOffer = async (
+  inputId: string,
+  bearerToken: string,
+  sdp: any,
+) => {
+  const res = await fetch(`${WHIP_URL}/whip/${inputId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/sdp',
+      Authorization: `Bearer ${bearerToken}`,
+    },
+    body: sdp,
+    // ewentualnie: cache: 'no-store'
+  });
 
+  const answer = await res.text();
+  console.log('answer', answer);
+  return {
+    ok: res.ok,
+    status: res.status,
+    answer,
+    location: res.headers.get('Location') ?? null,
+  };
+};
+
+export { sendWhipOffer };
 async function sendSmelterRequest(
   method: 'get' | 'delete' | 'post',
   route: string,
