@@ -31,7 +31,9 @@ type AddInputResponse = { inputId: string; bearerToken: string };
 export type InputWrapper = { id: number; inputId: string };
 
 // ===== utils =====
-const WHIP_URL = process.env.NEXT_PUBLIC_WHIP_URL || 'http://localhost:9000';
+const WHIP_URL =
+  process.env.NEXT_PUBLIC_WHIP_URL ||
+  'https://puffer.fishjam.io/smelter-demo-whep';
 const DEBUG_ICE = false;
 
 function buildIceServers(): RTCIceServer[] {
