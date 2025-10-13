@@ -7,7 +7,6 @@ import {
   updateRoom,
   getAvailableShaders,
   addCameraInput,
-  sendWhipOffer,
 } from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
@@ -28,25 +27,110 @@ type ControlPanelProps = {
   roomState: RoomState;
   refreshState: () => Promise<void>;
 };
-type AddInputResposne = { inputId: string; bearerToken: string };
+type AddInputResponse = { inputId: string; bearerToken: string };
 export type InputWrapper = { id: number; inputId: string };
 
+// ===== utils =====
+const WHIP_URL = process.env.NEXT_PUBLIC_WHIP_URL || 'http://localhost:9000';
+const DEBUG_ICE = false;
+
+function buildIceServers(): RTCIceServer[] {
+  // można wstrzyknąć TURN przez env (NEXT_PUBLIC_TURN_*)
+  const urls =
+    process.env.NEXT_PUBLIC_TURN_URLS?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
+  const username = process.env.NEXT_PUBLIC_TURN_USER;
+  const credential = process.env.NEXT_PUBLIC_TURN_PASS;
+  const servers: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+  if (urls.length && username && credential)
+    servers.push({ urls, username, credential });
+  return servers;
+}
+
+async function waitIceComplete(
+  pc: RTCPeerConnection,
+  timeoutMs = 2500,
+): Promise<RTCSessionDescriptionInit | null> {
+  return new Promise((res) => {
+    if (pc.iceGatheringState === 'complete') return res(pc.localDescription);
+    const t = setTimeout(() => res(pc.localDescription), timeoutMs);
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') {
+        clearTimeout(t);
+        res(pc.localDescription);
+      }
+    };
+  });
+}
+
+function forceH264(transceiver: RTCRtpTransceiver) {
+  const caps = RTCRtpSender.getCapabilities('video');
+  const h264s =
+    caps?.codecs.filter((c) => /video\/H264/i.test(c.mimeType)) ?? [];
+  if (h264s.length && transceiver.setCodecPreferences) {
+    const isFF = /Firefox/i.test(navigator.userAgent);
+    // w FF zostaw wszystkie warianty H264; w Chromium możesz dać preferencję baseline 42e01f, ale nie wymagaj
+    const prefer = isFF
+      ? h264s
+      : h264s.find((c) => /profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''))
+        ? // baseline najpierw, potem reszta
+          [
+            ...h264s.filter((c) =>
+              /profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''),
+            ),
+            ...h264s.filter(
+              (c) => !/profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''),
+            ),
+          ]
+        : h264s;
+    transceiver.setCodecPreferences(prefer);
+  }
+}
+
+async function sendWhipOfferLocal(
+  inputId: string,
+  bearerToken: string,
+  sdp: string,
+): Promise<{ answer: string; location: string | null }> {
+  const res = await fetch(`${WHIP_URL}/whip/${inputId}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/sdp',
+      authorization: `Bearer ${bearerToken}`,
+    },
+    body: sdp,
+    cache: 'no-store',
+  });
+  const answer = await res.text();
+  if (!res.ok) throw new Error(`WHIP ${res.status}: ${answer}`);
+  return { answer, location: res.headers.get('Location') };
+}
+
+function stopStream(s: MediaStream | null) {
+  s?.getTracks().forEach((t) => {
+    try {
+      t.stop();
+    } catch {}
+  });
+}
+
+// ===== component =====
 export default function ControlPanel({
   refreshState,
   roomId,
   roomState,
 }: ControlPanelProps) {
-  // --- State / refs ---
+  // lists/state
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
   const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
-
   const [showStreamsSpinner, setShowStreamsSpinner] = useState(
     roomState.inputs.length === 0,
   );
   const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // WebRTC refs (żeby nie gubić między renderami)
+  // WebRTC refs
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -55,10 +139,7 @@ export default function ControlPanel({
 
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
-      inputsArg.map((input, index) => ({
-        id: index,
-        inputId: input.inputId,
-      })),
+      inputsArg.map((input, index) => ({ id: index, inputId: input.inputId })),
     [],
   );
   const [inputWrappers, setInputWrappers] = useState<InputWrapper[]>(() =>
@@ -75,7 +156,7 @@ export default function ControlPanel({
     inputsRef.current = roomState.inputs;
   }, [roomState.inputs]);
 
-  // shaders (jak było)
+  // shaders
   const [availableShaders, setAvailableShaders] = useState<any[]>([]);
   useEffect(() => {
     let mounted = true;
@@ -139,172 +220,127 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
-  // --- helpers: cleanup / ICE wait ---
-  const stopStream = (s: MediaStream | null) => {
-    if (!s) return;
-    s.getTracks().forEach((t) => t.stop());
-  };
-
-  const waitIceComplete = (pc: RTCPeerConnection, timeoutMs = 2000) =>
-    new Promise<RTCSessionDescriptionInit | null>((res) => {
-      const t = setTimeout(() => res(pc.localDescription), timeoutMs);
-      pc.onicegatheringstatechange = () => {
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(t);
-          res(pc.localDescription);
-        }
-      };
-    });
-  const WHIP_URL = 'http://localhost:9000';
-
+  // global cleanup (tylko na wyjście z widoku/okna)
   useEffect(() => {
-    // sprzątanie przy unmount
+    const onUnload = () => {
+      try {
+        pcRef.current?.close();
+      } catch {}
+      stopStream(streamRef.current);
+      pcRef.current = null;
+      streamRef.current = null;
+    };
+    window.addEventListener('beforeunload', onUnload);
     return () => {
-      // try { pcRef.current?.close(); } catch { }
-      // stopStream(streamRef.current);
-      // pcRef.current = null;
-      // streamRef.current = null;
+      window.removeEventListener('beforeunload', onUnload);
+      // nie czyścimy tu – unikamy przypadkowego remount-killa
     };
   }, []);
 
-  const sendWhipOffer2 = async (
-    inputId: string,
-    bearerToken: string,
-    sdp: any,
-  ) => {
-    const res = await fetch(`${WHIP_URL}/whip/${inputId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/sdp',
-        Authorization: `Bearer ${bearerToken}`,
-      },
-      body: sdp,
-      // ewentualnie: cache: 'no-store'
-    });
-
-    const answer = await res.text();
-    console.log('answer', answer);
-    return {
-      ok: res.ok,
-      status: res.status,
-      answer,
-      location: res.headers.get('Location') ?? null,
-    };
-  };
-
-  // const v = streamRef.current?.getVideoTracks()[0];
-  // console.log('video readyState:', v?.readyState); // 'live' ma być
-  // console.log('audio readyState:', streamRef.current?.getAudioTracks()[0]?.readyState);
-
-  // setInterval(async () => {
-  //   const stats = await pcRef.current?.getStats();
-  //   let out = { bytes: 0, frames: 0, pli: 0, nack: 0, fps: 0 };
-  //   stats?.forEach(r => {
-  //     if (r.type === 'outbound-rtp' && !r.isRemote) {
-  //       out.bytes += r.bytesSent || 0;
-  //       out.frames += r.framesEncoded || 0;
-  //       out.fps = r.framesPerSecond ?? out.fps;
-  //       out.pli += r.pliCount || 0;
-  //       out.nack += r.nackCount || 0;
-  //     }
-  //   });
-  //   console.log('[OUT]', out);
-  // }, 2000);
-
-  let pc: RTCPeerConnection;
-  let stream: MediaStream;
-  // --- Add WHIP (kamera) ---
+  // ===== WHIP add (kamera) =====
   const [addingWhip, setAddingWhip] = useState(false);
+
   const handleAddWhip = useCallback(async () => {
     if (addingWhip) return;
     setAddingWhip(true);
     try {
-      // 1) utwórz input po stronie serwera (żeby ominąć CORS – serwer niech gada z WHIP/WHEP)
-      const response: AddInputResposne = await addCameraInput(roomId);
+      // 1) Rejestruj input po swojej stronie
+      const response: AddInputResponse = await addCameraInput(roomId);
+      await handleRefreshState(); // jeśli to robi remount, pc/stream są w refach i przetrwają
 
-      // 2) media lokalnie
-      stream = await navigator.mediaDevices.getUserMedia({
+      // 2) Media lokalnie
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
       streamRef.current = stream;
 
-      // 3) PC z jawny STUN
-      pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      // 3) RTCPeerConnection
+      const pc = new RTCPeerConnection({
+        iceServers: buildIceServers(),
         bundlePolicy: 'max-bundle',
       });
-      // const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-
-      const vTrack = stream.getVideoTracks()[0];
-      const aTrack = stream.getAudioTracks()[0];
-
-      const vTransceiver = pc.addTransceiver(vTrack, {
-        direction: 'sendonly',
-        sendEncodings: [{ maxBitrate: 1_200_000 }], // prosto i stabilnie
-      });
-      if (aTrack) pc.addTransceiver(aTrack, { direction: 'sendonly' });
-
-      const caps = RTCRtpSender.getCapabilities('video');
-      const h264 = caps?.codecs.filter(
-        (c) =>
-          /video\/H264/i.test(c.mimeType) &&
-          /profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''),
-      );
-      if (h264?.length && vTransceiver.setCodecPreferences) {
-        vTransceiver.setCodecPreferences(h264);
-      }
-
-      pc.onicecandidate = (e) =>
-        console.log('[ICE]', e.candidate?.candidate || 'gathering complete');
-      pc.oniceconnectionstatechange = () =>
-        console.log('[ICE state]', pc.iceConnectionState);
-      pc.onconnectionstatechange = () =>
-        console.log('[PC state]', pc.connectionState);
-
       pcRef.current = pc;
 
-      // 4) dodajemy tracki
-      //stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+      if (DEBUG_ICE) {
+        pc.onicecandidate = (e) =>
+          console.log('[ICE]', e.candidate?.candidate || 'gathering complete');
+        pc.oniceconnectionstatechange = () =>
+          console.log('[ICE state]', pc.iceConnectionState);
+        pc.onconnectionstatechange = () =>
+          console.log('[PC state]', pc.connectionState);
+      }
 
-      // 5) Offer + poczekaj na ICE, część serwerów wymaga complete
+      // 4) Transceivery + H264 (bez simulcastu)
+      const vTrack = stream.getVideoTracks()[0];
+      const aTrack = stream.getAudioTracks()[0];
+      const vTx = pc.addTransceiver(vTrack, {
+        direction: 'sendonly',
+        sendEncodings: [{ maxBitrate: 1_200_000 }],
+      });
+      if (aTrack) pc.addTransceiver(aTrack, { direction: 'sendonly' });
+      forceH264(vTx);
+
+      // 5) Offer, ICE complete
       await pc.setLocalDescription(await pc.createOffer());
       const offerDesc = await waitIceComplete(pc);
       if (!offerDesc?.sdp) throw new Error('No local SDP after ICE gathering');
 
-      // 6) Wyślij ofertę do swojej akcji (serwer robi WHIP POST i zwraca answer)
-      const whipOfferResponse = await sendWhipOffer2(
+      // 6) Wyślij ofertę → WHIP → ustaw answer
+      const { answer } = await sendWhipOfferLocal(
         response.inputId,
         response.bearerToken,
         offerDesc.sdp,
       );
+      await pc.setRemoteDescription({ type: 'answer', sdp: answer });
 
-      // zakładam, że akcja zwraca { answer: string }
-      await pc.setRemoteDescription({
-        type: 'answer',
-        sdp: whipOfferResponse.answer,
-      });
-
-      await handleRefreshState();
+      // (opcjonalnie) nie odświeżamy tu drugi raz, żeby nie prowokować remountu
     } catch (e: any) {
       console.error('WHIP add failed:', e);
       alert(`Nie udało się dodać wejścia WHIP: ${e?.message || e}`);
-      // cleanup on failure
-      //try { pcRef.current?.close(); } catch { }
-      // stopStream(streamRef.current);
-      //  pcRef.current = null;
-      // streamRef.current = null;
+      try {
+        pcRef.current?.close();
+      } catch {}
+      stopStream(streamRef.current);
+      pcRef.current = null;
+      streamRef.current = null;
     } finally {
       setAddingWhip(false);
     }
   }, [addingWhip, roomId, handleRefreshState]);
 
-  // --- Render (Twoje sekcje niżej bez zmian poza przyciskiem WHIP) ---
+  // ===== render =====
   return (
     <motion.div
       {...(fadeIn as any)}
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
-      {/* ... Twitch/Kick/MP4 accordions bez zmian ... */}
+      {!isKick && (
+        <Accordion title='Add new Twitch stream' defaultOpen>
+          <TwitchAddInputForm
+            inputs={inputs}
+            roomId={roomId}
+            refreshState={handleRefreshState}
+          />
+        </Accordion>
+      )}
+
+      {isKick && (
+        <Accordion title='Add new Kick Channel' defaultOpen>
+          <KickAddInputForm
+            inputs={inputs}
+            roomId={roomId}
+            refreshState={handleRefreshState}
+          />
+        </Accordion>
+      )}
+
+      <Accordion title='Add new MP4' defaultOpen>
+        <Mp4AddInputForm
+          inputs={inputs}
+          roomId={roomId}
+          refreshState={handleRefreshState}
+        />
+      </Accordion>
 
       <Accordion title='Add new WHIP input' defaultOpen>
         <div className='flex items-center justify-start p-2'>
@@ -325,7 +361,6 @@ export default function ControlPanel({
         </div>
       </Accordion>
 
-      {/* ... Streams + Layouts bez zmian ... */}
       <Accordion title='Streams' defaultOpen>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
@@ -337,9 +372,7 @@ export default function ControlPanel({
             <SortableList
               items={inputWrappers}
               renderItem={(item) => {
-                const input = inputs.find(
-                  (input) => input.inputId === item.inputId,
-                );
+                const input = inputs.find((i) => i.inputId === item.inputId);
                 return (
                   <SortableItem id={item.id}>
                     {input && (
