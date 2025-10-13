@@ -7,6 +7,7 @@ import {
   updateRoom,
   getAvailableShaders,
   addCameraInput,
+  getWHIP_URL,
 } from '@/app/actions/actions';
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
@@ -30,14 +31,11 @@ type ControlPanelProps = {
 type AddInputResponse = { inputId: string; bearerToken: string };
 export type InputWrapper = { id: number; inputId: string };
 
-// ===== utils =====
-const WHIP_URL =
-  process.env.NEXT_PUBLIC_WHIP_URL ||
-  'https://puffer.fishjam.io/smelter-demo-whep';
+// ======================= utils =======================
+
 const DEBUG_ICE = false;
 
 function buildIceServers(): RTCIceServer[] {
-  // można wstrzyknąć TURN przez env (NEXT_PUBLIC_TURN_*)
   const urls =
     process.env.NEXT_PUBLIC_TURN_URLS?.split(',')
       .map((s) => s.trim())
@@ -72,12 +70,10 @@ function forceH264(transceiver: RTCRtpTransceiver) {
     caps?.codecs.filter((c) => /video\/H264/i.test(c.mimeType)) ?? [];
   if (h264s.length && transceiver.setCodecPreferences) {
     const isFF = /Firefox/i.test(navigator.userAgent);
-    // w FF zostaw wszystkie warianty H264; w Chromium możesz dać preferencję baseline 42e01f, ale nie wymagaj
     const prefer = isFF
       ? h264s
       : h264s.find((c) => /profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''))
-        ? // baseline najpierw, potem reszta
-          [
+        ? [
             ...h264s.filter((c) =>
               /profile-level-id=42e01f/i.test(c.sdpFmtpLine || ''),
             ),
@@ -95,6 +91,7 @@ async function sendWhipOfferLocal(
   bearerToken: string,
   sdp: string,
 ): Promise<{ answer: string; location: string | null }> {
+  const WHIP_URL = await getWHIP_URL();
   const res = await fetch(`${WHIP_URL}/whip/${inputId}`, {
     method: 'POST',
     headers: {
@@ -109,6 +106,27 @@ async function sendWhipOfferLocal(
   return { answer, location: res.headers.get('Location') };
 }
 
+async function deleteWhipResource(
+  location: string,
+  bearerToken: string,
+  opts: { keepalive?: boolean } = {},
+) {
+  try {
+    let absolute = location;
+    if (!/^https?:\/\//i.test(location)) {
+      const WHIP_URL = await getWHIP_URL();
+      absolute = `${WHIP_URL.replace(/\/+$/, '')}/${location.replace(/^\/+/, '')}`;
+    }
+    await fetch(absolute, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${bearerToken}` },
+      keepalive: opts.keepalive === true,
+    });
+  } catch {
+    // best-effort
+  }
+}
+
 function stopStream(s: MediaStream | null) {
   s?.getTracks().forEach((t) => {
     try {
@@ -117,7 +135,105 @@ function stopStream(s: MediaStream | null) {
   });
 }
 
-// ===== component =====
+function attachLocalPreview(stream: MediaStream | null) {
+  const el = document.getElementById(
+    'local-preview',
+  ) as HTMLVideoElement | null;
+  if (el && stream) {
+    el.srcObject = stream;
+    el.play?.().catch(() => {});
+  }
+}
+
+// session (z LOCATION!)
+type WhipSession = {
+  roomId: string;
+  inputId: string;
+  bearerToken: string;
+  location: string | null;
+  ts: number;
+};
+const WHIP_SESSION_KEY = 'whip-session-v1';
+
+function saveWhipSession(s: WhipSession) {
+  try {
+    localStorage.setItem(WHIP_SESSION_KEY, JSON.stringify(s));
+  } catch {}
+}
+function loadWhipSession(): WhipSession | null {
+  try {
+    const raw = localStorage.getItem(WHIP_SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as WhipSession;
+    if (!s.inputId || !s.bearerToken || !s.roomId) return null;
+    if (Date.now() - s.ts > 24 * 60 * 60 * 1000) return null;
+    return s;
+  } catch {
+    return null;
+  }
+}
+function clearWhipSession() {
+  try {
+    localStorage.removeItem(WHIP_SESSION_KEY);
+  } catch {}
+}
+
+/** uruchamia publikację na danym inputId */
+async function startPublish(
+  inputId: string,
+  bearerToken: string,
+  pcRef: React.MutableRefObject<RTCPeerConnection | null>,
+  streamRef: React.MutableRefObject<MediaStream | null>,
+): Promise<{ location: string | null }> {
+  // Media
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
+  });
+  streamRef.current = stream;
+  attachLocalPreview(stream);
+
+  // PC
+  const pc = new RTCPeerConnection({
+    iceServers: buildIceServers(),
+    bundlePolicy: 'max-bundle',
+  });
+  pcRef.current = pc;
+
+  if (DEBUG_ICE) {
+    pc.onicecandidate = (e) =>
+      console.log('[ICE]', e.candidate?.candidate || 'gathering complete');
+    pc.oniceconnectionstatechange = () =>
+      console.log('[ICE state]', pc.iceConnectionState);
+    pc.onconnectionstatechange = () =>
+      console.log('[PC state]', pc.connectionState);
+  }
+
+  const vTrack = stream.getVideoTracks()[0];
+  const aTrack = stream.getAudioTracks()[0];
+  const vTx = pc.addTransceiver(vTrack, {
+    direction: 'sendonly',
+    sendEncodings: [{ maxBitrate: 1_200_000 }],
+  });
+  if (aTrack) pc.addTransceiver(aTrack, { direction: 'sendonly' });
+  forceH264(vTx);
+
+  await pc.setLocalDescription(await pc.createOffer());
+  const offerDesc = await waitIceComplete(pc);
+  if (!offerDesc?.sdp) throw new Error('No local SDP after ICE gathering');
+
+  const { answer, location } = await sendWhipOfferLocal(
+    inputId,
+    bearerToken,
+    offerDesc.sdp,
+  );
+  await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+
+  return { location };
+}
+
+// ======================= component =======================
+
 export default function ControlPanel({
   refreshState,
   roomId,
@@ -147,6 +263,45 @@ export default function ControlPanel({
   const [inputWrappers, setInputWrappers] = useState<InputWrapper[]>(() =>
     getInputWrappers(roomState.inputs),
   );
+
+  // --- AUTO-RESUME on mount: KILL OLD + CREATE NEW INPUT ---
+  useEffect(() => {
+    const s = loadWhipSession();
+    (async () => {
+      try {
+        if (pcRef.current) return;
+
+        // 1) best-effort: jeśli mieliśmy starą sesję, spróbuj ją usunąć po stronie ingestu
+        if (s?.location && s?.bearerToken) {
+          await deleteWhipResource(s.location, s.bearerToken);
+        }
+        clearWhipSession();
+
+        // 2) zawsze twórz NOWY input na reloadzie
+        const resp: AddInputResponse = await addCameraInput(roomId);
+        // (opcjonalnie) bez remountów:
+        // await refreshState();
+
+        // 3) start publish i zapisz świeżą sesję
+        const { location } = await startPublish(
+          resp.inputId,
+          resp.bearerToken,
+          pcRef,
+          streamRef,
+        );
+        saveWhipSession({
+          roomId,
+          inputId: resp.inputId,
+          bearerToken: resp.bearerToken,
+          location,
+          ts: Date.now(),
+        });
+      } catch (e) {
+        // jeśli nie ma uprawnień do kamery itp., po prostu nie wznawiamy
+        console.warn('Auto-resume skipped:', e);
+      }
+    })();
+  }, [roomId]);
 
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
@@ -222,9 +377,18 @@ export default function ControlPanel({
     await refreshState();
   }, [getInputWrappers, refreshState]);
 
-  // global cleanup (tylko na wyjście z widoku/okna)
+  // global cleanup – usuń sesję po stronie WHIP przy zamykaniu karty
   useEffect(() => {
-    const onUnload = () => {
+    const onUnload = async () => {
+      try {
+        const s = loadWhipSession();
+        if (s?.location) {
+          await deleteWhipResource(s.location, s.bearerToken, {
+            keepalive: true,
+          });
+          clearWhipSession();
+        }
+      } catch {}
       try {
         pcRef.current?.close();
       } catch {}
@@ -235,68 +399,41 @@ export default function ControlPanel({
     window.addEventListener('beforeunload', onUnload);
     return () => {
       window.removeEventListener('beforeunload', onUnload);
-      // nie czyścimy tu – unikamy przypadkowego remount-killa
     };
   }, []);
 
-  // ===== WHIP add (kamera) =====
+  // ===== WHIP add (manual) =====
   const [addingWhip, setAddingWhip] = useState(false);
 
   const handleAddWhip = useCallback(async () => {
     if (addingWhip) return;
     setAddingWhip(true);
     try {
-      // 1) Rejestruj input po swojej stronie
-      const response: AddInputResponse = await addCameraInput(roomId);
-      await handleRefreshState(); // jeśli to robi remount, pc/stream są w refach i przetrwają
-
-      // 2) Media lokalnie
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      streamRef.current = stream;
-
-      // 3) RTCPeerConnection
-      const pc = new RTCPeerConnection({
-        iceServers: buildIceServers(),
-        bundlePolicy: 'max-bundle',
-      });
-      pcRef.current = pc;
-
-      if (DEBUG_ICE) {
-        pc.onicecandidate = (e) =>
-          console.log('[ICE]', e.candidate?.candidate || 'gathering complete');
-        pc.oniceconnectionstatechange = () =>
-          console.log('[ICE state]', pc.iceConnectionState);
-        pc.onconnectionstatechange = () =>
-          console.log('[PC state]', pc.connectionState);
+      // skasuj ewentualną starą sesję
+      const s = loadWhipSession();
+      if (s?.location && s?.bearerToken) {
+        await deleteWhipResource(s.location, s.bearerToken);
+        clearWhipSession();
       }
 
-      // 4) Transceivery + H264 (bez simulcastu)
-      const vTrack = stream.getVideoTracks()[0];
-      const aTrack = stream.getAudioTracks()[0];
-      const vTx = pc.addTransceiver(vTrack, {
-        direction: 'sendonly',
-        sendEncodings: [{ maxBitrate: 1_200_000 }],
-      });
-      if (aTrack) pc.addTransceiver(aTrack, { direction: 'sendonly' });
-      forceH264(vTx);
-
-      // 5) Offer, ICE complete
-      await pc.setLocalDescription(await pc.createOffer());
-      const offerDesc = await waitIceComplete(pc);
-      if (!offerDesc?.sdp) throw new Error('No local SDP after ICE gathering');
-
-      // 6) Wyślij ofertę → WHIP → ustaw answer
-      const { answer } = await sendWhipOfferLocal(
+      // nowy input + publikacja
+      const response: AddInputResponse = await addCameraInput(roomId);
+      const { location } = await startPublish(
         response.inputId,
         response.bearerToken,
-        offerDesc.sdp,
+        pcRef,
+        streamRef,
       );
-      await pc.setRemoteDescription({ type: 'answer', sdp: answer });
 
-      // (opcjonalnie) nie odświeżamy tu drugi raz, żeby nie prowokować remountu
+      saveWhipSession({
+        roomId,
+        inputId: response.inputId,
+        bearerToken: response.bearerToken,
+        location,
+        ts: Date.now(),
+      });
+      // (opcjonalnie) odśwież UI
+      // await handleRefreshState();
     } catch (e: any) {
       console.error('WHIP add failed:', e);
       alert(`Nie udało się dodać wejścia WHIP: ${e?.message || e}`);
@@ -309,13 +446,16 @@ export default function ControlPanel({
     } finally {
       setAddingWhip(false);
     }
-  }, [addingWhip, roomId, handleRefreshState]);
+  }, [addingWhip, roomId]);
 
-  // ===== render =====
+  // ======================= render =======================
   return (
     <motion.div
       {...(fadeIn as any)}
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
+      {/* Ukryty lokalny podgląd – zapobiega „usypianiu” streamu */}
+      <video id='local-preview' muted playsInline autoPlay className='hidden' />
+
       {!isKick && (
         <Accordion title='Add new Twitch stream' defaultOpen>
           <TwitchAddInputForm

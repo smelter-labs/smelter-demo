@@ -9,8 +9,8 @@ let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
 let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
 BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
 WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
-// WHIP_URL = 'http://localhost:9000';
-// BASE_URL = 'http://localhost:3001';
+WHIP_URL = 'http://localhost:9000';
+BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -256,6 +256,10 @@ export async function restartService(): Promise<void> {
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
+}
+
+export async function getWHIP_URL(): Promise<string> {
+  return WHIP_URL;
 }
 
 export async function getAvailableShaders(): Promise<AvailableShader[]> {
