@@ -5,8 +5,8 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
 //let BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
-let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
-let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+const BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+const WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
 //WHIP_URL = 'http://localhost:9000';
 //BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
