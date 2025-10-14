@@ -265,43 +265,43 @@ export default function ControlPanel({
   );
 
   // --- AUTO-RESUME on mount: KILL OLD + CREATE NEW INPUT ---
-  useEffect(() => {
-    const s = loadWhipSession();
-    (async () => {
-      try {
-        if (pcRef.current) return;
+  // useEffect(() => {
+  //   const s = loadWhipSession();
+  //   (async () => {
+  //     try {
+  //       if (pcRef.current) return;
 
-        // 1) best-effort: jeśli mieliśmy starą sesję, spróbuj ją usunąć po stronie ingestu
-        if (s?.location && s?.bearerToken) {
-          await deleteWhipResource(s.location, s.bearerToken);
-        }
-        clearWhipSession();
+  //       // 1) best-effort: jeśli mieliśmy starą sesję, spróbuj ją usunąć po stronie ingestu
+  //       if (s?.location && s?.bearerToken) {
+  //         await deleteWhipResource(s.location, s.bearerToken);
+  //       }
+  //       clearWhipSession();
 
-        // 2) zawsze twórz NOWY input na reloadzie
-        const resp: AddInputResponse = await addCameraInput(roomId);
-        // (opcjonalnie) bez remountów:
-        // await refreshState();
+  //       // 2) zawsze twórz NOWY input na reloadzie
+  //       const resp: AddInputResponse = await addCameraInput(roomId);
+  //       // (opcjonalnie) bez remountów:
+  //       // await refreshState();
 
-        // 3) start publish i zapisz świeżą sesję
-        const { location } = await startPublish(
-          resp.inputId,
-          resp.bearerToken,
-          pcRef,
-          streamRef,
-        );
-        saveWhipSession({
-          roomId,
-          inputId: resp.inputId,
-          bearerToken: resp.bearerToken,
-          location,
-          ts: Date.now(),
-        });
-      } catch (e) {
-        // jeśli nie ma uprawnień do kamery itp., po prostu nie wznawiamy
-        console.warn('Auto-resume skipped:', e);
-      }
-    })();
-  }, [roomId]);
+  //       // 3) start publish i zapisz świeżą sesję
+  //       const { location } = await startPublish(
+  //         resp.inputId,
+  //         resp.bearerToken,
+  //         pcRef,
+  //         streamRef,
+  //       );
+  //       saveWhipSession({
+  //         roomId,
+  //         inputId: resp.inputId,
+  //         bearerToken: resp.bearerToken,
+  //         location,
+  //         ts: Date.now(),
+  //       });
+  //     } catch (e) {
+  //       // jeśli nie ma uprawnień do kamery itp., po prostu nie wznawiamy
+  //       console.warn('Auto-resume skipped:', e);
+  //     }
+  //   })();
+  // }, [roomId]);
 
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
