@@ -33,7 +33,6 @@ export async function waitIceComplete(
 }
 
 export function forceH264(transceiver: RTCRtpTransceiver) {
-  // @ts-expect-error - RTCRtpSender is not defined in the global scope, but it is defined in the RTCRtpSender interface
   if (
     !RTCRtpSender?.getCapabilities ||
     !('setCodecPreferences' in transceiver)

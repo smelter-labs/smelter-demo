@@ -15,7 +15,6 @@ export function attachLocalPreview(stream: MediaStream | null) {
       el.srcObject = stream;
       el.play?.().catch(() => {});
     } else {
-      // @ts-expect-error - srcObject is not defined in the global scope, but it is defined in the HTMLVideoElement interface
       el.srcObject = null;
       el.pause?.();
     }
@@ -28,7 +27,6 @@ export function stopCameraAndConnection(
   streamRef: React.MutableRefObject<MediaStream | null>,
 ) {
   console.log('[WHIP] Stopping camera and closing connection');
-  // @ts-expect-error - RTCPeerConnection is not defined in the global scope, but it is defined in the RTCPeerConnection interface
   try {
     pcRef.current?.close();
   } catch {}
