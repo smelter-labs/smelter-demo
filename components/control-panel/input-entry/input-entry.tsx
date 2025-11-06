@@ -11,12 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff, X, SlidersHorizontal } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 import ShaderPanel from './shader-panel';
+import { stopCameraAndConnection } from '../whip-input/utils/preview';
 
 interface InputEntryProps {
   roomId: string;
   input: Input;
   refreshState: () => Promise<void>;
   availableShaders?: AvailableShader[];
+  pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
+  streamRef?: React.MutableRefObject<MediaStream | null>;
 }
 
 function StatusButton({
@@ -124,6 +127,8 @@ export default function InputEntry({
   input,
   refreshState,
   availableShaders = [],
+  pcRef,
+  streamRef,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
@@ -132,6 +137,9 @@ export default function InputEntry({
     [shaderId: string]: string | null;
   }>({});
   const muted = input.volume === 0;
+
+  // Check if this is a WHIP input
+  const isWhipInput = input.type === 'whip';
 
   const lastParamChangeRef = useRef<{ [key: string]: number }>({});
   const [sliderValues, setSliderValues] = useState<{ [key: string]: number }>(
@@ -171,14 +179,22 @@ export default function InputEntry({
   }, [roomId, input, muted, refreshState]);
 
   const handleDelete = useCallback(async () => {
+    // If this is a WHIP input, stop the camera
+    if (isWhipInput && pcRef && streamRef) {
+      stopCameraAndConnection(pcRef, streamRef);
+    }
     await removeInput(roomId, input.inputId);
     await refreshState();
-  }, [roomId, input, refreshState]);
+  }, [roomId, input, refreshState, isWhipInput, pcRef, streamRef]);
 
   const handleConnectionToggle = useCallback(async () => {
     setConnectionStateLoading(true);
     try {
       if (input.status === 'connected') {
+        // If this is a WHIP input being disconnected, stop the camera
+        if (isWhipInput && pcRef && streamRef) {
+          stopCameraAndConnection(pcRef, streamRef);
+        }
         await disconnectInput(roomId, input.inputId);
         input.status = 'disconnected';
       } else if (input.status === 'disconnected') {
@@ -189,7 +205,7 @@ export default function InputEntry({
     } finally {
       setConnectionStateLoading(false);
     }
-  }, [roomId, input, refreshState]);
+  }, [roomId, input, refreshState, isWhipInput, pcRef, streamRef]);
 
   const handleSlidersToggle = useCallback(() => {
     setShowSliders((prev) => !prev);

@@ -7,7 +7,7 @@ import type { Input } from '@/app/actions/actions';
 
 export type GenericAddInputFormProps<T> = {
   inputs: Input[];
-  roomId: string;
+  roomId?: string;
   refreshState: () => Promise<void>;
   suggestions: T[];
   filterSuggestions?: (
@@ -26,6 +26,7 @@ export type GenericAddInputFormProps<T> = {
   buttonText: string;
   loadingText?: string;
   validateInput?: (value: string) => string | undefined;
+  initialValue?: string;
 };
 
 export function GenericAddInputForm<T>({
@@ -41,8 +42,9 @@ export function GenericAddInputForm<T>({
   buttonText,
   loadingText,
   validateInput,
+  initialValue = '',
 }: GenericAddInputFormProps<T>) {
-  const [currentSuggestion, setCurrentSuggestion] = useState('');
+  const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -50,6 +52,10 @@ export function GenericAddInputForm<T>({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionBoxRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setCurrentSuggestion(initialValue);
+  }, [initialValue]);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -180,9 +186,11 @@ export function GenericAddInputForm<T>({
         type='submit'
         disabled={loading}>
         {loading ? (
-          <LoadingSpinner size='sm' variant='spinner' />
+          <>
+            <LoadingSpinner size='sm' variant='spinner' /> {loadingText}
+          </>
         ) : (
-          (loadingText ?? buttonText)
+          <>{buttonText}</>
         )}
       </Button>
     </form>

@@ -7,7 +7,7 @@ export type Layout =
   | 'grid'
   | 'primary-on-left'
   | 'primary-on-top'
-  | 'secondary-in-corner';
+  | 'picture-in-picture';
 
 type LayoutConfig = {
   id: Layout;
@@ -26,9 +26,9 @@ export const LAYOUT_CONFIGS = [
   { id: 'grid', name: 'Grid', icon: Grid3X3, maxStreams: 4 },
   { id: 'primary-on-top', name: 'Primary Top', icon: Square, maxStreams: 4 },
   {
-    id: 'secondary-in-corner',
-    name: 'Secondary Corner',
-    icon: Layers,
+    id: 'picture-in-picture',
+    name: 'Picture in Picture',
+    icon: LayoutGrid,
     maxStreams: 4,
   },
 ] as const satisfies LayoutConfig[];
@@ -101,13 +101,27 @@ export default function LayoutSelector({
             </div>
           </div>
         );
-      case 'secondary-in-corner':
+      case 'picture-in-picture':
         return (
           <div className='w-full h-full relative'>
             <div
-              className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}></div>
-            {streamCount > 1 && (
-              <div className='transition-all duration-300 ease-in-out absolute top-1.5 right-1.5 w-1/4 h-1/4 rounded-xs border border-white-25 bg-purple-80'></div>
+              className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
+            />
+            {Array.from({ length: Math.max(0, streamCount - 1) }).map(
+              (_, idx) => {
+                return (
+                  <div
+                    key={idx}
+                    className='transition-all duration-300 ease-in-out absolute border border-white-25 bg-purple-80 rounded-xs'
+                    style={{
+                      top: `${0.5 + idx * 1.7}rem`,
+                      right: '0.5rem',
+                      width: '25%',
+                      height: '25%',
+                      zIndex: 10 + idx,
+                    }}></div>
+                );
+              },
             )}
           </div>
         );

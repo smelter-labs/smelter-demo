@@ -44,8 +44,17 @@ export function SortableList<T extends BaseItem>({
   const [active, setActive] = useState<Active | null>(null);
 
   // Keep local orderedItems in sync with props.items if they change externally
+  // Only update when the id sequence actually changes to avoid render loops
   useEffect(() => {
-    setOrderedItems(items);
+    setOrderedItems((prev) => {
+      if (
+        prev.length === items.length &&
+        prev.every((prevItem, index) => prevItem.id === items[index]?.id)
+      ) {
+        return prev;
+      }
+      return items;
+    });
   }, [items]);
 
   const activeItem = useMemo(

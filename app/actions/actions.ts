@@ -4,7 +4,13 @@ import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+//let BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+//WHIP_URL = 'http://localhost:9000';
+//BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -53,20 +59,20 @@ export type Input = {
 
 export type RegisterInputOptions =
   | {
-      type: 'twitch-channel';
-      channelId: string;
-    }
+    type: 'twitch-channel';
+    channelId: string;
+  }
   | {
-      type: 'kick-channel';
-      channelId: string;
-    }
+    type: 'kick-channel';
+    channelId: string;
+  }
   | {
-      type: 'local-mp4';
-      source: {
-        fileName?: string;
-        url?: string;
-      };
+    type: 'local-mp4';
+    source: {
+      fileName?: string;
+      url?: string;
     };
+  };
 
 export type RoomState = {
   inputs: Input[];
@@ -79,7 +85,7 @@ export type Layout =
   | 'grid'
   | 'primary-on-left'
   | 'primary-on-top'
-  | 'secondary-in-corner';
+  | 'picture-in-picture';
 
 export interface ChannelSuggestion {
   streamId: string;
@@ -166,6 +172,7 @@ export async function addTwitchInput(roomId: string, channelId: string) {
     },
   );
 }
+
 export async function addKickInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
@@ -191,6 +198,32 @@ export async function removeInput(roomId: string, inputId: string) {
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
     {},
   );
+}
+
+export async function addCameraInput(roomId: string, username?: string) {
+  const response = await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'whip', username: username || undefined },
+  );
+  console.log('addCameraInput', response);
+  return response;
+}
+
+export async function acknowledgeWhipInput(
+  roomId: string,
+  inputId: string,
+): Promise<void> {
+  try {
+    await sendSmelterRequest(
+      'post',
+      `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}/whip/ack`,
+      {},
+    );
+  } catch (err: any) {
+    console.warn('Failed to acknowledge WHIP input:', err?.message ?? err);
+    throw err;
+  }
 }
 
 export async function getAllRooms(): Promise<any> {
@@ -236,10 +269,14 @@ export async function connectInput(roomId: string, inputId: string) {
 export async function restartService(): Promise<void> {
   try {
     await spawn('bash', ['-c', 'sudo systemctl restart smelter.service'], {});
-  } catch {}
+  } catch { }
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
+}
+
+export async function getWHIP_URL(): Promise<string> {
+  return WHIP_URL;
 }
 
 export async function getAvailableShaders(): Promise<AvailableShader[]> {
