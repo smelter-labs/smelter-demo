@@ -59,20 +59,20 @@ export type Input = {
 
 export type RegisterInputOptions =
   | {
-    type: 'twitch-channel';
-    channelId: string;
-  }
+      type: 'twitch-channel';
+      channelId: string;
+    }
   | {
-    type: 'kick-channel';
-    channelId: string;
-  }
+      type: 'kick-channel';
+      channelId: string;
+    }
   | {
-    type: 'local-mp4';
-    source: {
-      fileName?: string;
-      url?: string;
+      type: 'local-mp4';
+      source: {
+        fileName?: string;
+        url?: string;
+      };
     };
-  };
 
 export type RoomState = {
   inputs: Input[];
@@ -266,7 +266,7 @@ export async function connectInput(roomId: string, inputId: string) {
 export async function restartService(): Promise<void> {
   try {
     await spawn('bash', ['-c', 'sudo systemctl restart smelter.service'], {});
-  } catch { }
+  } catch {}
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
