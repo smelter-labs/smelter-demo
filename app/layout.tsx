@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import React from 'react';
+import TryShadersTooltip from '@/components/ui/try-shaders-tooltip';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

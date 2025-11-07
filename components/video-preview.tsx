@@ -18,9 +18,9 @@ export default function VideoPreview({
 
   return (
     <motion.div className='col-span-3' {...(fadeInUp as any)}>
-      <Card className='h-full flex flex-col bg-black-90 border-black-50 border-0'>
+      <Card className='h-full flex flex-col bg-black-90  border-0'>
         <CardContent className='flex flex-col'>
-          <div className='flex-1 rounded border flex items-center justify-center border-[#414154] bg-black-75'>
+          <div className='flex-1 rounded  flex items-center justify-center  bg-black-75'>
             {activeStream ? (
               <div>
                 <OutputStream videoRef={videoRef} whepUrl={whepUrl} />

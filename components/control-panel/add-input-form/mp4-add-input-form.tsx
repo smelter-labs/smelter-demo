@@ -30,13 +30,14 @@ export function Mp4AddInputForm({
     <GenericAddInputForm<string>
       inputs={inputs}
       roomId={roomId}
+      inputDisabled={true}
       refreshState={refreshState}
       suggestions={mp4Suggestions.mp4s}
       // No filtering, just show all
-      placeholder='MP4 URL or select from list'
+      placeholder='Select MP4 from list'
       onSubmit={async (mp4FileName: string) => {
         if (!mp4FileName) {
-          toast.error('Please enter or select an MP4 URL.');
+          toast.error('Please select an MP4.');
           throw new Error('No MP4 URL');
         }
         try {
@@ -55,9 +56,7 @@ export function Mp4AddInputForm({
       getSuggestionValue={(mp4Url) => mp4Url}
       buttonText='Add MP4'
       loadingText='Add MP4'
-      validateInput={(value) =>
-        !value ? 'Please enter or select an MP4 URL.' : undefined
-      }
+      validateInput={(value) => (!value ? 'Please select MP4 URL.' : undefined)}
     />
   );
 }

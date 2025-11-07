@@ -4,7 +4,13 @@ import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+// let BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+// WHIP_URL = 'http://localhost:9000';
+// BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -79,7 +85,7 @@ export type Layout =
   | 'grid'
   | 'primary-on-left'
   | 'primary-on-top'
-  | 'secondary-in-corner';
+  | 'picture-in-picture';
 
 export interface ChannelSuggestion {
   streamId: string;
@@ -166,6 +172,7 @@ export async function addTwitchInput(roomId: string, channelId: string) {
     },
   );
 }
+
 export async function addKickInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
@@ -193,9 +200,33 @@ export async function removeInput(roomId: string, inputId: string) {
   );
 }
 
+export async function addCameraInput(roomId: string, username?: string) {
+  const response = await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'whip', username: username || undefined },
+  );
+  return response;
+}
+
+export async function acknowledgeWhipInput(
+  roomId: string,
+  inputId: string,
+): Promise<void> {
+  try {
+    await sendSmelterRequest(
+      'post',
+      `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}/whip/ack`,
+      {},
+    );
+  } catch (err: any) {
+    console.warn('Failed to acknowledge WHIP input:', err?.message ?? err);
+    throw err;
+  }
+}
+
 export async function getAllRooms(): Promise<any> {
   const rooms = await sendSmelterRequest('get', `/rooms`);
-  console.log('Rooms info:', rooms);
   return rooms;
 }
 
@@ -209,7 +240,6 @@ export async function updateInput(
   inputId: string,
   opts: Partial<UpdateInputOptions>,
 ) {
-  console.log(opts);
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
@@ -240,6 +270,10 @@ export async function restartService(): Promise<void> {
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
+}
+
+export async function getWHIP_URL(): Promise<string> {
+  return WHIP_URL;
 }
 
 export async function getAvailableShaders(): Promise<AvailableShader[]> {
@@ -280,7 +314,6 @@ function spawn(
   args: string[],
   options: SpawnOptions,
 ): Promise<void> {
-  console.log('spawn', command, args);
   const child = nodeSpawn(command, args, {
     stdio: 'inherit',
     ...options,
