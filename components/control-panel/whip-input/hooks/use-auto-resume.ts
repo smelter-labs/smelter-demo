@@ -2,16 +2,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import { addCameraInput, removeInput, type Input } from '@/app/actions/actions';
 import {
   loadLastWhipInputId,
-  loadWhipSession,
   saveLastWhipInputId,
   saveWhipSession,
   tryAcquireAutoResumeLock,
-  clearWhipSession,
+  clearWhipSessionFor,
 } from '../utils/whip-storage';
 import type { AddInputResponse } from '../utils/types';
 import { startPublish } from '../utils/whip-publisher';
 import { stopCameraAndConnection } from '../utils/preview';
-import { deleteWhipResource } from '../utils/whip-api';
 
 export function useAutoResume(
   roomId: string,
@@ -19,6 +17,7 @@ export function useAutoResume(
   pcRef: React.MutableRefObject<RTCPeerConnection | null>,
   streamRef: React.MutableRefObject<MediaStream | null>,
   inputs: Input[],
+  refreshState?: () => Promise<void>,
   setActiveWhipInputId?: (id: string | null) => void,
   setIsWhipActive?: (active: boolean) => void,
 ) {
@@ -39,7 +38,6 @@ export function useAutoResume(
     (async () => {
       try {
         if (startedRef.current) return;
-        console.log('useAutoResume', isPageReload);
         if (!isPageReload) return;
         const acquired = tryAcquireAutoResumeLock(roomId);
         if (!acquired) return;
@@ -50,40 +48,28 @@ export function useAutoResume(
         const lastInputId = loadLastWhipInputId(roomId);
         if (!lastInputId) return;
 
-        // Check if there's already a WHIP input with the same username
         const trimmedUserName = userName.trim();
-        const existingWhipInput = inputs.find(
-          (input) => input.type === 'whip' && input.title === trimmedUserName,
-        );
 
-        // No existing input with same username; remove old last saved input before creating a new one
         try {
           await removeInput(roomId, lastInputId);
         } catch {}
+        try {
+          clearWhipSessionFor(roomId, lastInputId);
+        } catch {}
 
-        // Clean up any previous WHIP session/resource (same as handleAddWhip)
-        const oldSession = loadWhipSession();
-        if (oldSession?.location && oldSession?.bearerToken) {
-          try {
-            await deleteWhipResource(
-              oldSession.location,
-              oldSession.bearerToken,
-            );
-          } catch (e) {
-            console.warn('Failed to delete old WHIP resource:', e);
-          }
-        }
-        clearWhipSession();
-
-        // Always create a new WHIP input (same as handleAddWhip)
         const nameArg = trimmedUserName || undefined;
         const resp: AddInputResponse = await addCameraInput(roomId, nameArg);
 
-        // Set active WHIP input for heartbeat
         if (setActiveWhipInputId) setActiveWhipInputId(resp.inputId);
         if (setIsWhipActive) setIsWhipActive(false);
 
-        // Callback to stop camera when connection is lost
+        // Ensure UI reflects the newly added input as soon as possible
+        if (refreshState) {
+          try {
+            await refreshState();
+          } catch {}
+        }
+
         const onDisconnected = () => {
           stopCameraAndConnection(pcRef, streamRef);
           if (setIsWhipActive) setIsWhipActive(false);
@@ -97,7 +83,6 @@ export function useAutoResume(
           onDisconnected,
         );
 
-        // Connection established successfully
         if (setIsWhipActive) setIsWhipActive(true);
 
         saveWhipSession({
@@ -108,6 +93,13 @@ export function useAutoResume(
           ts: Date.now(),
         });
         saveLastWhipInputId(roomId, resp.inputId);
+
+        // Final refresh in case server-side state changed during publish
+        if (refreshState) {
+          try {
+            await refreshState();
+          } catch {}
+        }
       } catch (e) {
         if (setActiveWhipInputId) setActiveWhipInputId(null);
         if (setIsWhipActive) setIsWhipActive(false);

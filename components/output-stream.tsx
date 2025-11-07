@@ -46,11 +46,9 @@ async function connect(endpointUrl: string): Promise<MediaStream> {
     let audioTrack: undefined | MediaStreamTrack;
     pc.ontrack = (ev: RTCTrackEvent) => {
       if (ev.track.kind === 'video') {
-        console.log('New video track');
         videoTrack = ev.track;
       }
       if (ev.track.kind === 'audio') {
-        console.log('New audio track');
         audioTrack = ev.track;
       }
       if (videoTrack && audioTrack) {
@@ -59,11 +57,9 @@ async function connect(endpointUrl: string): Promise<MediaStream> {
     };
   });
 
-  console.log('add transceivers');
   pc.addTransceiver('video', { direction: 'recvonly' });
   pc.addTransceiver('audio', { direction: 'recvonly' });
 
-  console.log('establish WHEP connection');
   await establishWhipConnection(pc, endpointUrl);
 
   const tracks = await tracksPromise;

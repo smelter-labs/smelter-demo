@@ -5,12 +5,12 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
 //let BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
-const BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
-const WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
+let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
+let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
 //BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
 //WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
-// WHIP_URL = 'http://localhost:9000';
-// BASE_URL = 'http://localhost:3001';
+WHIP_URL = 'http://localhost:9000';
+BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -206,7 +206,6 @@ export async function addCameraInput(roomId: string, username?: string) {
     `/room/${encodeURIComponent(roomId)}/input`,
     { type: 'whip', username: username || undefined },
   );
-  console.log('addCameraInput', response);
   return response;
 }
 
@@ -228,7 +227,6 @@ export async function acknowledgeWhipInput(
 
 export async function getAllRooms(): Promise<any> {
   const rooms = await sendSmelterRequest('get', `/rooms`);
-  console.log('Rooms info:', rooms);
   return rooms;
 }
 
@@ -242,7 +240,6 @@ export async function updateInput(
   inputId: string,
   opts: Partial<UpdateInputOptions>,
 ) {
-  console.log(opts);
   return await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input/${encodeURIComponent(inputId)}`,
@@ -317,7 +314,6 @@ function spawn(
   args: string[],
   options: SpawnOptions,
 ): Promise<void> {
-  console.log('spawn', command, args);
   const child = nodeSpawn(command, args, {
     stdio: 'inherit',
     ...options,

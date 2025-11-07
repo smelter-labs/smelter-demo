@@ -31,8 +31,9 @@ export function loadWhipSession(): WhipSession | null {
     return null;
   }
 }
-export function clearWhipSession() {
+export function clearWhipSession(roomId: string) {
   try {
+    window.sessionStorage.removeItem(lastIdKey(roomId));
     getSafeSessionStorage()?.removeItem(WHIP_SESSION_KEY);
   } catch {}
 }
@@ -50,6 +51,27 @@ export function loadLastWhipInputId(roomId: string): string | null {
   } catch {
     return null;
   }
+}
+
+export function clearLastWhipInputId(roomId: string) {
+  try {
+    if (typeof window === 'undefined') return;
+    window.sessionStorage.removeItem(lastIdKey(roomId));
+  } catch {}
+}
+
+export function clearWhipSessionFor(roomId: string, inputId: string) {
+  try {
+    window.sessionStorage.removeItem(userNameKey(roomId));
+    const s = loadWhipSession();
+    if (s && s.roomId === roomId && s.inputId === inputId) {
+      clearWhipSession(roomId);
+    }
+    const lastId = loadLastWhipInputId(roomId);
+    if (lastId === inputId) {
+      clearLastWhipInputId(roomId);
+    }
+  } catch {}
 }
 
 export function loadUserName(roomId: string): string {
@@ -70,18 +92,9 @@ export function saveUserName(roomId: string, name: string) {
 export function tryAcquireAutoResumeLock(roomId: string): boolean {
   try {
     if (typeof window === 'undefined') return false;
-    console.log('tryAcquireAutoResumeLock', roomId);
     const key = autoResumeLockKey(roomId);
-    console.log(
-      'sessionStorage.getItem',
-      key,
-      '=',
-      sessionStorage.getItem(key),
-    );
     if (sessionStorage.getItem(key)) return true;
-    console.log('sessionStorage.setItem', key, '1');
     sessionStorage.setItem(key, '1');
-    console.log('sessionStorage.getItem', key, sessionStorage.getItem(key));
     return true;
   } catch {
     return true; // allow once if sessionStorage unavailable

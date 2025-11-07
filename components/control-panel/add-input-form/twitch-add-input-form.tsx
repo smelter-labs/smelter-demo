@@ -77,7 +77,7 @@ export default function TwitchAddInputForm({
             );
           })
       }
-      placeholder='Channel ID or URL'
+      placeholder='Select Channel'
       onSubmit={async (value: string) => {
         const channelId = tryTwitchIdFromUrl(value) ?? value;
         try {

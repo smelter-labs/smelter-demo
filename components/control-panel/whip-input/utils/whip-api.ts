@@ -19,24 +19,3 @@ export async function sendWhipOfferLocal(
   if (!res.ok) throw new Error(`WHIP ${res.status}: ${answer}`);
   return { answer, location: res.headers.get('Location') };
 }
-
-export async function deleteWhipResource(
-  location: string,
-  bearerToken: string,
-  opts: { keepalive?: boolean } = {},
-) {
-  try {
-    let absolute = location;
-    if (!/^https?:\/\//i.test(location)) {
-      const WHIP_URL = await getWHIP_URL();
-      absolute = `${WHIP_URL.replace(/\/+$/, '')}/${location.replace(/^\/+/, '')}`;
-    }
-    await fetch(absolute, {
-      method: 'DELETE',
-      headers: { authorization: `Bearer ${bearerToken}` },
-      keepalive: opts.keepalive === true,
-    });
-  } catch {
-    // best-effort
-  }
-}

@@ -49,7 +49,6 @@ export function KickAddInputForm({
 
   useEffect(() => {
     void refreshSuggestions();
-    console.log('refreshSuggestions');
     const interval = setInterval(refreshSuggestions, 30_000);
     return () => clearInterval(interval);
   }, [refreshSuggestions]);
@@ -116,7 +115,7 @@ export function KickAddInputForm({
       refreshState={refreshState}
       suggestions={kickSuggestions}
       filterSuggestions={filterSuggestions}
-      placeholder='Kick Channel ID or URL'
+      placeholder='Select Channel'
       onSubmit={handleSubmit}
       renderSuggestion={renderSuggestion}
       getSuggestionValue={(suggestion) => suggestion.streamId}

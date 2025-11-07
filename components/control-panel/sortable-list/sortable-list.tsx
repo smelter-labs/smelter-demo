@@ -32,19 +32,18 @@ interface Props<T extends BaseItem> {
   items: T[];
   renderItem(item: T): ReactNode;
   onOrderChange(items: T[]): void;
+  resetVersion?: number; // force reset orderedItems when this changes
 }
 
 export function SortableList<T extends BaseItem>({
   items,
   renderItem,
   onOrderChange,
+  resetVersion,
 }: Props<T>) {
-  // Maintain a local state for the order of items
   const [orderedItems, setOrderedItems] = useState<T[]>(items);
   const [active, setActive] = useState<Active | null>(null);
 
-  // Keep local orderedItems in sync with props.items if they change externally
-  // Only update when the id sequence actually changes to avoid render loops
   useEffect(() => {
     setOrderedItems((prev) => {
       if (
@@ -56,6 +55,13 @@ export function SortableList<T extends BaseItem>({
       return items;
     });
   }, [items]);
+
+  // Explicit reset trigger from parent (e.g., after auto-resume) to ensure orderedItems syncs
+  useEffect(() => {
+    if (resetVersion !== undefined) {
+      setOrderedItems(items);
+    }
+  }, [resetVersion]);
 
   const activeItem = useMemo(
     () => orderedItems.find((item) => item.id === active?.id),
@@ -114,7 +120,6 @@ export function SortableList<T extends BaseItem>({
     }
   };
 
-  // Prevent vertical scroll by setting overflowY: 'hidden' on the list
   return (
     <DndContext
       sensors={sensors}
@@ -130,7 +135,6 @@ export function SortableList<T extends BaseItem>({
           role='application'
           style={{ overflowY: 'hidden', maxHeight: 'none' }}>
           {orderedItems.map((item) => {
-            // If this item is being dragged, apply opacity 0.5
             const isActive = active?.id === item.id;
             return (
               <li key={item.id} style={isActive ? { opacity: 0.5 } : undefined}>

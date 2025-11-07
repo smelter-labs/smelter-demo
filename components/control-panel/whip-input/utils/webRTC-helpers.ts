@@ -58,9 +58,7 @@ export function forceH264(transceiver: RTCRtpTransceiver) {
         : h264s;
     try {
       transceiver.setCodecPreferences(prefer);
-    } catch {
-      // noop
-    }
+    } catch {}
   }
 }
 

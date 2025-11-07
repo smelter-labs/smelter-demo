@@ -10,6 +10,7 @@ import {
   addCameraInput,
   getAvailableShaders,
   updateRoom as updateRoomAction,
+  removeInput,
 } from '@/app/actions/actions';
 
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
@@ -23,18 +24,22 @@ import { KickAddInputForm } from './add-input-form/kick-add-input-form';
 import LoadingSpinner from '@/components/ui/spinner';
 
 import { GenericAddInputForm } from './add-input-form/generic-add-input-form';
+import { Button } from '@/components/ui/button';
 
 import { useAutoResume } from './whip-input/hooks/use-auto-resume';
 import { useWhipHeartbeat } from './whip-input/hooks/use-whip-heartbeat';
 import { useStreamsSpinner } from './whip-input/hooks/use-streams-spinner';
 import { stopCameraAndConnection } from './whip-input/utils/preview';
-import { deleteWhipResource } from './whip-input/utils/whip-api';
+
 import {
   loadUserName,
   saveUserName,
   loadWhipSession,
   saveWhipSession,
   saveLastWhipInputId,
+  loadLastWhipInputId,
+  clearWhipSession,
+  clearLastWhipInputId,
 } from './whip-input/utils/whip-storage';
 import { startPublish } from './whip-input/utils/whip-publisher';
 import { toast } from 'react-toastify';
@@ -45,7 +50,6 @@ export type ControlPanelProps = {
   refreshState: () => Promise<void>;
 };
 
-// WHIPAddInputForm implementation
 function WHIPAddInputForm(props: {
   inputs: Input[];
   roomId: string;
@@ -77,16 +81,11 @@ function WHIPAddInputForm(props: {
     }
     try {
       const s = loadWhipSession();
-      if (s?.location && s?.bearerToken) {
-        await deleteWhipResource(s.location, s.bearerToken);
-      }
       const response = await addCameraInput(roomId, cleanedName);
 
-      // Set active WHIP input for heartbeat
       setActiveWhipInputId(response.inputId);
-      setIsWhipActive(false); // Will be set to true when connection is established
+      setIsWhipActive(false);
 
-      // Callback to stop camera when connection is lost
       const onDisconnected = () => {
         stopCameraAndConnection(pcRef, streamRef);
         setIsWhipActive(false);
@@ -100,7 +99,6 @@ function WHIPAddInputForm(props: {
         onDisconnected,
       );
 
-      // Connection established successfully
       setIsWhipActive(true);
 
       saveWhipSession({
@@ -111,8 +109,6 @@ function WHIPAddInputForm(props: {
         ts: Date.now(),
       });
       saveLastWhipInputId(roomId, response.inputId);
-      // Optionally refresh state here if needed
-      // await refreshState();
     } catch (e: any) {
       console.error('WHIP add failed:', e);
       toast.error(`Failed to add WHIP input: ${e?.message || e}`);
@@ -125,18 +121,19 @@ function WHIPAddInputForm(props: {
 
   return (
     <GenericAddInputForm<string>
+      showArrow={false}
       inputs={inputs}
       refreshState={refreshState}
-      suggestions={[]} // No suggestions for WHIP
+      suggestions={[]}
       placeholder='Enter a username (e.g. John Smith)'
       initialValue={userName}
       onSubmit={async (whipUserName: string) => {
         await handleAddWhip(whipUserName);
-        setUserName(whipUserName); // Save latest username to local state
+        setUserName(whipUserName);
       }}
       renderSuggestion={(suggestion: string) => suggestion}
       getSuggestionValue={(v) => v}
-      buttonText='Add WHIP input'
+      buttonText='Add Camera'
       loadingText='Adding...'
       validateInput={(value) =>
         !value ? 'Please enter a username.' : undefined
@@ -152,7 +149,6 @@ export default function ControlPanel({
   roomId,
   roomState,
 }: ControlPanelProps) {
-  // --- State and refs ---
   const [userName, setUserName] = useState<string>(() => {
     const saved = loadUserName(roomId);
     if (saved) return saved;
@@ -167,7 +163,6 @@ export default function ControlPanel({
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
   const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
 
-  // Use custom spinner logic
   const { showStreamsSpinner, onInputsChange } = useStreamsSpinner(
     roomState.inputs,
   );
@@ -175,7 +170,6 @@ export default function ControlPanel({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Track active WHIP input for heartbeat
   const [activeWhipInputId, setActiveWhipInputId] = useState<string | null>(
     () => {
       const session = loadWhipSession();
@@ -187,7 +181,6 @@ export default function ControlPanel({
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
 
-  // --- Input wrappers for sortable list ---
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
       inputsArg.map((input, index) => ({
@@ -200,14 +193,20 @@ export default function ControlPanel({
   const [inputWrappers, setInputWrappers] = useState<InputWrapper[]>(() =>
     getInputWrappers(roomState.inputs),
   );
+  const [listVersion, setListVersion] = useState<number>(0);
+  const handleRefreshState = useCallback(async () => {
+    setInputWrappers(getInputWrappers(inputsRef.current));
+    setListVersion((v) => v + 1);
+    await refreshState();
+  }, [getInputWrappers, refreshState]);
 
-  // --- Keep inputWrappers in sync with inputs ---
   useAutoResume(
     roomId,
     userName,
     pcRef,
     streamRef,
     inputs,
+    handleRefreshState,
     setActiveWhipInputId,
     setIsWhipActive,
   );
@@ -219,14 +218,39 @@ export default function ControlPanel({
     onInputsChange(inputs);
   }, [inputs, getInputWrappers, onInputsChange]);
 
-  // --- Keep inputs in sync with roomState.inputs ---
   useEffect(() => {
     setInputs(roomState.inputs);
     inputsRef.current = roomState.inputs;
     onInputsChange(roomState.inputs);
   }, [roomState.inputs, onInputsChange]);
 
-  // --- Fetch available shaders and store in state ---
+  useEffect(() => {
+    if (!activeWhipInputId) return;
+    const stillExists = inputs.some((i) => i.inputId === activeWhipInputId);
+    if (stillExists) return;
+
+    const timeout = setTimeout(() => {
+      const existsNow = inputsRef.current.some(
+        (i) => i.inputId === activeWhipInputId,
+      );
+      if (existsNow) return;
+      try {
+        stopCameraAndConnection(pcRef, streamRef);
+        setIsWhipActive(false);
+        const s = loadWhipSession();
+        if (s && s.roomId === roomId && s.inputId === activeWhipInputId) {
+          clearWhipSession(roomId);
+        }
+        const lastId = loadLastWhipInputId(roomId);
+        if (lastId === activeWhipInputId) clearLastWhipInputId(roomId);
+      } finally {
+        setActiveWhipInputId(null);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [inputs, activeWhipInputId, roomId]);
+
   const [availableShaders, setAvailableShaders] = useState<any[]>([]);
   useEffect(() => {
     let mounted = true;
@@ -242,7 +266,6 @@ export default function ControlPanel({
     };
   }, []);
 
-  // --- Handlers ---
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
       try {
@@ -269,20 +292,8 @@ export default function ControlPanel({
     [roomId, refreshState],
   );
 
-  const handleRefreshState = useCallback(async () => {
-    setInputWrappers(getInputWrappers(inputsRef.current));
-    await refreshState();
-  }, [getInputWrappers, refreshState]);
-
-  // --- Disconnect/cleanup logic ---
   useEffect(() => {
     const onUnload = () => {
-      try {
-        const s = loadWhipSession();
-        if (s?.location) {
-          deleteWhipResource(s.location, s.bearerToken, { keepalive: true });
-        }
-      } catch {}
       stopCameraAndConnection(pcRef, streamRef);
     };
     window.addEventListener('beforeunload', onUnload);
@@ -300,14 +311,12 @@ export default function ControlPanel({
     };
   }, []);
 
-  // Monitor peer connection state to detect when connection becomes active/inactive
   useEffect(() => {
     const pc = pcRef.current;
     if (!pc) return;
 
     const handleConnectionStateChange = () => {
       const state = pc.connectionState;
-      console.log('[WHIP Heartbeat] Connection state changed:', state);
 
       if (state === 'connected') {
         setIsWhipActive(true);
@@ -322,7 +331,6 @@ export default function ControlPanel({
 
     pc.addEventListener('connectionstatechange', handleConnectionStateChange);
 
-    // Check initial state
     handleConnectionStateChange();
 
     return () => {
@@ -367,18 +375,35 @@ export default function ControlPanel({
         />
       </Accordion>
 
-      <Accordion title='Add new WHIP input' defaultOpen>
-        <WHIPAddInputForm
-          inputs={inputs}
-          roomId={roomId}
-          refreshState={handleRefreshState}
-          userName={userName}
-          setUserName={setUserName}
-          pcRef={pcRef}
-          streamRef={streamRef}
-          setActiveWhipInputId={setActiveWhipInputId}
-          setIsWhipActive={setIsWhipActive}
-        />
+      <Accordion title='Add new Camera input' defaultOpen>
+        {!activeWhipInputId ? (
+          <WHIPAddInputForm
+            inputs={inputs}
+            roomId={roomId}
+            refreshState={handleRefreshState}
+            userName={userName}
+            setUserName={setUserName}
+            pcRef={pcRef}
+            streamRef={streamRef}
+            setActiveWhipInputId={setActiveWhipInputId}
+            setIsWhipActive={setIsWhipActive}
+          />
+        ) : (
+          (() => {
+            // Find the WHIP input entry if it exists, fallback to userName
+            const whipInput = inputs.find(
+              (i) => i.inputId === activeWhipInputId,
+            );
+            const displayName = whipInput?.title || userName;
+            return (
+              <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
+                <div className='text-white-100 text-sm'>
+                  User {displayName} is already connected.
+                </div>
+              </div>
+            );
+          })()
+        )}
       </Accordion>
 
       {/* Streams list */}
@@ -392,10 +417,12 @@ export default function ControlPanel({
           ) : (
             <SortableList
               items={inputWrappers}
+              resetVersion={listVersion}
               renderItem={(item) => {
                 const input = inputs.find(
                   (input) => input.inputId === item.inputId,
                 );
+
                 return (
                   <SortableItem key={item.inputId} id={item.id}>
                     {input && (
@@ -406,6 +433,12 @@ export default function ControlPanel({
                         availableShaders={availableShaders}
                         pcRef={pcRef}
                         streamRef={streamRef}
+                        onWhipDisconnectedOrRemoved={(id) => {
+                          if (activeWhipInputId === id) {
+                            setActiveWhipInputId(null);
+                            setIsWhipActive(false);
+                          }
+                        }}
                       />
                     )}
                   </SortableItem>

@@ -21,12 +21,10 @@ export function attachLocalPreview(stream: MediaStream | null) {
   }
 }
 
-// Helper to stop camera and close peer connection
 export function stopCameraAndConnection(
   pcRef: React.MutableRefObject<RTCPeerConnection | null>,
   streamRef: React.MutableRefObject<MediaStream | null>,
 ) {
-  console.log('[WHIP] Stopping camera and closing connection');
   try {
     pcRef.current?.close();
   } catch {}

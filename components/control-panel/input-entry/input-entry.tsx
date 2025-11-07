@@ -12,6 +12,11 @@ import { Mic, MicOff, X, SlidersHorizontal } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 import ShaderPanel from './shader-panel';
 import { stopCameraAndConnection } from '../whip-input/utils/preview';
+import {
+  clearWhipSessionFor,
+  loadLastWhipInputId,
+  loadWhipSession,
+} from '../whip-input/utils/whip-storage';
 
 interface InputEntryProps {
   roomId: string;
@@ -20,31 +25,43 @@ interface InputEntryProps {
   availableShaders?: AvailableShader[];
   pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
   streamRef?: React.MutableRefObject<MediaStream | null>;
+  onWhipDisconnectedOrRemoved?: (inputId: string) => void;
 }
 
 function StatusButton({
   input,
   loading,
+  showSliders,
   onClick,
 }: {
   input: Input;
   loading: boolean;
+  showSliders: boolean;
   onClick: () => void;
 }) {
   const getStatusLabel = () => {
-    if (input.status === 'pending' || loading) {
+    if (loading) {
       return <LoadingSpinner size='sm' variant='spinner' />;
     }
-    if (input.status === 'connected') return 'Disconnect';
-    if (input.status === 'disconnected') return 'Connect';
-    return 'unknown';
+    if (showSliders) {
+      return (
+        <span className='flex items-center'>
+          <SlidersHorizontal className='mr-1 text-purple-60' />
+          Hide Shaders
+        </span>
+      );
+    }
+    return (
+      <span className='flex items-center'>
+        <SlidersHorizontal className='mr-1 text-purple-60' />
+        Show Shaders
+      </span>
+    );
   };
 
   const getStatusColor = () => {
-    if (input.status === 'connected') return 'bg-red-80 hover:bg-red-80';
-    if (input.status === 'disconnected')
-      return 'bg-green-100 hover:bg-green-100';
-    return '';
+    if (showSliders) return 'bg-purple-60 hover:bg-purple-60';
+    return 'bg-gray-800 hover:bg-purple-60';
   };
 
   return (
@@ -52,8 +69,9 @@ function StatusButton({
       data-no-dnd
       size='sm'
       style={{ width: '100%' }}
-      className={`text-xs text-white-100 hover:opacity-55 cursor-pointer ${getStatusColor()}`}
-      onClick={onClick}>
+      className={`text-xs text-white-100 hover:opacity-75 cursor-pointer ${getStatusColor()} transition-all duration-200`}
+      onClick={onClick}
+      aria-label={showSliders ? 'Hide Shaders' : 'Show Shaders'}>
       {getStatusLabel()}
     </Button>
   );
@@ -77,9 +95,9 @@ function MuteButton({
       className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
       onClick={onClick}>
       {muted ? (
-        <MicOff className='w-3 h-3 text-red-40' />
+        <MicOff className=' text-red-40 size-6' />
       ) : (
-        <Mic className='w-3 h-3 text-green-60' />
+        <Mic className=' text-green-60 size-6' />
       )}
     </Button>
   );
@@ -93,34 +111,12 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
       variant='ghost'
       className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
       onClick={onClick}>
-      <X className='w-3 h-3 text-red-40' />
+      <X className=' text-red-40 size-6' />
     </Button>
   );
 }
 
-function SlidersButton({
-  showSliders,
-  onClick,
-}: {
-  showSliders: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <Button
-      data-no-dnd
-      size='sm'
-      variant='ghost'
-      className={`transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer ${showSliders ? 'text-red-40' : ''}`}
-      aria-label='Show sliders'
-      onClick={onClick}>
-      <SlidersHorizontal
-        className={`w-3 h-3 ${showSliders ? 'text-red-40' : 'text-purple-60'}`}
-      />
-    </Button>
-  );
-}
-
-// --- Main Component ---
+// Removed SlidersButton - handled by StatusButton now
 
 export default function InputEntry({
   roomId,
@@ -129,6 +125,7 @@ export default function InputEntry({
   availableShaders = [],
   pcRef,
   streamRef,
+  onWhipDisconnectedOrRemoved,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
@@ -138,7 +135,6 @@ export default function InputEntry({
   }>({});
   const muted = input.volume === 0;
 
-  // Check if this is a WHIP input
   const isWhipInput = input.type === 'whip';
 
   const lastParamChangeRef = useRef<{ [key: string]: number }>({});
@@ -149,7 +145,6 @@ export default function InputEntry({
     [key: string]: NodeJS.Timeout | number | null;
   }>({});
 
-  // Ensure shadersConfig is initialized and all available shaders are present
   availableShaders.forEach((availableShader) => {
     if (!input.shaders) {
       input.shaders = [];
@@ -168,8 +163,6 @@ export default function InputEntry({
     }
   });
 
-  // --- Handlers ---
-
   const handleMuteToggle = useCallback(async () => {
     await updateInput(roomId, input.inputId, {
       volume: muted ? 1 : 0,
@@ -179,24 +172,51 @@ export default function InputEntry({
   }, [roomId, input, muted, refreshState]);
 
   const handleDelete = useCallback(async () => {
-    // If this is a WHIP input, stop the camera
+    const session = loadWhipSession();
+    const isSavedInSession =
+      (session &&
+        session.roomId === roomId &&
+        session.inputId === input.inputId) ||
+      loadLastWhipInputId(roomId) === input.inputId;
+    const isWhipInput = input.inputId.indexOf('whip') > 0 || isSavedInSession;
     if (isWhipInput && pcRef && streamRef) {
       stopCameraAndConnection(pcRef, streamRef);
     }
+
+    if (isWhipInput) {
+      try {
+        clearWhipSessionFor(roomId, input.inputId);
+      } catch {}
+      try {
+        onWhipDisconnectedOrRemoved?.(input.inputId);
+      } catch {}
+    }
     await removeInput(roomId, input.inputId);
     await refreshState();
-  }, [roomId, input, refreshState, isWhipInput, pcRef, streamRef]);
+  }, [
+    roomId,
+    input,
+    refreshState,
+    isWhipInput,
+    pcRef,
+    streamRef,
+    onWhipDisconnectedOrRemoved,
+  ]);
 
   const handleConnectionToggle = useCallback(async () => {
     setConnectionStateLoading(true);
     try {
       if (input.status === 'connected') {
-        // If this is a WHIP input being disconnected, stop the camera
         if (isWhipInput && pcRef && streamRef) {
           stopCameraAndConnection(pcRef, streamRef);
         }
         await disconnectInput(roomId, input.inputId);
         input.status = 'disconnected';
+        if (isWhipInput) {
+          try {
+            onWhipDisconnectedOrRemoved?.(input.inputId);
+          } catch {}
+        }
       } else if (input.status === 'disconnected') {
         await connectInput(roomId, input.inputId);
         input.status = 'connected';
@@ -205,7 +225,15 @@ export default function InputEntry({
     } finally {
       setConnectionStateLoading(false);
     }
-  }, [roomId, input, refreshState, isWhipInput, pcRef, streamRef]);
+  }, [
+    roomId,
+    input,
+    refreshState,
+    isWhipInput,
+    pcRef,
+    streamRef,
+    onWhipDisconnectedOrRemoved,
+  ]);
 
   const handleSlidersToggle = useCallback(() => {
     setShowSliders((prev) => !prev);
@@ -299,8 +327,6 @@ export default function InputEntry({
     [roomId, input, refreshState],
   );
 
-  // --- Helpers ---
-
   const getSourceStateColor = () => {
     if (input.sourceState === 'live') return 'bg-green-60';
     if (input.sourceState === 'offline') return 'bg-red-60';
@@ -330,8 +356,6 @@ export default function InputEntry({
     );
   };
 
-  // --- Render ---
-
   const shaderPanelBase =
     'transition-all duration-500 ease-in-out transform origin-top';
   const shaderPanelShow = 'opacity-100 scale-100 translate-y-0';
@@ -342,7 +366,6 @@ export default function InputEntry({
     <div
       key={input.inputId}
       className='p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
-      {/* Header */}
       <div className='flex items-center mb-3'>
         <span
           className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
@@ -352,13 +375,13 @@ export default function InputEntry({
           {input.title}
         </div>
       </div>
-      {/* Controls */}
       <div className='flex flex-row items-center'>
         <div className='flex-1 flex'>
           <StatusButton
             input={input}
             loading={connectionStateLoading}
-            onClick={handleConnectionToggle}
+            showSliders={showSliders}
+            onClick={handleSlidersToggle}
           />
         </div>
         <div className='flex flex-row items-center justify-end flex-1 gap-1'>
@@ -367,14 +390,26 @@ export default function InputEntry({
             disabled={input.sourceState === 'offline'}
             onClick={handleMuteToggle}
           />
-          <SlidersButton
-            showSliders={showSliders}
-            onClick={handleSlidersToggle}
-          />
+          {/* <Button
+            data-no-dnd
+            size='sm'
+            variant='ghost'
+            className={`transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer`}
+            aria-label={input.status === 'connected' ? 'Disconnect' : 'Connect'}
+            disabled={connectionStateLoading}
+            onClick={handleConnectionToggle}
+          >
+            {connectionStateLoading ? (
+              <LoadingSpinner size="sm" variant="spinner" />
+            ) : (
+              input.status === 'connected'
+                ? <span className='text-red-80 font-bold'>•</span>
+                : <span className='text-green-100 font-bold'>•</span>
+            )}
+          </Button> */}
           <DeleteButton onClick={handleDelete} />
         </div>
       </div>
-      {/* Shader Panel */}
       <div
         className={
           shaderPanelBase +
