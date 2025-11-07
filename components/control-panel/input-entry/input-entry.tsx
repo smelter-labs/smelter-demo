@@ -176,12 +176,13 @@ export default function InputEntry({
         session.roomId === roomId &&
         session.inputId === input.inputId) ||
       loadLastWhipInputId(roomId) === input.inputId;
-    const isWhipInput = input.inputId.indexOf('whip') > 0 || isSavedInSession;
-    if (isWhipInput && pcRef && streamRef) {
+    const isWhipCandidate =
+      input.inputId.indexOf('whip') > 0 || isSavedInSession;
+    if (isWhipCandidate && pcRef && streamRef) {
       stopCameraAndConnection(pcRef, streamRef);
     }
 
-    if (isWhipInput) {
+    if (isWhipCandidate) {
       try {
         clearWhipSessionFor(roomId, input.inputId);
       } catch {}
@@ -209,7 +210,6 @@ export default function InputEntry({
           stopCameraAndConnection(pcRef, streamRef);
         }
         await disconnectInput(roomId, input.inputId);
-        input.status = 'disconnected';
         if (isWhipInput) {
           try {
             onWhipDisconnectedOrRemoved?.(input.inputId);
@@ -217,7 +217,6 @@ export default function InputEntry({
         }
       } else if (input.status === 'disconnected') {
         await connectInput(roomId, input.inputId);
-        input.status = 'connected';
       }
       await refreshState();
     } finally {

@@ -1,17 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
-import {
-  getTwitchSuggestions,
-  getRoomInfo,
-  InputSuggestions,
-  RoomState,
-} from '@/app/actions/actions';
+import { getRoomInfo, RoomState } from '@/app/actions/actions';
 import LoadingSpinner from '@/components/ui/spinner';
 import { WarningBanner } from '@/components/warning-banner';
 import SmelterLogo from '@/components/ui/smelter-logo';

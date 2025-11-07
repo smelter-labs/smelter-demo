@@ -5,12 +5,16 @@ import { motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-import type { Input, Layout, RoomState } from '@/app/actions/actions';
+import type {
+  Input,
+  Layout,
+  RoomState,
+  AvailableShader,
+} from '@/app/actions/actions';
 import {
   addCameraInput,
   getAvailableShaders,
   updateRoom as updateRoomAction,
-  removeInput,
 } from '@/app/actions/actions';
 
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
@@ -24,7 +28,7 @@ import { KickAddInputForm } from './add-input-form/kick-add-input-form';
 import LoadingSpinner from '@/components/ui/spinner';
 
 import { GenericAddInputForm } from './add-input-form/generic-add-input-form';
-import { Button } from '@/components/ui/button';
+//
 
 import { useAutoResume } from './whip-input/hooks/use-auto-resume';
 import { useWhipHeartbeat } from './whip-input/hooks/use-whip-heartbeat';
@@ -161,7 +165,7 @@ export default function ControlPanel({
 
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
-  const everHadInputRef = useRef<boolean>(roomState.inputs.length > 0);
+  //
 
   const { showStreamsSpinner, onInputsChange } = useStreamsSpinner(
     roomState.inputs,
@@ -251,7 +255,9 @@ export default function ControlPanel({
     return () => clearTimeout(timeout);
   }, [inputs, activeWhipInputId, roomId]);
 
-  const [availableShaders, setAvailableShaders] = useState<any[]>([]);
+  const [availableShaders, setAvailableShaders] = useState<AvailableShader[]>(
+    [],
+  );
   useEffect(() => {
     let mounted = true;
     getAvailableShaders()
@@ -339,7 +345,7 @@ export default function ControlPanel({
         handleConnectionStateChange,
       );
     };
-  }, [pcRef.current]);
+  }, [pcRef]);
 
   return (
     <motion.div
@@ -375,7 +381,7 @@ export default function ControlPanel({
         />
       </Accordion>
 
-      <Accordion title='Add new Camera input' defaultOpen>
+      {/* <Accordion title='Add new Camera input' defaultOpen>
         {!activeWhipInputId ? (
           <WHIPAddInputForm
             inputs={inputs}
@@ -389,22 +395,17 @@ export default function ControlPanel({
             setIsWhipActive={setIsWhipActive}
           />
         ) : (
-          (() => {
-            // Find the WHIP input entry if it exists, fallback to userName
-            const whipInput = inputs.find(
-              (i) => i.inputId === activeWhipInputId,
-            );
-            const displayName = whipInput?.title || userName;
-            return (
-              <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
-                <div className='text-white-100 text-sm'>
-                  User {displayName} is already connected.
-                </div>
-              </div>
-            );
-          })()
+          <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
+            <div className='text-white-100 text-sm'>
+              {(() => {
+                const whipInput = inputs.find((i) => i.inputId === activeWhipInputId);
+                const displayName = whipInput?.title || userName;
+                return `User ${displayName} is already connected.`;
+              })()}
+            </div>
+          </div>
         )}
-      </Accordion>
+      </Accordion> */}
 
       {/* Streams list */}
       <Accordion title='Streams' defaultOpen>
