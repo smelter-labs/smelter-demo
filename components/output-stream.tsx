@@ -324,7 +324,7 @@ export default function OutputStream({
               className={slider + ' w-24'}
               aria-label='Volume'
               disabled={muted}
-              style={{ marginLeft: 2, marginRight: 8, width: '120px' }}
+              style={{ marginLeft: 2, marginRight: 8, maxWidth: '100px' }}
             />
 
             {/* Fullscreen */}
