@@ -258,13 +258,16 @@ export default function OutputStream({
 
   return (
     <div
-      className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-4'
+      className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-4 aspect-[16/9]'
       style={{ maxWidth: 1920, maxHeight: 1080 }}>
       {/* Spinner, only show if not loaded */}
       {!videoLoaded && (
-        <div className='absolute inset-0 w-full h-full'>
-          <LoadingSpinner />
-        </div>
+        <>
+          <img src='/video-bg-placeholder.png' alt='Video placeholder' />
+          <div className='absolute inset-0 w-full h-full'>
+            <LoadingSpinner />
+          </div>
+        </>
       )}
       <video
         id='videoPlayer'
