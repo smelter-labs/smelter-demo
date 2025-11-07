@@ -15,6 +15,15 @@ import {
 // You may want to install lucide-react: npm i lucide-react
 // Or swap for your favorite SVG icons.
 
+// Simple loading spinner component (tailwind-based)
+function LoadingSpinner() {
+  return (
+    <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
+      <div className='animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-purple-400 border-opacity-60'></div>
+    </div>
+  );
+}
+
 export default function OutputStream({
   whepUrl,
   videoRef,
@@ -23,7 +32,7 @@ export default function OutputStream({
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   // Custom controls states
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false); // Fix: default to "not playing"
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
@@ -43,7 +52,10 @@ export default function OutputStream({
       const vid = resolvedVideoRef.current;
       if (vid && vid.srcObject !== stream) {
         vid.srcObject = stream;
-        vid.play().catch(console.error);
+        vid.play().then(
+          () => setPlaying(true), // Set playing if autoplay succeeded
+          () => setPlaying(false), // Set not playing if autoplay failed
+        );
       }
     });
   }, [whepUrl, resolvedVideoRef]);
@@ -57,6 +69,7 @@ export default function OutputStream({
     const onLoadedMetadata = () => {
       setDuration(vid.duration || 0);
       setVideoLoaded(true); // <-- Mark video as loaded
+      setPlaying(!vid.paused && !vid.ended); // sync play/pause state
     };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
@@ -73,6 +86,8 @@ export default function OutputStream({
 
     setMuted(vid.muted || vid.volume === 0);
     setVolume(vid.volume);
+    // Fix: derive playing state from actual paused property at mount
+    setPlaying(!vid.paused && !vid.ended);
 
     return () => {
       vid.removeEventListener('timeupdate', onTimeUpdate);
@@ -146,7 +161,10 @@ export default function OutputStream({
     const vid = resolvedVideoRef.current;
     if (!vid) return;
     if (vid.paused || vid.ended) {
-      vid.play();
+      vid.play().then(
+        () => setPlaying(true),
+        () => setPlaying(false),
+      );
     } else {
       vid.pause();
     }
@@ -240,8 +258,14 @@ export default function OutputStream({
 
   return (
     <div
-      className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-5'
+      className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-4'
       style={{ maxWidth: 1920, maxHeight: 1080 }}>
+      {/* Spinner, only show if not loaded */}
+      {!videoLoaded && (
+        <div className='absolute inset-0 w-full h-full'>
+          <LoadingSpinner />
+        </div>
+      )}
       <video
         id='videoPlayer'
         ref={resolvedVideoRef}
