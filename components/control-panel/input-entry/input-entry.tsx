@@ -95,9 +95,9 @@ function MuteButton({
       className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
       onClick={onClick}>
       {muted ? (
-        <MicOff className=' text-red-40 size-6' />
+        <MicOff className=' text-red-40 size-5' />
       ) : (
-        <Mic className=' text-green-60 size-6' />
+        <Mic className=' text-green-60 size-5' />
       )}
     </Button>
   );
@@ -109,14 +109,12 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
       data-no-dnd
       size='sm'
       variant='ghost'
-      className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      className='transition-all duration-300 ease-in-out h-6 w-6 p-2 cursor-pointer'
       onClick={onClick}>
-      <X className=' text-red-40 size-6' />
+      <X className=' text-red-40 size-5' />
     </Button>
   );
 }
-
-// Removed SlidersButton - handled by StatusButton now
 
 export default function InputEntry({
   roomId,
