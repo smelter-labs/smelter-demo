@@ -9,8 +9,8 @@ let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
 let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
 BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
 WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
-WHIP_URL = 'http://localhost:9000';
-BASE_URL = 'http://localhost:3001';
+// WHIP_URL = 'http://localhost:9000';
+// BASE_URL = 'http://localhost:3001';
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -59,20 +59,20 @@ export type Input = {
 
 export type RegisterInputOptions =
   | {
-      type: 'twitch-channel';
-      channelId: string;
-    }
+    type: 'twitch-channel';
+    channelId: string;
+  }
   | {
-      type: 'kick-channel';
-      channelId: string;
-    }
+    type: 'kick-channel';
+    channelId: string;
+  }
   | {
-      type: 'local-mp4';
-      source: {
-        fileName?: string;
-        url?: string;
-      };
+    type: 'local-mp4';
+    source: {
+      fileName?: string;
+      url?: string;
     };
+  };
 
 export type RoomState = {
   inputs: Input[];
@@ -266,7 +266,7 @@ export async function connectInput(roomId: string, inputId: string) {
 export async function restartService(): Promise<void> {
   try {
     await spawn('bash', ['-c', 'sudo systemctl restart smelter.service'], {});
-  } catch {}
+  } catch { }
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
