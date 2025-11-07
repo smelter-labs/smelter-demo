@@ -29,6 +29,8 @@ export default function OutputStream({
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // NEW: videoLoaded state
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   // Internal ref in case videoRef is not set yet
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +54,10 @@ export default function OutputStream({
     if (!vid) return;
 
     const onTimeUpdate = () => setCurrent(vid.currentTime);
-    const onLoadedMetadata = () => setDuration(vid.duration || 0);
+    const onLoadedMetadata = () => {
+      setDuration(vid.duration || 0);
+      setVideoLoaded(true); // <-- Mark video as loaded
+    };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     const onVolumeChange = () => {
@@ -235,7 +240,7 @@ export default function OutputStream({
 
   return (
     <div
-      className='relative w-full h-full bg-black rounded-md overflow-hidden'
+      className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-5'
       style={{ maxWidth: 1920, maxHeight: 1080 }}>
       <video
         id='videoPlayer'
@@ -248,65 +253,67 @@ export default function OutputStream({
         tabIndex={-1}
       />
       {/* Custom Controls */}
-      <div
-        className={controlBar + ' flex-row justify-between'}
-        style={{ userSelect: 'none' }}>
-        <div className='flex items-center gap-3'>
-          {/* Play/Pause */}
-          <button
-            className={button}
-            onClick={handlePlayPause}
-            aria-label={playing ? 'Pause' : 'Play'}>
-            {playing ? (
-              <PauseIcon className='w-6 h-6' />
-            ) : (
-              <PlayIcon className='w-6 h-6' />
-            )}
-          </button>
+      {videoLoaded && (
+        <div
+          className={controlBar + ' flex-row justify-between'}
+          style={{ userSelect: 'none' }}>
+          <div className='flex items-center gap-3'>
+            {/* Play/Pause */}
+            <button
+              className={button}
+              onClick={handlePlayPause}
+              aria-label={playing ? 'Pause' : 'Play'}>
+              {playing ? (
+                <PauseIcon className='w-6 h-6' />
+              ) : (
+                <PlayIcon className='w-6 h-6' />
+              )}
+            </button>
 
-          {/* Time & Seekbar */}
-          <span className='text-xs text-white w-12 text-right tabular-nums font-mono mr-1'>
-            {formatTime(current)}
-          </span>
-        </div>
-        <div className='flex items-center gap-2 ml-auto'>
-          {/* Volume */}
-          <button
-            className={button + ' ml-2'}
-            onClick={handleMuteToggle}
-            aria-label={muted ? 'Unmute' : 'Mute'}>
-            {muted ? (
-              <MutedIcon className='w-5 h-5' />
-            ) : (
-              <VolumeIcon className='w-5 h-5' />
-            )}
-          </button>
-          <input
-            type='range'
-            min={0}
-            max={1}
-            step={0.01}
-            value={muted ? 0 : volume}
-            onChange={(e) => handleVolumeChange(Number(e.target.value))}
-            className={slider + ' w-24'}
-            aria-label='Volume'
-            disabled={muted}
-            style={{ marginLeft: 2, marginRight: 8, width: '120px' }}
-          />
+            {/* Time & Seekbar */}
+            <span className='text-xs text-white w-12 text-right tabular-nums font-mono mr-1'>
+              {formatTime(current)}
+            </span>
+          </div>
+          <div className='flex items-center gap-2 ml-auto'>
+            {/* Volume */}
+            <button
+              className={button + ' ml-2'}
+              onClick={handleMuteToggle}
+              aria-label={muted ? 'Unmute' : 'Mute'}>
+              {muted ? (
+                <MutedIcon className='w-5 h-5' />
+              ) : (
+                <VolumeIcon className='w-5 h-5' />
+              )}
+            </button>
+            <input
+              type='range'
+              min={0}
+              max={1}
+              step={0.01}
+              value={muted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(Number(e.target.value))}
+              className={slider + ' w-24'}
+              aria-label='Volume'
+              disabled={muted}
+              style={{ marginLeft: 2, marginRight: 8, width: '120px' }}
+            />
 
-          {/* Fullscreen */}
-          <button
-            className={button}
-            onClick={handleFullscreen}
-            aria-label={isFullscreen ? 'Minimize video' : 'Fullscreen video'}>
-            {isFullscreen ? (
-              <MinimizeIcon className='w-5 h-5' />
-            ) : (
-              <FullscreenIcon className='w-5 h-5' />
-            )}
-          </button>
+            {/* Fullscreen */}
+            <button
+              className={button}
+              onClick={handleFullscreen}
+              aria-label={isFullscreen ? 'Minimize video' : 'Fullscreen video'}>
+              {isFullscreen ? (
+                <MinimizeIcon className='w-5 h-5' />
+              ) : (
+                <FullscreenIcon className='w-5 h-5' />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
