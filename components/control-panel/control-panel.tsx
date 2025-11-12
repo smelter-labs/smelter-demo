@@ -381,7 +381,7 @@ export default function ControlPanel({
         />
       </Accordion>
 
-      {/* <Accordion title='Add new Camera input' defaultOpen>
+      <Accordion title='Add new Camera input' defaultOpen>
         {!activeWhipInputId ? (
           <WHIPAddInputForm
             inputs={inputs}
@@ -405,7 +405,7 @@ export default function ControlPanel({
             </div>
           </div>
         )}
-      </Accordion> */}
+      </Accordion>
 
       {/* Streams list */}
       <Accordion title='Streams' defaultOpen>
