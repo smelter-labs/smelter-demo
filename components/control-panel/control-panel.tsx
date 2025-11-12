@@ -354,7 +354,7 @@ export default function ControlPanel({
       <video id='local-preview' muted playsInline autoPlay className='hidden' />
 
       {!isKick && (
-        <Accordion title='Add new Twitch stream' defaultOpen>
+        <Accordion title='Add new stream' defaultOpen>
           <TwitchAddInputForm
             inputs={inputs}
             roomId={roomId}
@@ -364,7 +364,7 @@ export default function ControlPanel({
       )}
 
       {isKick && (
-        <Accordion title='Add new Kick Channel' defaultOpen>
+        <Accordion title='Add new stream' defaultOpen>
           <KickAddInputForm
             inputs={inputs}
             roomId={roomId}
