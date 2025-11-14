@@ -98,6 +98,7 @@ function WHIPAddInputForm(props: {
       const { location } = await startPublish(
         response.inputId,
         response.bearerToken,
+        response.whipUrl,
         pcRef,
         streamRef,
         onDisconnected,
@@ -381,7 +382,7 @@ export default function ControlPanel({
         />
       </Accordion>
 
-      {/* <Accordion title='Add new Camera input' defaultOpen>
+      <Accordion title='Add new Camera input' defaultOpen>
         {!activeWhipInputId ? (
           <WHIPAddInputForm
             inputs={inputs}
@@ -398,14 +399,16 @@ export default function ControlPanel({
           <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
             <div className='text-white-100 text-sm'>
               {(() => {
-                const whipInput = inputs.find((i) => i.inputId === activeWhipInputId);
+                const whipInput = inputs.find(
+                  (i) => i.inputId === activeWhipInputId,
+                );
                 const displayName = whipInput?.title || userName;
                 return `User ${displayName} is already connected.`;
               })()}
             </div>
           </div>
         )}
-      </Accordion> */}
+      </Accordion>
 
       {/* Streams list */}
       <Accordion title='Streams' defaultOpen>

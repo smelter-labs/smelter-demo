@@ -10,6 +10,7 @@ import { sendWhipOfferLocal } from './whip-api';
 export async function startPublish(
   inputId: string,
   bearerToken: string,
+  whipUrl: string,
   pcRef: React.MutableRefObject<RTCPeerConnection | null>,
   streamRef: React.MutableRefObject<MediaStream | null>,
   onDisconnected?: () => void,
@@ -77,6 +78,7 @@ export async function startPublish(
   const { answer, location } = await sendWhipOfferLocal(
     inputId,
     bearerToken,
+    whipUrl,
     offerDesc.sdp,
   );
   await pc.setRemoteDescription({ type: 'answer', sdp: answer });
