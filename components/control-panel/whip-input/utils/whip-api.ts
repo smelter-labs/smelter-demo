@@ -1,12 +1,10 @@
-import { getWHIP_URL } from '@/app/actions/actions';
-
 export async function sendWhipOfferLocal(
   inputId: string,
   bearerToken: string,
+  whipUrl: string,
   sdp: string,
 ): Promise<{ answer: string; location: string | null }> {
-  const WHIP_URL = await getWHIP_URL();
-  const res = await fetch(`${WHIP_URL}/whip/${inputId}`, {
+  const res = await fetch(`${whipUrl}`, {
     method: 'POST',
     headers: {
       'content-type': 'application/sdp',

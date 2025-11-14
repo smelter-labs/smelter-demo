@@ -1,16 +1,12 @@
 'use server';
 
+import { AddInputResponse } from '@/components/control-panel/whip-input/utils/types';
 import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
-// let BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
-let BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
-let WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
-BASE_URL = 'https://puffer.fishjam.io/smelter-demo-api';
-WHIP_URL = 'https://puffer.fishjam.io/smelter-demo-whep';
-// WHIP_URL = 'http://localhost:9000';
-// BASE_URL = 'http://localhost:3001';
+const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+
 assert(BASE_URL);
 
 type ShaderParam = {
@@ -200,13 +196,20 @@ export async function removeInput(roomId: string, inputId: string) {
   );
 }
 
-export async function addCameraInput(roomId: string, username?: string) {
+export async function addCameraInput(
+  roomId: string,
+  username?: string,
+): Promise<AddInputResponse> {
   const response = await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     { type: 'whip', username: username || undefined },
   );
-  return response;
+  return {
+    inputId: response.inputId,
+    bearerToken: response.bearerToken,
+    whipUrl: response.whipUrl,
+  };
 }
 
 export async function acknowledgeWhipInput(
@@ -270,10 +273,6 @@ export async function restartService(): Promise<void> {
   await new Promise<void>((res) => {
     setTimeout(() => res(), 5000);
   });
-}
-
-export async function getWHIP_URL(): Promise<string> {
-  return WHIP_URL;
 }
 
 export async function getAvailableShaders(): Promise<AvailableShader[]> {

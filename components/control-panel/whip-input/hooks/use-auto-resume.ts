@@ -78,6 +78,7 @@ export function useAutoResume(
         const { location } = await startPublish(
           resp.inputId,
           resp.bearerToken,
+          resp.whipUrl,
           pcRef,
           streamRef,
           onDisconnected,
