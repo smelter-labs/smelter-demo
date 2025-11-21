@@ -1,4 +1,3 @@
-// useDriverTour.ts
 import { useEffect, useRef, useCallback } from 'react';
 import { driver, type Driver, type DriveStep } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -17,11 +16,8 @@ export type DriverTourApi = {
   next: () => void;
   prev: () => void;
   moveTo: (index: number) => void;
-
-  // warunkowe next/prev
   nextIf: (expectedIndex: number) => void;
   prevIf: (expectedIndex: number) => void;
-
   instance: Driver | null;
 };
 
@@ -45,8 +41,6 @@ export function useDriverTour(
   }, []);
 
   const start = useCallback(() => {
-    // Recreate driver instance on every start to avoid sharing state between tours
-    // Local observer state bound to this driver instance
     let resizeObserver: ResizeObserver | null = null;
     let observedElement: Element | null = null;
     let rafId: number | null = null;
@@ -141,10 +135,9 @@ export function useDriverTour(
       },
     };
 
-    // Ensure previous instance is destroyed
     try {
       driverRef.current?.destroy?.();
-    } catch {}
+    } catch { }
 
     const d = driver(config);
     driverRef.current = d;

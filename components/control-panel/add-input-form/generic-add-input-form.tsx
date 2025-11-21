@@ -29,9 +29,9 @@ export type GenericAddInputFormProps<T> = {
   validateInput?: (value: string) => string | undefined;
   initialValue?: string;
   showArrow?: boolean;
-  inputDisabled?: boolean; // disables only typing/editing, not dropdown
+  inputDisabled?: boolean;
   id?: string;
-  submitOnItem?: boolean; // <---- New parameter
+  submitOnItem?: boolean;
 };
 
 export function GenericAddInputForm<T>({
@@ -51,7 +51,7 @@ export function GenericAddInputForm<T>({
   showArrow = true,
   inputDisabled = false,
   id = '',
-  submitOnItem = false, // <--- accept new param, default false
+  submitOnItem = false,
 }: GenericAddInputFormProps<T>) {
   const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
   const [loading, setLoading] = useState(false);
@@ -99,7 +99,6 @@ export function GenericAddInputForm<T>({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (inputDisabled) {
-      // Prevent any typing actions, but allow dropdown navigation
       if (
         e.key !== 'ArrowDown' &&
         e.key !== 'ArrowUp' &&
@@ -134,9 +133,6 @@ export function GenericAddInputForm<T>({
         setHighlightedIndex(-1);
       }
     }
-    // else if (e.key === 'Escape') {
-    //   setShowSuggestions(false);
-    // }
   };
 
   const suggestionBoxClass =
@@ -160,7 +156,6 @@ export function GenericAddInputForm<T>({
       await refreshState();
       setCurrentSuggestion('');
     } catch {
-      // onSubmit should handle toast error
     } finally {
       setLoading(false);
     }
@@ -173,14 +168,11 @@ export function GenericAddInputForm<T>({
       await refreshState();
       setCurrentSuggestion('');
     } catch {
-      // onSubmit should handle toast error
     } finally {
       setLoading(false);
     }
   };
 
-  // Prevent typing/editing in the input if inputDisabled is true,
-  // allow focus, arrow keys, clicking, dropdown, selection, and submit
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!inputDisabled) {
       setCurrentSuggestion(e.target.value);
@@ -188,7 +180,6 @@ export function GenericAddInputForm<T>({
     }
   };
 
-  // Callback for when a suggestion is clicked
   const handleSuggestionSelect = async (suggestion: T) => {
     const value = getSuggestionValue(suggestion);
     setCurrentSuggestion(value);
@@ -196,7 +187,6 @@ export function GenericAddInputForm<T>({
 
     if (submitOnItem) {
       console.log('submitOnItem is true, submitting...', value);
-      // Submit the form on click, but ensure a minimum delay of 200ms
       next();
       await handleSubmitOnItem(value);
 
@@ -221,14 +211,11 @@ export function GenericAddInputForm<T>({
           }
           value={currentSuggestion}
           onChange={handleInputChange}
-          // onFocus={() => setShowSuggestions(true)}
-          // onBlur={() => {setTimeout(() => setShowSuggestions(false), 100)}}
           onKeyDown={handleInputKeyDown}
           placeholder={placeholder}
           autoComplete='off'
           spellCheck={false}
           readOnly={inputDisabled}
-          // still allow clicking to open suggestions if disabled
           onClick={() => {
             setShowSuggestions(true);
             setTimeout(() => next(), 200);
