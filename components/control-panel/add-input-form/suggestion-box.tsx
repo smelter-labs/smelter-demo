@@ -1,7 +1,6 @@
 import { useDriverTourControls } from '@/components/tour/DriverTourContext';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// --- Shared Generic AddInputForm ---
 export type SuggestionBoxProps<T> = {
   suggestions: T[];
   show: boolean;

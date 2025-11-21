@@ -18,7 +18,7 @@ import {
 } from '../tour/DriverTourContext';
 import {
   composingTourSteps,
-  tourOptions,
+  tourOptions as commonTourOptions,
   roomTourSteps,
   shadersTourSteps,
 } from '../tour/tour-config';
@@ -62,15 +62,18 @@ export default function RoomPage() {
 
   return (
     <DriverToursProvider>
-      <DriverTourProvider id='room' steps={roomTourSteps} options={tourOptions}>
+      <DriverTourProvider
+        id='room'
+        steps={roomTourSteps}
+        options={commonTourOptions}>
         <DriverTourProvider
           id='shaders'
           steps={shadersTourSteps}
-          options={tourOptions}>
+          options={commonTourOptions}>
           <DriverTourProvider
             id='composing'
             steps={composingTourSteps}
-            options={tourOptions}>
+            options={commonTourOptions}>
             <motion.div
               variants={staggerContainer}
               className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>

@@ -137,13 +137,13 @@ export function useDriverTour(
 
     try {
       driverRef.current?.destroy?.();
-    } catch { }
+    } catch {}
 
     const d = driver(config);
     driverRef.current = d;
     console.log('start tour', id, driverRef.current, 'steps', steps.length);
     d.drive();
-  }, [id]);
+  }, [id, options, steps]);
 
   const reset = useCallback(() => {
     driverRef.current?.refresh?.();

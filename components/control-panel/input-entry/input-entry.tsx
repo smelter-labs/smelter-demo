@@ -260,7 +260,7 @@ export default function InputEntry({
         setShaderLoading(null);
       }
     },
-    [roomId, input, refreshState, roomTourNextIf],
+    [roomId, input, refreshState, shadersTourNextIf],
   );
 
   const handleSliderChange = useCallback(

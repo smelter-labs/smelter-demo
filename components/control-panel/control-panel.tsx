@@ -67,7 +67,7 @@ export default function ControlPanel({
 
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
-  //
+  const { nextIf: nextIfComposing } = useDriverTourControls('composing');
 
   const { showStreamsSpinner, onInputsChange } = useStreamsSpinner(
     roomState.inputs,
@@ -198,7 +198,7 @@ export default function ControlPanel({
         alert('Failed to change layout.');
       }
     },
-    [roomId, refreshState],
+    [roomId, refreshState, nextIfComposing],
   );
 
   useEffect(() => {
@@ -249,10 +249,6 @@ export default function ControlPanel({
       );
     };
   }, [pcRef]);
-
-  // --- Add driver tour ---
-  // Steps should be the same as RoomView; could be duplicated or imported
-  const { nextIf: nextIfComposing } = useDriverTourControls('composing');
 
   return (
     <motion.div
@@ -340,7 +336,6 @@ export default function ControlPanel({
                 const input = inputs.find(
                   (input) => input.inputId === item.inputId,
                 );
-
                 return (
                   <SortableItem key={item.inputId} id={item.id}>
                     {input && (
