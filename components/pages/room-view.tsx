@@ -1,5 +1,5 @@
 import { RoomState } from '@/app/actions/actions';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AutoplayModal from '@/components/ui/autoplay-modal';
 import { motion } from 'framer-motion';
 import { staggerContainer } from '@/utils/animations';

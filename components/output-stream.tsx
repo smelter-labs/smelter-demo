@@ -271,6 +271,7 @@ export default function OutputStream({
       )}
       <video
         id='videoPlayer'
+        data-tour='video-player-container'
         ref={resolvedVideoRef}
         className='w-full h-full rounded-md object-contain pointer-events-auto select-none bg-black'
         autoPlay

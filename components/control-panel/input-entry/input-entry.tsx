@@ -18,6 +18,8 @@ import {
   loadWhipSession,
 } from '../whip-input/utils/whip-storage';
 
+import { useDriverTourControls } from '@/components/tour/DriverTourContext';
+
 interface InputEntryProps {
   roomId: string;
   input: Input;
@@ -47,14 +49,14 @@ function StatusButton({
       return (
         <span className='flex items-center'>
           <SlidersHorizontal className='mr-1 text-purple-60' />
-          Hide Shaders
+          Hide FX
         </span>
       );
     }
     return (
       <span className='flex items-center'>
         <SlidersHorizontal className='mr-1 text-purple-60' />
-        Show Shaders
+        Show FX
       </span>
     );
   };
@@ -70,8 +72,7 @@ function StatusButton({
       size='sm'
       style={{ width: '100%' }}
       className={`text-xs text-white-100 hover:opacity-75 cursor-pointer ${getStatusColor()} transition-all duration-200`}
-      onClick={onClick}
-      aria-label={showSliders ? 'Hide Shaders' : 'Show Shaders'}>
+      onClick={onClick}>
       {getStatusLabel()}
     </Button>
   );
@@ -196,7 +197,6 @@ export default function InputEntry({
     roomId,
     input,
     refreshState,
-    isWhipInput,
     pcRef,
     streamRef,
     onWhipDisconnectedOrRemoved,
@@ -232,9 +232,13 @@ export default function InputEntry({
     onWhipDisconnectedOrRemoved,
   ]);
 
+  const { nextIf: roomTourNextIf } = useDriverTourControls('room');
+  const { nextIf: shadersTourNextIf } = useDriverTourControls('shaders');
+
   const handleSlidersToggle = useCallback(() => {
+    shadersTourNextIf(0);
     setShowSliders((prev) => !prev);
-  }, []);
+  }, [shadersTourNextIf]);
 
   const handleShaderToggle = useCallback(
     async (shaderId: string) => {
@@ -246,6 +250,7 @@ export default function InputEntry({
             ? { ...shader, enabled: !shader.enabled }
             : shader,
         );
+        shadersTourNextIf(1);
         await updateInput(roomId, input.inputId, {
           shaders: newShadersConfig,
           volume: input.volume,
@@ -255,7 +260,7 @@ export default function InputEntry({
         setShaderLoading(null);
       }
     },
-    [roomId, input, refreshState],
+    [roomId, input, refreshState, roomTourNextIf],
   );
 
   const handleSliderChange = useCallback(
@@ -354,40 +359,40 @@ export default function InputEntry({
   };
 
   const shaderPanelBase =
-    'transition-all duration-500 ease-in-out transform origin-top';
-  const shaderPanelShow = 'opacity-100 scale-100 translate-y-0';
-  const shaderPanelHide =
-    'opacity-0 scale-95 -translate-y-2 pointer-events-none';
+    'transition-all duration-1500 ease-in-out transform origin-top overflow-hidden';
+  const shaderPanelShow = '';
+  const shaderPanelHide = 'pointer-events-none  duration-1500';
 
   return (
-    <div
-      key={input.inputId}
-      className='p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
-      <div className='flex items-center mb-3'>
-        <span
-          className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
-          aria-label={getSourceStateLabel()}
-        />
-        <div className='text-s font-medium text-white-100 truncate'>
-          {input.title}
-        </div>
-      </div>
-      <div className='flex flex-row items-center'>
-        <div className='flex-1 flex'>
-          <StatusButton
-            input={input}
-            loading={connectionStateLoading}
-            showSliders={showSliders}
-            onClick={handleSlidersToggle}
+    <>
+      <div
+        key={input.inputId}
+        className='p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
+        <div className='flex items-center mb-3'>
+          <span
+            className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
+            aria-label={getSourceStateLabel()}
           />
+          <div className='text-s font-medium text-white-100 truncate'>
+            {input.title}
+          </div>
         </div>
-        <div className='flex flex-row items-center justify-end flex-1 gap-1'>
-          <MuteButton
-            muted={muted}
-            disabled={input.sourceState === 'offline'}
-            onClick={handleMuteToggle}
-          />
-          {/* <Button
+        <div className='flex flex-row items-center'>
+          <div className='flex-1 flex'>
+            <StatusButton
+              input={input}
+              loading={connectionStateLoading}
+              showSliders={showSliders}
+              onClick={handleSlidersToggle}
+            />
+          </div>
+          <div className='flex flex-row items-center justify-end flex-1 gap-1'>
+            <MuteButton
+              muted={muted}
+              disabled={input.sourceState === 'offline'}
+              onClick={handleMuteToggle}
+            />
+            {/* <Button
             data-no-dnd
             size='sm'
             variant='ghost'
@@ -404,20 +409,21 @@ export default function InputEntry({
                 : <span className='text-green-100 font-bold'>•</span>
             )}
           </Button> */}
-          <DeleteButton onClick={handleDelete} />
+            <DeleteButton onClick={handleDelete} />
+          </div>
         </div>
-      </div>
-      <div
-        className={
-          shaderPanelBase +
-          ' ' +
-          (showSliders ? shaderPanelShow : shaderPanelHide)
-        }
-        style={{
-          maxHeight: showSliders ? 1000 : 0,
-          transitionProperty: 'opacity, transform, max-height',
-        }}>
-        {showSliders && (
+        <div
+          className={
+            shaderPanelBase +
+            ' ' +
+            (showSliders ? shaderPanelShow : shaderPanelHide)
+          }
+          aria-hidden={!showSliders}
+          style={{
+            maxHeight: showSliders ? '500px' : 0,
+            height: showSliders ? '100%' : 0,
+            transitionProperty: 'opacity, transform, height, max-height',
+          }}>
           <ShaderPanel
             input={input}
             availableShaders={availableShaders}
@@ -429,8 +435,8 @@ export default function InputEntry({
             getShaderParamConfig={getShaderParamConfig}
             getShaderButtonClass={getShaderButtonClass}
           />
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

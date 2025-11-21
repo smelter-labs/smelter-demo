@@ -1,3 +1,4 @@
+import { useDriverTourControls } from '@/components/tour/DriverTourContext';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // --- Shared Generic AddInputForm ---
@@ -15,6 +16,7 @@ export type SuggestionBoxProps<T> = {
     idx: number,
     highlighted: boolean,
   ) => React.ReactNode;
+  id?: string;
 };
 
 export function SuggestionBox<T>({
@@ -27,11 +29,14 @@ export function SuggestionBox<T>({
   inputRef,
   suggestionBoxClass,
   renderSuggestion,
+  id,
 }: SuggestionBoxProps<T>) {
+  const { next } = useDriverTourControls('room');
   return (
     <AnimatePresence>
       {show && suggestions.length > 0 && (
         <motion.div
+          id={id}
           ref={suggestionBoxRef as React.RefObject<HTMLDivElement>}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -46,7 +51,6 @@ export function SuggestionBox<T>({
             <button
               type='button'
               key={
-                // Try to get a unique key for each suggestion
                 typeof suggestion === 'string'
                   ? suggestion
                   : ((suggestion as any).streamId ?? idx)
@@ -55,7 +59,6 @@ export function SuggestionBox<T>({
                 ${highlightedIndex === idx ? 'bg-purple-80 text-white-100' : 'text-purple-20'}
               `}
               onMouseDown={(e) => {
-                // Prevent input blur
                 e.preventDefault();
                 onMouseDown?.(e);
               }}
@@ -65,7 +68,7 @@ export function SuggestionBox<T>({
               }}
               tabIndex={-1}
               style={{
-                whiteSpace: 'normal', // allow wrapping
+                whiteSpace: 'normal',
                 wordBreak: 'break-word',
               }}>
               {renderSuggestion(suggestion, idx, highlightedIndex === idx)}

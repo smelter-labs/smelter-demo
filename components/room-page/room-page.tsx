@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -12,6 +12,17 @@ import { WarningBanner } from '@/components/warning-banner';
 import SmelterLogo from '@/components/ui/smelter-logo';
 import { staggerContainer } from '@/utils/animations';
 import RoomView from '@/components/pages/room-view';
+import {
+  DriverTourProvider,
+  DriverToursProvider,
+} from '../tour/DriverTourContext';
+import {
+  composingTourSteps,
+  tourOptions,
+  roomTourSteps,
+  shadersTourSteps,
+} from '../tour/tour-config';
+import TourLauncher from '@/components/room-page/TourLauncher';
 
 export default function RoomPage() {
   const router = useRouter();
@@ -50,38 +61,56 @@ export default function RoomPage() {
   }, [refreshState]);
 
   return (
-    <motion.div
-      variants={staggerContainer}
-      className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
-      <div
-        style={{
-          display: 'inline-block',
-          width: `${162.5 / 1.2}px`,
-          height: `${21.25 / 1.2}px`,
-        }}>
-        <SmelterLogo />
-      </div>
-      {roomState.pendingDelete && (
-        <Link href='/'>
-          <WarningBanner>
-            This room will be removed shortly, go to the main page and start a
-            new one.
-          </WarningBanner>
-        </Link>
-      )}
-      {loading ? (
-        <motion.div
-          variants={staggerContainer}
-          className='flex-1 grid min-h-0 justify-center content-center'>
-          <LoadingSpinner size='lg' variant='spinner' />
-        </motion.div>
-      ) : (
-        <RoomView
-          roomState={roomState}
-          roomId={roomId as string}
-          refreshState={refreshState}
-        />
-      )}
-    </motion.div>
+    <DriverToursProvider>
+      <DriverTourProvider id='room' steps={roomTourSteps} options={tourOptions}>
+        <DriverTourProvider
+          id='shaders'
+          steps={shadersTourSteps}
+          options={tourOptions}>
+          <DriverTourProvider
+            id='composing'
+            steps={composingTourSteps}
+            options={tourOptions}>
+            <motion.div
+              variants={staggerContainer}
+              className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
+              <div className='flex items-center justify-between'>
+                <div
+                  style={{
+                    display: 'inline-block',
+                    width: `${162.5 / 1.2}px`,
+                    height: `${21.25 / 1.2}px`,
+                  }}>
+                  <SmelterLogo />
+                </div>
+                <TourLauncher />
+              </div>
+              {roomState.pendingDelete && (
+                <Link href='/'>
+                  <WarningBanner>
+                    This room will be removed shortly, go to the main page and
+                    start a new one.
+                  </WarningBanner>
+                </Link>
+              )}
+
+              {loading ? (
+                <motion.div
+                  variants={staggerContainer}
+                  className='flex-1 grid min-h-0 justify-center content-center'>
+                  <LoadingSpinner size='lg' variant='spinner' />
+                </motion.div>
+              ) : (
+                <RoomView
+                  roomState={roomState}
+                  roomId={roomId as string}
+                  refreshState={refreshState}
+                />
+              )}
+            </motion.div>
+          </DriverTourProvider>
+        </DriverTourProvider>
+      </DriverTourProvider>
+    </DriverToursProvider>
   );
 }

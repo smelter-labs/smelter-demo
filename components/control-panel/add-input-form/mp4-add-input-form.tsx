@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { GenericAddInputForm } from './generic-add-input-form';
 import { toast } from 'react-toastify';
 
-// --- AddMP4InputForm ---
 export function Mp4AddInputForm({
   inputs,
   roomId,
@@ -28,17 +27,17 @@ export function Mp4AddInputForm({
 
   return (
     <GenericAddInputForm<string>
+      id='mp4-suggestion-container'
       inputs={inputs}
       roomId={roomId}
       inputDisabled={true}
       refreshState={refreshState}
       suggestions={mp4Suggestions.mp4s}
-      // No filtering, just show all
       placeholder='Select MP4 from list'
       onSubmit={async (mp4FileName: string) => {
         if (!mp4FileName) {
           toast.error('Please select an MP4.');
-          throw new Error('No MP4 URL');
+          throw new Error('No MP4 File');
         }
         try {
           await addMP4Input(roomId, mp4FileName);
@@ -57,6 +56,7 @@ export function Mp4AddInputForm({
       buttonText='Add MP4'
       loadingText='Add MP4'
       validateInput={(value) => (!value ? 'Please select MP4 URL.' : undefined)}
+      submitOnItem={true}
     />
   );
 }

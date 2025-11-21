@@ -51,10 +51,12 @@ export default function TwitchAddInputForm({
 
   return (
     <GenericAddInputForm
+      id='twitch-suggestion-container'
       inputs={inputs}
       roomId={roomId}
       refreshState={refreshState}
       suggestions={suggestions.twitch}
+      submitOnItem={true}
       filterSuggestions={(twitchSuggestions, currentSuggestion, inputs) =>
         twitchSuggestions
           .filter((suggestion) => {
@@ -88,14 +90,14 @@ export default function TwitchAddInputForm({
         }
       }}
       renderSuggestion={(suggestion, idx, highlighted) => (
-        <>
+        <div data-tour='twitch-suggestion-item-container'>
           <span className='font-semibold break-all'>{suggestion.streamId}</span>
           <br />
           <span className='font-bold text-white-80 break-words'>
             {suggestion.title}
           </span>
           <span className='ml-2 text-white-60 block'>[Twitch.tv]</span>
-        </>
+        </div>
       )}
       getSuggestionValue={(suggestion) => suggestion.streamId}
       buttonText='Add input'

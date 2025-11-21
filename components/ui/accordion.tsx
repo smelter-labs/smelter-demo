@@ -1,27 +1,35 @@
 // Animated Accordion implementation
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, HTMLAttributes } from 'react';
+
+type AccordionProps = {
+  title: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  id?: string;
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export default function Accordion({
   title,
   children,
   defaultOpen = false,
-}: {
-  title: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
+  id = '',
+  ...rest
+}: AccordionProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className='border-b border-[#414154]  border-1 rounded-lg mb-2'>
+    <div
+      className='border-b border-[#414154] border-1 rounded-lg mb-2'
+      id={id}
+      {...rest}>
       <button
         type='button'
         className='flex items-center w-full px-2 py-2 focus:outline-none select-none bg-purple-100 rounded-t-lg border-[#414154] border-b-1 cursor-pointer mb-2'
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}>
         <span
-          className={`transition-transform duration-300 mr-2 flex items-center justify-center`}
+          className='transition-transform duration-300 mr-2 flex items-center justify-center'
           style={{
             transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
             color: '#fff', // ensure arrow is visible
