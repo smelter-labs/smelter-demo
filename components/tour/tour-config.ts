@@ -28,7 +28,7 @@ export const roomTourSteps: DriveStep[] = [
     element: '[data-tour="twitch-suggestion-item-container"]',
     popover: {
       title: 'Click to add',
-      description: "Just click on the stream to include it.",
+      description: 'Just click on the stream to include it.',
       side: 'left',
       align: 'start',
       showButtons: [],
