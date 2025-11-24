@@ -7,7 +7,7 @@ export const roomTourSteps: DriveStep[] = [
     popover: {
       title: 'Hello Smelter!',
       description:
-        'What you see right now is video composed in real time from multiple sources. Can you believe that?',
+        'What you see now is a video composed in real time from multiple sources. Hard to believe, right?',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
@@ -18,7 +18,7 @@ export const roomTourSteps: DriveStep[] = [
     popover: {
       title: "Let's add some streams!",
       description:
-        'You can add streams from Twitch, Kick or any hls/webrtc source. ',
+        'You can add streams from Twitch, Kick, or any HLS/WebRTC source.',
       side: 'left',
       align: 'center',
       showButtons: [],
@@ -28,7 +28,7 @@ export const roomTourSteps: DriveStep[] = [
     element: '[data-tour="twitch-suggestion-item-container"]',
     popover: {
       title: 'Click to add',
-      description: "Just click 'Add' to add the stream.",
+      description: "Just click on the stream to include it.",
       side: 'left',
       align: 'start',
       showButtons: [],
@@ -38,7 +38,7 @@ export const roomTourSteps: DriveStep[] = [
     element: '[data-tour="video-player-container"]',
     popover: {
       title: 'Stream is loading...',
-      description: 'Wait a moment, the stream is loading...',
+      description: 'Please wait a moment while the stream loads...',
       side: 'right',
       align: 'center',
       showButtons: [],
@@ -48,7 +48,7 @@ export const roomTourSteps: DriveStep[] = [
     element: '[data-tour="video-player-container"]',
     popover: {
       title: 'Stream is ready!',
-      description: 'The stream is ready to watch. ',
+      description: 'Your stream is ready to watch.',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
@@ -59,7 +59,7 @@ export const roomTourSteps: DriveStep[] = [
     popover: {
       title: "What's next?",
       description:
-        'You can play around by yourself, but you can also start one of the tours to see what Smelter can do.',
+        'Feel free to explore on your own, or start one of the tours to discover what Smelter can do.',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
@@ -81,7 +81,7 @@ export const composingTourSteps: DriveStep[] = [
     popover: {
       title: 'Composing Videos',
       description:
-        'You can compose video in real time. Just drag and drop the sources to the desired position.',
+        'You can compose videos in real time. Simply drag and drop the sources into the positions you want.',
       side: 'left',
       align: 'center',
       showButtons: [],
@@ -92,7 +92,7 @@ export const composingTourSteps: DriveStep[] = [
     popover: {
       title: 'Composing Videos',
       description:
-        'You can compose video in real time. Just drag and drop the sources to the desired position.',
+        'You can compose videos in real time. Simply drag and drop the sources into the positions you want.',
       side: 'left',
       align: 'center',
       showButtons: ['next'],
@@ -103,7 +103,7 @@ export const composingTourSteps: DriveStep[] = [
     popover: {
       title: 'Layouts',
       description:
-        'You can change the layout of the video. Just click on the layout you want to use.',
+        'You can change the video layout. Just click the layout you want to use.',
       side: 'left',
       align: 'center',
       showButtons: [],
@@ -114,7 +114,7 @@ export const composingTourSteps: DriveStep[] = [
     popover: {
       title: 'Layouts',
       description:
-        'You can change the layout of the video. Just click on the layout you want to use.',
+        'You can change the video layout. Just click the layout you want to use.',
       side: 'left',
       align: 'center',
       showButtons: ['next'],
@@ -123,9 +123,9 @@ export const composingTourSteps: DriveStep[] = [
   {
     element: '[data-tour="video-player-container"]',
     popover: {
-      title: 'It happens in real time!',
+      title: 'Happening in real time!',
       description:
-        'As the video is composed in real time, you can see the result of your actions immediately.',
+        'Since the video is composed in real time, you can see the results immediately.',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
@@ -139,7 +139,7 @@ export const shadersTourSteps: DriveStep[] = [
     popover: {
       title: 'Using Shaders',
       description:
-        'Each video can be processed with various shaders. Just click "Show FX" button to see available shaders.',
+        'Each video can be enhanced with various shaders. Click the "Show FX" button to see the available options.',
       side: 'left',
       align: 'center',
       showButtons: [],
@@ -150,7 +150,7 @@ export const shadersTourSteps: DriveStep[] = [
     popover: {
       title: 'Using Shaders',
       description:
-        'We have prepared some shaders but you can create your own. Just click "Enable" button to enable the shader you want to use.',
+        'We’ve prepared some shaders for you, but you can also create your own. Click "Enable" to activate the shader you want.',
       side: 'left',
       align: 'center',
       showButtons: [],
@@ -159,9 +159,9 @@ export const shadersTourSteps: DriveStep[] = [
   {
     element: '[data-tour="video-player-container"]',
     popover: {
-      title: 'Shader is enabled!',
+      title: 'Shader enabled!',
       description:
-        'The shader is enabled and you can see the result of your actions immediately.',
+        'The shader is now active, and you can see the effect immediately.',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
@@ -170,9 +170,9 @@ export const shadersTourSteps: DriveStep[] = [
   {
     element: '[data-tour="streams-list-container"]',
     popover: {
-      title: 'Using Shaders',
+      title: 'Adjusting Shaders',
       description:
-        'Now you can adjust the shader parameters to your liking. Just move the slider to the desired value.',
+        'Now you can fine-tune the shader parameters. Just move the sliders to get the effect you want.',
       side: 'left',
       align: 'center',
       showButtons: ['next'],
