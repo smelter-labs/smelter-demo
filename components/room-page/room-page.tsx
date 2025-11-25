@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -16,11 +16,14 @@ import {
   DriverTourProvider,
   DriverToursProvider,
 } from '../tour/DriverTourContext';
+import { useDriverTourControls } from '../tour/DriverTourContext';
 import {
   composingTourSteps,
-  tourOptions as commonTourOptions,
+  commonTourOptions,
+  mobileTourSteps,
   roomTourSteps,
   shadersTourSteps,
+  mobileTourOptions,
 } from '../tour/tour-config';
 import TourLauncher from '@/components/room-page/TourLauncher';
 
@@ -60,57 +63,90 @@ export default function RoomPage() {
     return () => clearInterval(interval);
   }, [refreshState]);
 
+  function MobileTourAutostart({ loading }: { loading: boolean }) {
+    const { start } = useDriverTourControls('mobile');
+    const startedRef = useRef(false);
+    useEffect(() => {
+      // if (loading) return;
+      // if (typeof window === 'undefined') return;
+      // if (startedRef.current) return;
+      const isMobile = window.matchMedia('(max-width: 1100px)').matches;
+      if (!isMobile) return;
+      const alreadyShown =
+        window.sessionStorage.getItem('mobileTourShown') === '1';
+      if (alreadyShown) return;
+      startedRef.current = true;
+      // Delay slightly to ensure DOM has settled
+      const id = window.setTimeout(() => {
+        try {
+          window.sessionStorage.setItem('mobileTourShown', '1');
+        } catch {}
+        start();
+      }, 150);
+      return () => window.clearTimeout(id);
+    }, [loading, start]);
+    return null;
+  }
+
   return (
     <DriverToursProvider>
       <DriverTourProvider
-        id='room'
-        steps={roomTourSteps}
-        options={commonTourOptions}>
+        id='mobile'
+        steps={mobileTourSteps}
+        options={mobileTourOptions}>
         <DriverTourProvider
-          id='shaders'
-          steps={shadersTourSteps}
+          id='room'
+          steps={roomTourSteps}
           options={commonTourOptions}>
           <DriverTourProvider
-            id='composing'
-            steps={composingTourSteps}
+            id='shaders'
+            steps={shadersTourSteps}
             options={commonTourOptions}>
-            <motion.div
-              variants={staggerContainer}
-              className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
-              <div className='flex items-center justify-between'>
-                <div
-                  style={{
-                    display: 'inline-block',
-                    width: `${162.5 / 1.2}px`,
-                    height: `${21.25 / 1.2}px`,
-                  }}>
-                  <SmelterLogo />
+            <DriverTourProvider
+              id='composing'
+              steps={composingTourSteps}
+              options={commonTourOptions}>
+              <MobileTourAutostart loading={loading} />
+              <motion.div
+                variants={staggerContainer}
+                className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>
+                <div className='flex items-center justify-between'>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      width: `${162.5 / 1.2}px`,
+                      height: `${21.25 / 1.2}px`,
+                    }}>
+                    <SmelterLogo />
+                  </div>
+                  <div className='hidden md:block'>
+                    <TourLauncher />
+                  </div>
                 </div>
-                <TourLauncher />
-              </div>
-              {roomState.pendingDelete && (
-                <Link href='/'>
-                  <WarningBanner>
-                    This room will be removed shortly, go to the main page and
-                    start a new one.
-                  </WarningBanner>
-                </Link>
-              )}
+                {roomState.pendingDelete && (
+                  <Link href='/'>
+                    <WarningBanner>
+                      This room will be removed shortly, go to the main page and
+                      start a new one.
+                    </WarningBanner>
+                  </Link>
+                )}
 
-              {loading ? (
-                <motion.div
-                  variants={staggerContainer}
-                  className='flex-1 grid min-h-0 justify-center content-center'>
-                  <LoadingSpinner size='lg' variant='spinner' />
-                </motion.div>
-              ) : (
-                <RoomView
-                  roomState={roomState}
-                  roomId={roomId as string}
-                  refreshState={refreshState}
-                />
-              )}
-            </motion.div>
+                {loading ? (
+                  <motion.div
+                    variants={staggerContainer}
+                    className='flex-1 grid min-h-0 justify-center content-center'>
+                    <LoadingSpinner size='lg' variant='spinner' />
+                  </motion.div>
+                ) : (
+                  <RoomView
+                    roomState={roomState}
+                    roomId={roomId as string}
+                    refreshState={refreshState}
+                  />
+                )}
+              </motion.div>
+            </DriverTourProvider>
           </DriverTourProvider>
         </DriverTourProvider>
       </DriverTourProvider>
