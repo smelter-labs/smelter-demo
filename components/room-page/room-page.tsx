@@ -74,7 +74,7 @@ export default function RoomPage() {
       if (!isMobile) return;
       const alreadyShown =
         window.sessionStorage.getItem('mobileTourShown') === '1';
-    //  if (alreadyShown) return;
+      if (alreadyShown) return;
       startedRef.current = true;
       // Delay slightly to ensure DOM has settled
       const id = window.setTimeout(() => {
