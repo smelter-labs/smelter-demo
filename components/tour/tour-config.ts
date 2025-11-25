@@ -87,14 +87,6 @@ export const roomTourSteps: DriveStep[] = [
   },
 ];
 
-export const tourOptions: Parameters<typeof useDriverTour>[2] = {
-  showProgress: false,
-  nextBtnText: 'Next',
-  prevBtnText: 'Previous',
-  doneBtnText: 'Done',
-  stageRadius: 25,
-};
-
 export const composingTourSteps: DriveStep[] = [
   {
     element: '[data-tour="streams-list-container"]',
@@ -194,3 +186,29 @@ export const shadersTourSteps: DriveStep[] = [
     onHighlightStarted: handleAccordionHighlightStarted,
   },
 ];
+
+export const mobileTourSteps: DriveStep[] = [
+  {
+    element: '.no-existing-element',
+    popover: {
+      title: 'Better on Desktop',
+      description:
+        'For a smoother and more comfortable experience, we recommend checking out the desktop version. It provides clearer navigation and access to several configuration options that are limited on mobile.',
+      showButtons: ['next'],
+    },
+  },
+];
+
+export const commonTourOptions: Parameters<typeof useDriverTour>[2] = {
+  showProgress: false,
+  nextBtnText: 'Next',
+  prevBtnText: 'Previous',
+  doneBtnText: 'Done',
+  stageRadius: 25,
+  allowKeyboardControl: false,
+};
+
+export const mobileTourOptions: Parameters<typeof useDriverTour>[2] = {
+  ...commonTourOptions,
+  allowKeyboardControl: true,
+};
