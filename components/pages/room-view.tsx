@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { staggerContainer } from '@/utils/animations';
 import VideoPreview from '@/components/video-preview';
 import ControlPanel from '@/components/control-panel/control-panel';
+import { useDriverTourControls } from '@/components/tour/DriverTourContext';
+import { usePathname } from 'next/navigation';
 
 interface RoomViewProps {
   roomId: string;
@@ -18,21 +20,28 @@ export default function RoomView({
   refreshState,
 }: RoomViewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [showAutoplayPopup, setShowAutoplayPopup] = useState(false);
+  const [showAutoplayPopup, setShowAutoplayPopup] = useState(true);
   const [played, setPlayed] = useState(false);
-  const [isReload, setIsReload] = useState(false);
+  const pathname = usePathname();
+  const isKick = pathname?.toLowerCase().includes('kick');
+  const { start: startRoomTour } = useDriverTourControls('room');
 
   const handleAutoplayPermission = useCallback((allow: boolean) => {
     if (allow) {
+      console.log('Playing video');
       videoRef.current?.play();
     }
     setShowAutoplayPopup(false);
   }, []);
 
   const setupVideoEventListeners = useCallback(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      console.log('No video element found');
+      return;
+    }
 
     videoRef.current.onplay = () => {
+      console.log('Video played');
       setPlayed(true);
     };
   }, []);
@@ -41,27 +50,24 @@ export default function RoomView({
     setupVideoEventListeners();
   }, [setupVideoEventListeners]);
 
+  // Auto-start the room tour only on first site visit (skip Kick variant)
   useEffect(() => {
-    // Detect if the page load was caused by a browser reload
     try {
-      const navEntries = performance.getEntriesByType(
-        'navigation',
-      ) as PerformanceNavigationTiming[];
-      if (navEntries && navEntries.length > 0) {
-        if (navEntries[0].type === 'reload') {
-          setIsReload(true);
-          return;
-        }
-      }
-      // Fallback for older browsers
-      const legacyNav = (performance as any).navigation;
-      if (legacyNav && legacyNav.type === 1) {
-        setIsReload(true);
-      }
+      if (typeof window === 'undefined') return;
+      if (isKick) return;
+      const STORAGE_KEY = 'smelter:tour:room:first-visit:v1';
+      const seen = window.localStorage.getItem(STORAGE_KEY) === '1';
+      if (seen) return;
+      // Delay slightly to ensure DOM targets are present
+      const t = window.setTimeout(() => {
+        startRoomTour?.();
+        window.localStorage.setItem(STORAGE_KEY, '1');
+      }, 500);
+      return () => window.clearTimeout(t);
     } catch {
-      // no-op
+      // ignore storage errors
     }
-  }, []);
+  }, [isKick, startRoomTour]);
 
   useEffect(() => {
     const attemptAutoplay = async () => {
@@ -70,17 +76,15 @@ export default function RoomView({
         await videoRef.current.play();
       } catch (error) {
         console.log('Autoplay error:', error);
-        if (isReload) {
-          setShowAutoplayPopup(true);
-        }
+        setShowAutoplayPopup(true);
       }
     };
     attemptAutoplay();
-  }, [isReload]);
+  }, []);
 
   return (
     <>
-      {showAutoplayPopup && isReload && !played && (
+      {showAutoplayPopup && !played && (
         <AutoplayModal
           onAllow={() => handleAutoplayPermission(true)}
           onDeny={() => handleAutoplayPermission(false)}

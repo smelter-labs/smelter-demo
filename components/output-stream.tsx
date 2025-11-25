@@ -24,26 +24,6 @@ function LoadingSpinner() {
   );
 }
 
-// Util: mobile detection (very simple)
-function useIsMobile() {
-  // use window.matchMedia for more reliability
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined'
-      ? window.matchMedia('(max-width: 600px)').matches
-      : false,
-  );
-
-  useEffect(() => {
-    function onResize() {
-      setIsMobile(window.matchMedia('(max-width: 600px)').matches);
-    }
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  return isMobile;
-}
-
 export default function OutputStream({
   whepUrl,
   videoRef,
@@ -52,43 +32,39 @@ export default function OutputStream({
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   // Custom controls states
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(false); // Fix: default to "not playing"
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // NEW: videoLoaded state
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const resolvedVideoRef = videoRef?.current ? videoRef : localVideoRef;
-
-  // <<<< MOBILE DETECTION >>>>
-  const isMobile = useIsMobile();
 
   // Setup WHEP
   useEffect(() => {
     connect(whepUrl).then((stream) => {
-      const vid = resolvedVideoRef.current;
+      const vid = videoRef.current;
       if (vid && vid.srcObject !== stream) {
         vid.srcObject = stream;
         vid.play().then(
-          () => setPlaying(true),
-          () => setPlaying(false),
+          () => setPlaying(true), // Set playing if autoplay succeeded
+          () => setPlaying(false), // Set not playing if autoplay failed
         );
       }
     });
-  }, [whepUrl, resolvedVideoRef]);
+  }, [whepUrl, videoRef]);
 
   // Video events sync
   useEffect(() => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
 
     const onTimeUpdate = () => setCurrent(vid.currentTime);
     const onLoadedMetadata = () => {
       setDuration(vid.duration || 0);
-      setVideoLoaded(true);
-      setPlaying(!vid.paused && !vid.ended);
+      setVideoLoaded(true); // <-- Mark video as loaded
+      setPlaying(!vid.paused && !vid.ended); // sync play/pause state
     };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
@@ -105,6 +81,7 @@ export default function OutputStream({
 
     setMuted(vid.muted || vid.volume === 0);
     setVolume(vid.volume);
+    // Fix: derive playing state from actual paused property at mount
     setPlaying(!vid.paused && !vid.ended);
 
     return () => {
@@ -115,16 +92,19 @@ export default function OutputStream({
       vid.removeEventListener('volumechange', onVolumeChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedVideoRef.current]);
+  }, [videoRef.current]);
 
   // Fullscreen event sync
   useEffect(() => {
+    // Use the fullscreenchange event to monitor any entry/exit, not just via our button.
     const handleFullscreenChange = () => {
-      const vid = resolvedVideoRef.current;
+      const vid = videoRef.current;
       if (!vid) {
         setIsFullscreen(false);
         return;
       }
+      // If the video element IS fullscreen, set true; otherwise, set false.
+      // Handles vendor prefixes just in case.
       let isNowFullscreen = false;
       if (document.fullscreenElement === vid) {
         isNowFullscreen = true;
@@ -138,7 +118,9 @@ export default function OutputStream({
       setIsFullscreen(isNowFullscreen);
     };
 
+    // Listen on the document.
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    // Also vendor prefixed for safekeeping.
     document.addEventListener(
       'webkitfullscreenchange',
       handleFullscreenChange as EventListener,
@@ -167,10 +149,11 @@ export default function OutputStream({
         handleFullscreenChange as EventListener,
       );
     };
-  }, [resolvedVideoRef]);
+  }, [videoRef]);
 
+  // Custom controls handlers
   const handlePlayPause = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     if (vid.paused || vid.ended) {
       vid.play().then(
@@ -183,7 +166,7 @@ export default function OutputStream({
   };
 
   const handleVolumeChange = (v: number) => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.volume = v;
     setVolume(v);
@@ -197,28 +180,30 @@ export default function OutputStream({
   };
 
   const handleMuteToggle = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.muted = !vid.muted;
     setMuted(vid.muted);
   };
 
   const handleSeek = (value: number) => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid || !isFinite(vid.duration)) return;
     vid.currentTime = value;
     setCurrent(value);
   };
 
   const handleFullscreen = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
+    // Use prefixed fullscreen for better compatibility
     if (
       !document.fullscreenElement &&
       !(document as any).webkitFullscreenElement &&
       !(document as any).mozFullScreenElement &&
       !(document as any).msFullscreenElement
     ) {
+      // Try standard, then vendor prefixes.
       if (vid.requestFullscreen) {
         vid.requestFullscreen();
       } else if ((vid as any).webkitRequestFullscreen) {
@@ -228,6 +213,7 @@ export default function OutputStream({
       } else if ((vid as any).msRequestFullscreen) {
         (vid as any).msRequestFullscreen();
       }
+      // No need to setIsFullscreen(true) here; we'll pick up the change in fullscreen event.
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen();
@@ -238,11 +224,12 @@ export default function OutputStream({
       } else if ((document as any).msExitFullscreen) {
         (document as any).msExitFullscreen();
       }
+      // No need to setIsFullscreen(false) here; we'll pick up the change in fullscreen event.
     }
   };
 
   const handleReplay = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.currentTime = 0;
     vid.play();
@@ -256,22 +243,13 @@ export default function OutputStream({
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Responsive styles for controls: adjust icon size, button size, and gaps
-  const iconSize = isMobile ? 19 : 24;
-  const timeTextSize = isMobile ? 'text-[12px]' : 'text-xs';
-  const controlBar = isMobile
-    ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-black/20 flex items-center px-2 py-[7px] gap-1 z-10'
-    : 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-black/20 flex items-center px-4 py-3 gap-3 z-10';
-  const button = isMobile
-    ? 'group hover:bg-purple-800/20 p-1.5 rounded transition cursor-pointer text-white outline-none'
-    : 'group hover:bg-purple-800/20 p-2 rounded transition cursor-pointer text-white outline-none';
-  const slider = isMobile
-    ? 'h-1 rounded bg-gray-300 dark:bg-black/50 appearance-none transition w-full accent-purple-600'
-    : 'h-1.5 rounded bg-gray-300 dark:bg-black/50 appearance-none transition w-full accent-purple-600';
-
-  // extra: volume slider width per device
-  const volumeSliderWidth = isMobile ? 60 : 120;
-  const volumeSliderClass = slider + (isMobile ? ' w-[60px]' : ' w-24');
+  // Styles for custom controls (tailwind-like or adjust as needed)
+  const controlBar =
+    'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-black/20 flex items-center px-4 py-3 gap-3 z-10';
+  const button =
+    'group hover:bg-purple-800/20 p-2 rounded transition cursor-pointer text-white outline-none';
+  const slider =
+    'h-1.5 rounded bg-gray-300 dark:bg-black/50 appearance-none transition w-full accent-purple-600';
 
   return (
     <div
@@ -289,7 +267,7 @@ export default function OutputStream({
       <video
         id='videoPlayer'
         data-tour='video-player-container'
-        ref={resolvedVideoRef}
+        ref={videoRef}
         className='w-full h-full rounded-md object-contain pointer-events-auto select-none bg-black'
         autoPlay
         autoFocus
@@ -300,49 +278,36 @@ export default function OutputStream({
       {/* Custom Controls */}
       {videoLoaded && (
         <div
-          className={
-            controlBar +
-            (isMobile
-              ? ' flex-row justify-between gap-1'
-              : ' flex-row justify-between')
-          }
+          className={controlBar + ' flex-row justify-between'}
           style={{ userSelect: 'none' }}>
-          <div
-            className={
-              isMobile ? 'flex items-center gap-1' : 'flex items-center gap-3'
-            }>
+          <div className='flex items-center gap-3'>
             {/* Play/Pause */}
             <button
               className={button}
               onClick={handlePlayPause}
               aria-label={playing ? 'Pause' : 'Play'}>
               {playing ? (
-                <PauseIcon className='' width={iconSize} height={iconSize} />
+                <PauseIcon className='w-6 h-6' />
               ) : (
-                <PlayIcon className='' width={iconSize} height={iconSize} />
+                <PlayIcon className='w-6 h-6' />
               )}
             </button>
 
             {/* Time & Seekbar */}
-            <span
-              className={`${timeTextSize} text-white w-12 text-right tabular-nums font-mono ${isMobile ? 'mr-0' : 'mr-1'}`}>
+            <span className='text-xs text-white w-12 text-right tabular-nums font-mono mr-1'>
               {formatTime(current)}
             </span>
           </div>
-          <div
-            className={
-              'flex items-center ' +
-              (isMobile ? 'gap-1 ml-auto' : 'gap-2 ml-auto')
-            }>
+          <div className='flex items-center gap-2 ml-auto'>
             {/* Volume */}
             <button
-              className={button + (isMobile ? ' ml-1' : ' ml-2')}
+              className={button + ' ml-2'}
               onClick={handleMuteToggle}
               aria-label={muted ? 'Unmute' : 'Mute'}>
               {muted ? (
-                <MutedIcon width={iconSize - 2} height={iconSize - 2} />
+                <MutedIcon className='w-5 h-5' />
               ) : (
-                <VolumeIcon width={iconSize - 2} height={iconSize - 2} />
+                <VolumeIcon className='w-5 h-5' />
               )}
             </button>
             <input
@@ -352,14 +317,10 @@ export default function OutputStream({
               step={0.01}
               value={muted ? 0 : volume}
               onChange={(e) => handleVolumeChange(Number(e.target.value))}
-              className={volumeSliderClass}
+              className={slider + ' w-24'}
               aria-label='Volume'
               disabled={muted}
-              style={{
-                marginLeft: isMobile ? 2 : 2,
-                marginRight: isMobile ? 4 : 8,
-                width: `${volumeSliderWidth}px`,
-              }}
+              style={{ marginLeft: 2, marginRight: 8, width: '120px' }}
             />
 
             {/* Fullscreen */}
@@ -368,9 +329,9 @@ export default function OutputStream({
               onClick={handleFullscreen}
               aria-label={isFullscreen ? 'Minimize video' : 'Fullscreen video'}>
               {isFullscreen ? (
-                <MinimizeIcon width={iconSize - 2} height={iconSize - 2} />
+                <MinimizeIcon className='w-5 h-5' />
               ) : (
-                <FullscreenIcon width={iconSize - 2} height={iconSize - 2} />
+                <FullscreenIcon className='w-5 h-5' />
               )}
             </button>
           </div>
