@@ -70,7 +70,7 @@ export default function RoomPage() {
       // if (loading) return;
       // if (typeof window === 'undefined') return;
       // if (startedRef.current) return;
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      const isMobile = window.matchMedia('(max-width: 1024px)').matches;
       if (!isMobile) return;
       const alreadyShown =
         window.sessionStorage.getItem('mobileTourShown') === '1';
