@@ -41,15 +41,10 @@ export default function OutputStream({
   // NEW: videoLoaded state
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  // Internal ref in case videoRef is not set yet
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-
-  const resolvedVideoRef = videoRef?.current ? videoRef : localVideoRef;
-
   // Setup WHEP
   useEffect(() => {
     connect(whepUrl).then((stream) => {
-      const vid = resolvedVideoRef.current;
+      const vid = videoRef.current;
       if (vid && vid.srcObject !== stream) {
         vid.srcObject = stream;
         vid.play().then(
@@ -58,11 +53,11 @@ export default function OutputStream({
         );
       }
     });
-  }, [whepUrl, resolvedVideoRef]);
+  }, [whepUrl, videoRef]);
 
   // Video events sync
   useEffect(() => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
 
     const onTimeUpdate = () => setCurrent(vid.currentTime);
@@ -97,13 +92,13 @@ export default function OutputStream({
       vid.removeEventListener('volumechange', onVolumeChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedVideoRef.current]);
+  }, [videoRef.current]);
 
   // Fullscreen event sync
   useEffect(() => {
     // Use the fullscreenchange event to monitor any entry/exit, not just via our button.
     const handleFullscreenChange = () => {
-      const vid = resolvedVideoRef.current;
+      const vid = videoRef.current;
       if (!vid) {
         setIsFullscreen(false);
         return;
@@ -154,11 +149,11 @@ export default function OutputStream({
         handleFullscreenChange as EventListener,
       );
     };
-  }, [resolvedVideoRef]);
+  }, [videoRef]);
 
   // Custom controls handlers
   const handlePlayPause = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     if (vid.paused || vid.ended) {
       vid.play().then(
@@ -171,7 +166,7 @@ export default function OutputStream({
   };
 
   const handleVolumeChange = (v: number) => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.volume = v;
     setVolume(v);
@@ -185,21 +180,21 @@ export default function OutputStream({
   };
 
   const handleMuteToggle = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.muted = !vid.muted;
     setMuted(vid.muted);
   };
 
   const handleSeek = (value: number) => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid || !isFinite(vid.duration)) return;
     vid.currentTime = value;
     setCurrent(value);
   };
 
   const handleFullscreen = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     // Use prefixed fullscreen for better compatibility
     if (
@@ -234,7 +229,7 @@ export default function OutputStream({
   };
 
   const handleReplay = () => {
-    const vid = resolvedVideoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     vid.currentTime = 0;
     vid.play();
@@ -271,7 +266,8 @@ export default function OutputStream({
       )}
       <video
         id='videoPlayer'
-        ref={resolvedVideoRef}
+        data-tour='video-player-container'
+        ref={videoRef}
         className='w-full h-full rounded-md object-contain pointer-events-auto select-none bg-black'
         autoPlay
         autoFocus

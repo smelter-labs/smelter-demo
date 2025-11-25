@@ -106,5 +106,15 @@ export function useAutoResume(
         if (setIsWhipActive) setIsWhipActive(false);
       }
     })();
-  }, [roomId]);
+  }, [
+    roomId,
+    userName,
+    isPageReload,
+    pcRef,
+    streamRef,
+    inputs,
+    refreshState,
+    setActiveWhipInputId,
+    setIsWhipActive,
+  ]);
 }

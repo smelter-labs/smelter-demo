@@ -74,7 +74,10 @@ export default function ShaderPanel({
               </Button>
             </div>
             {enabled && shader.params && shader.params.length > 0 && (
-              <div className='mt-4 space-y-5' data-no-dnd>
+              <div
+                className='mt-4 space-y-5'
+                data-no-dnd
+                data-tour='shader-params-container'>
                 {shader.params.map((param) => {
                   const paramConfig = getShaderParamConfig(
                     shader.id,

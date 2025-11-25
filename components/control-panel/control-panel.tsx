@@ -2,7 +2,7 @@
 
 import { fadeIn } from '@/utils/animations';
 import { motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 import type {
@@ -12,7 +12,6 @@ import type {
   AvailableShader,
 } from '@/app/actions/actions';
 import {
-  addCameraInput,
   getAvailableShaders,
   updateRoom as updateRoomAction,
 } from '@/app/actions/actions';
@@ -26,126 +25,28 @@ import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
 import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
 import { KickAddInputForm } from './add-input-form/kick-add-input-form';
 import LoadingSpinner from '@/components/ui/spinner';
-
-import { GenericAddInputForm } from './add-input-form/generic-add-input-form';
-//
-
 import { useAutoResume } from './whip-input/hooks/use-auto-resume';
 import { useWhipHeartbeat } from './whip-input/hooks/use-whip-heartbeat';
 import { useStreamsSpinner } from './whip-input/hooks/use-streams-spinner';
 import { stopCameraAndConnection } from './whip-input/utils/preview';
+import { WHIPAddInputForm } from './add-input-form/whip-add-input-form';
 
 import {
   loadUserName,
   saveUserName,
   loadWhipSession,
-  saveWhipSession,
-  saveLastWhipInputId,
   loadLastWhipInputId,
   clearWhipSession,
   clearLastWhipInputId,
 } from './whip-input/utils/whip-storage';
-import { startPublish } from './whip-input/utils/whip-publisher';
-import { toast } from 'react-toastify';
+
+import { useDriverTourControls } from '../tour/DriverTourContext';
 
 export type ControlPanelProps = {
   roomId: string;
   roomState: RoomState;
   refreshState: () => Promise<void>;
 };
-
-function WHIPAddInputForm(props: {
-  inputs: Input[];
-  roomId: string;
-  refreshState: () => Promise<void>;
-  userName: string;
-  setUserName: (name: string) => void;
-  pcRef: React.MutableRefObject<RTCPeerConnection | null>;
-  streamRef: React.MutableRefObject<MediaStream | null>;
-  setActiveWhipInputId: (id: string | null) => void;
-  setIsWhipActive: (active: boolean) => void;
-}) {
-  const {
-    inputs,
-    roomId,
-    refreshState,
-    userName,
-    setUserName,
-    pcRef,
-    streamRef,
-    setActiveWhipInputId,
-    setIsWhipActive,
-  } = props;
-
-  const handleAddWhip = async (whipUserName: string) => {
-    const cleanedName = whipUserName.trim();
-    if (!cleanedName) {
-      toast.error('Please enter a username.');
-      throw new Error('Please enter a username.');
-    }
-    try {
-      const s = loadWhipSession();
-      const response = await addCameraInput(roomId, cleanedName);
-
-      setActiveWhipInputId(response.inputId);
-      setIsWhipActive(false);
-
-      const onDisconnected = () => {
-        stopCameraAndConnection(pcRef, streamRef);
-        setIsWhipActive(false);
-      };
-
-      const { location } = await startPublish(
-        response.inputId,
-        response.bearerToken,
-        response.whipUrl,
-        pcRef,
-        streamRef,
-        onDisconnected,
-      );
-
-      setIsWhipActive(true);
-
-      saveWhipSession({
-        roomId,
-        inputId: response.inputId,
-        bearerToken: response.bearerToken,
-        location,
-        ts: Date.now(),
-      });
-      saveLastWhipInputId(roomId, response.inputId);
-    } catch (e: any) {
-      console.error('WHIP add failed:', e);
-      toast.error(`Failed to add WHIP input: ${e?.message || e}`);
-      stopCameraAndConnection(pcRef, streamRef);
-      setActiveWhipInputId(null);
-      setIsWhipActive(false);
-      throw e;
-    }
-  };
-
-  return (
-    <GenericAddInputForm<string>
-      showArrow={false}
-      inputs={inputs}
-      refreshState={refreshState}
-      suggestions={[]}
-      placeholder='Enter a username (e.g. John Smith)'
-      initialValue={userName}
-      onSubmit={async (whipUserName: string) => {
-        await handleAddWhip(whipUserName);
-        setUserName(whipUserName);
-      }}
-      renderSuggestion={(suggestion: string) => suggestion}
-      getSuggestionValue={(v) => v}
-      buttonText='Add Camera'
-      loadingText='Adding...'
-      validateInput={(value) =>
-        !value ? 'Please enter a username.' : undefined
-      }
-    />
-  );
-}
 
 export type InputWrapper = { id: number; inputId: string };
 
@@ -166,7 +67,7 @@ export default function ControlPanel({
 
   const inputsRef = useRef<Input[]>(roomState.inputs);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
-  //
+  const { nextIf: nextIfComposing } = useDriverTourControls('composing');
 
   const { showStreamsSpinner, onInputsChange } = useStreamsSpinner(
     roomState.inputs,
@@ -291,12 +192,13 @@ export default function ControlPanel({
       try {
         await updateRoomAction(roomId, { layout });
         await refreshState();
+        nextIfComposing(2);
       } catch (e) {
         console.error('changeLayout failed:', e);
         alert('Failed to change layout.');
       }
     },
-    [roomId, refreshState],
+    [roomId, refreshState, nextIfComposing],
   );
 
   useEffect(() => {
@@ -355,7 +257,10 @@ export default function ControlPanel({
       <video id='local-preview' muted playsInline autoPlay className='hidden' />
 
       {!isKick && (
-        <Accordion title='Add new stream' defaultOpen>
+        <Accordion
+          title='Add new stream'
+          defaultOpen
+          data-tour='twitch-add-input-form-container'>
           <TwitchAddInputForm
             inputs={inputs}
             roomId={roomId}
@@ -365,7 +270,10 @@ export default function ControlPanel({
       )}
 
       {isKick && (
-        <Accordion title='Add new stream' defaultOpen>
+        <Accordion
+          title='Add new stream'
+          defaultOpen
+          data-tour='kick-add-input-form-container'>
           <KickAddInputForm
             inputs={inputs}
             roomId={roomId}
@@ -373,8 +281,10 @@ export default function ControlPanel({
           />
         </Accordion>
       )}
-
-      <Accordion title='Add new MP4' defaultOpen>
+      <Accordion
+        title='Add new MP4'
+        defaultOpen
+        data-tour='mp4-add-input-form-container'>
         <Mp4AddInputForm
           inputs={inputs}
           roomId={roomId}
@@ -382,7 +292,7 @@ export default function ControlPanel({
         />
       </Accordion>
 
-      {/* <Accordion title='Add new Camera input' defaultOpen>
+      <Accordion title='Add new Camera input' defaultOpen>
         {!activeWhipInputId ? (
           <WHIPAddInputForm
             inputs={inputs}
@@ -408,10 +318,10 @@ export default function ControlPanel({
             </div>
           </div>
         )}
-      </Accordion> */}
+      </Accordion>
 
       {/* Streams list */}
-      <Accordion title='Streams' defaultOpen>
+      <Accordion title='Streams' defaultOpen data-tour='streams-list-container'>
         <div className='flex-1 overflow-auto relative'>
           <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
           {showStreamsSpinner ? (
@@ -426,7 +336,6 @@ export default function ControlPanel({
                 const input = inputs.find(
                   (input) => input.inputId === item.inputId,
                 );
-
                 return (
                   <SortableItem key={item.inputId} id={item.id}>
                     {input && (
@@ -455,7 +364,10 @@ export default function ControlPanel({
       </Accordion>
 
       {/* Layout selector */}
-      <Accordion title='Layouts' defaultOpen>
+      <Accordion
+        title='Layouts'
+        defaultOpen
+        data-tour='layout-selector-container'>
         <LayoutSelector
           changeLayout={changeLayout}
           activeLayoutId={roomState.layout}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/spinner';
 import { SuggestionBox } from './suggestion-box';
 import type { Input } from '@/app/actions/actions';
+import { useDriverTourControls } from '@/components/tour/DriverTourContext';
 
 export type GenericAddInputFormProps<T> = {
   inputs: Input[];
@@ -28,7 +29,9 @@ export type GenericAddInputFormProps<T> = {
   validateInput?: (value: string) => string | undefined;
   initialValue?: string;
   showArrow?: boolean;
-  inputDisabled?: boolean; // disables only typing/editing, not dropdown
+  inputDisabled?: boolean;
+  id?: string;
+  submitOnItem?: boolean;
 };
 
 export function GenericAddInputForm<T>({
@@ -47,13 +50,15 @@ export function GenericAddInputForm<T>({
   initialValue = '',
   showArrow = true,
   inputDisabled = false,
+  id = '',
+  submitOnItem = false,
 }: GenericAddInputFormProps<T>) {
   const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
-
+  const { nextIf, next, reset } = useDriverTourControls('room');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionBoxRef = useRef<HTMLDivElement | null>(null);
 
@@ -94,7 +99,6 @@ export function GenericAddInputForm<T>({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (inputDisabled) {
-      // Prevent any typing actions, but allow dropdown navigation
       if (
         e.key !== 'ArrowDown' &&
         e.key !== 'ArrowUp' &&
@@ -128,8 +132,6 @@ export function GenericAddInputForm<T>({
         setShowSuggestions(false);
         setHighlightedIndex(-1);
       }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
     }
   };
 
@@ -138,8 +140,8 @@ export function GenericAddInputForm<T>({
       ? 'absolute z-30 left-0 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-0 w-full overflow-y-auto text-sm sm:text-base'
       : 'absolute z-30 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-[320px] sm:min-w-[400px] w-[120%] sm:w-[140%] overflow-y-auto text-sm sm:text-base';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | Event) => {
+    if (e) e.preventDefault();
     const value = currentSuggestion.trim();
     if (validateInput) {
       const error = validateInput(value);
@@ -154,18 +156,44 @@ export function GenericAddInputForm<T>({
       await refreshState();
       setCurrentSuggestion('');
     } catch {
-      // onSubmit should handle toast error
     } finally {
       setLoading(false);
     }
   };
 
-  // Prevent typing/editing in the input if inputDisabled is true,
-  // allow focus, arrow keys, clicking, dropdown, selection, and submit
+  const handleSubmitOnItem = async (value: string) => {
+    setLoading(true);
+    try {
+      await onSubmit(value);
+      await refreshState();
+      setCurrentSuggestion('');
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!inputDisabled) {
       setCurrentSuggestion(e.target.value);
       setShowSuggestions(true);
+    }
+  };
+
+  const handleSuggestionSelect = async (suggestion: T) => {
+    const value = getSuggestionValue(suggestion);
+    setCurrentSuggestion(value);
+    setShowSuggestions(false);
+
+    if (submitOnItem) {
+      console.log('submitOnItem is true, submitting...', value);
+      next();
+      await handleSubmitOnItem(value);
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      setShowSuggestions(false);
+      next();
+      inputRef.current?.blur();
     }
   };
 
@@ -183,15 +211,15 @@ export function GenericAddInputForm<T>({
           }
           value={currentSuggestion}
           onChange={handleInputChange}
-          onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
           onKeyDown={handleInputKeyDown}
           placeholder={placeholder}
           autoComplete='off'
           spellCheck={false}
           readOnly={inputDisabled}
-          // still allow clicking to open suggestions if disabled
-          onClick={() => setShowSuggestions(true)}
+          onClick={() => {
+            setShowSuggestions(true);
+            setTimeout(() => next(), 200);
+          }}
         />
         {showArrow && (
           <span
@@ -203,13 +231,11 @@ export function GenericAddInputForm<T>({
           </span>
         )}
         <SuggestionBox<T>
+          id={id}
           suggestions={filteredSuggestions}
           show={showSuggestions}
           highlightedIndex={highlightedIndex}
-          onSelect={(suggestion) => {
-            setCurrentSuggestion(getSuggestionValue(suggestion));
-            setShowSuggestions(false);
-          }}
+          onSelect={handleSuggestionSelect}
           suggestionBoxRef={suggestionBoxRef}
           inputRef={inputRef}
           suggestionBoxClass={suggestionBoxClass}
