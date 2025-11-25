@@ -5,15 +5,12 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useDriverTourControls } from '../tour/DriverTourContext';
 
 export default function TourLauncher() {
-  // For arrow visibility timing
   const [showArrow, setShowArrow] = useState(false);
   const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInteractedRef = useRef(false);
 
-  // Persist handleAnyInteraction function identity for event + imperative call
   const handleAnyInteractionRef = useRef<(() => void) | null>(null);
 
-  // Hide arrow after 5s since first interaction
   useEffect(() => {
     function handleAnyInteraction() {
       if (!hasInteractedRef.current) {
@@ -25,7 +22,6 @@ export default function TourLauncher() {
     }
     handleAnyInteractionRef.current = handleAnyInteraction;
 
-    // Initial timeout for 25s after mount
     timeoutIdRef.current = setTimeout(() => {
       setShowArrow(false);
     }, 25000);
@@ -44,28 +40,23 @@ export default function TourLauncher() {
   const { start: startComposingTour, stop: stopComposingTour } =
     useDriverTourControls('composing');
 
-  // We'll use a ref to the button to measure alignment
   const roomTourBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Calculate left position for the arrow so it's centered to the icon
   const [arrowLeft, setArrowLeft] = useState<number | null>(null);
 
   useEffect(() => {
     if (roomTourBtnRef.current) {
-      // Set left position so the arrow is horizontally centered under the icon
       const btnRect = roomTourBtnRef.current.getBoundingClientRect();
-      // Find the offsetLeft relative to the parent (.relative flex)
       const parentRect =
         roomTourBtnRef.current.parentElement?.parentElement?.getBoundingClientRect();
       if (parentRect) {
         const centerOffset =
-          btnRect.left - parentRect.left + btnRect.width / 2 - 13; // 13px is half arrow SVG width (26)
+          btnRect.left - parentRect.left + btnRect.width / 2 - 13;
         setArrowLeft(centerOffset);
       }
     }
-  }, [showArrow]); // recalc when showArrow, in case the component moves
+  }, [showArrow]);
 
-  // Helper to manually "interact" (i.e., hide the arrow)
   const markInteracted = () => {
     if (handleAnyInteractionRef.current) {
       handleAnyInteractionRef.current();
@@ -76,7 +67,7 @@ export default function TourLauncher() {
     <div
       className='ml-auto flex items-center relative'
       data-tour='tour-launcher-container'
-      style={{ minHeight: 52 /* increases click area for pointer events */ }}>
+      style={{ minHeight: 52 }}>
       <span className='mr-2 text-white/70 text-sm font-bold'>Showcase:</span>
       <div className='relative flex items-center flex-col'>
         <button
@@ -87,7 +78,7 @@ export default function TourLauncher() {
             stopComposingTour?.();
             stopShadersTour?.();
             startRoomTour();
-            markInteracted(); // <-- Hide arrow when tour is started
+            markInteracted();
           }}
           className='disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-white/10 transition-colors cursor-pointer z-10'
           id='room-tour-launch-btn'
@@ -106,14 +97,12 @@ export default function TourLauncher() {
             <line x1='12' y1='17' x2='12.01' y2='17' />
           </svg>
         </button>
-        {/* Arrow is now handled OUTSIDE of the flex-col, but over the same icon */}
       </div>
-      {/* Animated Arrow: positioned absolutely and centered horizontally under the button icon (using calculated left) */}
       {showArrow && (
         <div
           style={{
             position: 'absolute',
-            left: arrowLeft !== null ? `${arrowLeft}px` : '86px', // fallback left
+            left: arrowLeft !== null ? `${arrowLeft}px` : '86px',
             top: '50%',
             transform: 'translateY(24px)',
             width: '26px',
@@ -146,11 +135,8 @@ export default function TourLauncher() {
               />
             </g>
           </svg>
-          {/* subtle "Tour" label - optional */}
-          {/* <span style={{color: 'white', fontSize: 10, marginTop: -4}}>Tour</span> */}
         </div>
       )}
-      {/* Arrow animation styles are global here */}
       <style jsx>{`
         @keyframes bounceArrowDown {
           0%,
