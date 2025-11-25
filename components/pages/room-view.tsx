@@ -20,6 +20,7 @@ export default function RoomView({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [showAutoplayPopup, setShowAutoplayPopup] = useState(false);
   const [played, setPlayed] = useState(false);
+  const [isReload, setIsReload] = useState(false);
 
   const handleAutoplayPermission = useCallback((allow: boolean) => {
     if (allow) {
@@ -41,21 +42,45 @@ export default function RoomView({
   }, [setupVideoEventListeners]);
 
   useEffect(() => {
+    // Detect if the page load was caused by a browser reload
+    try {
+      const navEntries = performance.getEntriesByType(
+        'navigation',
+      ) as PerformanceNavigationTiming[];
+      if (navEntries && navEntries.length > 0) {
+        if (navEntries[0].type === 'reload') {
+          setIsReload(true);
+          return;
+        }
+      }
+      // Fallback for older browsers
+      const legacyNav = (performance as any).navigation;
+      if (legacyNav && legacyNav.type === 1) {
+        setIsReload(true);
+      }
+    } catch {
+      // no-op
+    }
+  }, []);
+
+  useEffect(() => {
     const attemptAutoplay = async () => {
       if (!videoRef.current) return;
       try {
         await videoRef.current.play();
       } catch (error) {
         console.log('Autoplay error:', error);
-        setShowAutoplayPopup(true);
+        if (isReload) {
+          setShowAutoplayPopup(true);
+        }
       }
     };
     attemptAutoplay();
-  }, []);
+  }, [isReload]);
 
   return (
     <>
-      {showAutoplayPopup && !played && (
+      {showAutoplayPopup && isReload && !played && (
         <AutoplayModal
           onAllow={() => handleAutoplayPermission(true)}
           onDeny={() => handleAutoplayPermission(false)}
