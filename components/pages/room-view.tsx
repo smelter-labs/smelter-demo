@@ -50,11 +50,12 @@ export default function RoomView({
     setupVideoEventListeners();
   }, [setupVideoEventListeners]);
 
-  // Auto-start the room tour only on first site visit (skip Kick variant)
+  // Auto-start the room tour only on first site visit (skip Kick variant and on mobile)
   useEffect(() => {
     try {
       if (typeof window === 'undefined') return;
       if (isKick) return;
+      if (window.matchMedia('(max-width: 767px)').matches) return; // don't show on mobile
       const STORAGE_KEY = 'smelter:tour:room:first-visit:v1';
       const seen = window.localStorage.getItem(STORAGE_KEY) === '1';
       if (seen) return;

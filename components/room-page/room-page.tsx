@@ -70,7 +70,7 @@ export default function RoomPage() {
       // if (loading) return;
       // if (typeof window === 'undefined') return;
       // if (startedRef.current) return;
-      const isMobile = window.matchMedia('(max-width: 1100px)').matches;
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
       if (!isMobile) return;
       const alreadyShown =
         window.sessionStorage.getItem('mobileTourShown') === '1';
@@ -82,7 +82,7 @@ export default function RoomPage() {
           window.sessionStorage.setItem('mobileTourShown', '1');
         } catch {}
         start();
-      }, 150);
+      }, 1500);
       return () => window.clearTimeout(id);
     }, [loading, start]);
     return null;
