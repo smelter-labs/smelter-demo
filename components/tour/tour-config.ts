@@ -14,7 +14,7 @@ export const roomTourSteps: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour="twitch-add-input-form-container"]',
+    element: '[data-tour="twitch-add-input-form-container"] input',
     popover: {
       title: "Let's add some streams!",
       description:
