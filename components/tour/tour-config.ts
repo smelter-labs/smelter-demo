@@ -1,5 +1,23 @@
 import type { DriveStep } from 'driver.js';
 import type { useDriverTour } from './useDriverTour';
+import type { AccordionHandle } from '../ui/accordion';
+
+/**
+ * Ensures the accordion for the streams-list-container is open during the tour step.
+ */
+export function handleAccordionHighlightStarted(
+  element: any,
+  step: any,
+  opts: any,
+) {
+  if (!element) return;
+  const accordion = element.closest(
+    '[data-accordion="true"]',
+  ) as HTMLDivElement;
+  if (accordion && accordion.getAttribute('data-open') === 'false') {
+    accordion.querySelector('button')?.click();
+  }
+}
 
 export const roomTourSteps: DriveStep[] = [
   {
@@ -23,6 +41,7 @@ export const roomTourSteps: DriveStep[] = [
       align: 'center',
       showButtons: [],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="twitch-suggestion-item-container"]',
@@ -33,6 +52,7 @@ export const roomTourSteps: DriveStep[] = [
       align: 'start',
       showButtons: [],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="video-player-container"]',
@@ -82,21 +102,11 @@ export const composingTourSteps: DriveStep[] = [
       title: 'Composing Videos',
       description:
         'You can compose videos in real time. Simply drag and drop the sources into the positions you want.',
-      side: 'left',
+      side: 'bottom',
       align: 'center',
       showButtons: [],
     },
-  },
-  {
-    element: '[data-tour="streams-list-container"]',
-    popover: {
-      title: 'Composing Videos',
-      description:
-        'You can compose videos in real time. Simply drag and drop the sources into the positions you want.',
-      side: 'left',
-      align: 'center',
-      showButtons: ['next'],
-    },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="layout-selector-container"]',
@@ -104,10 +114,11 @@ export const composingTourSteps: DriveStep[] = [
       title: 'Layouts',
       description:
         'You can change the video layout. Just click the layout you want to use.',
-      side: 'left',
+      side: 'bottom',
       align: 'center',
       showButtons: [],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="layout-selector-container"]',
@@ -119,6 +130,7 @@ export const composingTourSteps: DriveStep[] = [
       align: 'center',
       showButtons: ['next'],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="video-player-container"]',
@@ -140,10 +152,11 @@ export const shadersTourSteps: DriveStep[] = [
       title: 'Using Shaders',
       description:
         'Each video can be enhanced with various shaders. Click the "Show FX" button to see the available options.',
-      side: 'left',
+      side: 'bottom',
       align: 'center',
       showButtons: [],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="streams-list-container"]',
@@ -151,10 +164,11 @@ export const shadersTourSteps: DriveStep[] = [
       title: 'Using Shaders',
       description:
         'We’ve prepared some shaders for you, but you can also create your own. Click "Enable" to activate the shader you want.',
-      side: 'left',
+      side: 'bottom',
       align: 'center',
       showButtons: [],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
     element: '[data-tour="video-player-container"]',
@@ -177,5 +191,6 @@ export const shadersTourSteps: DriveStep[] = [
       align: 'center',
       showButtons: ['next'],
     },
+    onHighlightStarted: handleAccordionHighlightStarted,
   },
 ];

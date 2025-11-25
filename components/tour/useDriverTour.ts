@@ -98,7 +98,10 @@ export function useDriverTour(
         userOnDeselected?.(element, step, ctx);
       },
       onDestroyStarted: () => {
-        if (!driverRef.current?.hasNextStep() || confirm('Are you sure?')) {
+        if (
+          !driverRef.current?.hasNextStep() ||
+          confirm('You are about to end the tour. Are you sure?')
+        ) {
           driverRef.current?.destroy();
         }
       },
