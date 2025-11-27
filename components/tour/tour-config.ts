@@ -101,6 +101,18 @@ export const composingTourSteps: DriveStep[] = [
     onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
+    element: '[data-tour="streams-list-container"]',
+    popover: {
+      title: 'Composing Videos',
+      description:
+        'You can compose videos in real time. Simply drag and drop the sources into the positions you want.',
+      side: 'bottom',
+      align: 'center',
+      showButtons: ['next'],
+    },
+    onHighlightStarted: handleAccordionHighlightStarted,
+  },
+  {
     element: '[data-tour="layout-selector-container"]',
     popover: {
       title: 'Layouts',
