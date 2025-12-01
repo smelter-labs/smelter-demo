@@ -110,6 +110,7 @@ export function KickAddInputForm({
 
   return (
     <GenericAddInputForm
+      submitOnItem={false}
       inputs={inputs}
       roomId={roomId}
       refreshState={refreshState}

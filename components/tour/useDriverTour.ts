@@ -12,6 +12,7 @@ export type DriverTourApi = {
   start: () => void;
   reset: () => void;
   stop: () => void;
+  forceStop: () => void;
   highlight: (step: DriveStep) => void;
   next: () => void;
   prev: () => void;
@@ -27,6 +28,73 @@ export function useDriverTour(
   options: DriverTourOptions = {},
 ): DriverTourApi {
   const driverRef = useRef<Driver | null>(null);
+  const forceDestroyRef = useRef<boolean>(false);
+  const endConfirmOpenRef = useRef<boolean>(false);
+
+  const showEndTourConfirm = useCallback((): Promise<boolean> => {
+    if (endConfirmOpenRef.current) {
+      // If it's already open, return a promise that resolves false to avoid double-destroy
+      return Promise.resolve(false);
+    }
+    endConfirmOpenRef.current = true;
+    return new Promise<boolean>((resolve) => {
+      try {
+        document.body.classList.add('smelter-modal-open');
+        const overlay = document.createElement('div');
+        overlay.className =
+          'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+        // Ensure we are above any tour overlays
+        overlay.style.zIndex = '2147483647';
+        overlay.style.pointerEvents = 'auto';
+        const modal = document.createElement('div');
+        modal.className =
+          'bg-gray-800 border border-gray-600 rounded-lg p-6 max-w-md mx-4';
+        const title = document.createElement('h3');
+        title.className = 'text-white text-lg font-semibold mb-4';
+        title.textContent = 'End Tour?';
+        const desc = document.createElement('p');
+        desc.className = 'text-gray-300 mb-6';
+        desc.textContent =
+          'You are about to end the tour. Would you like to continue the tour or end it now?';
+        const buttons = document.createElement('div');
+        buttons.className = 'flex gap-3 justify-end';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className =
+          'px-4 py-2 rounded bg-purple-80 hover:bg-purple-100 text-white-100 font-bold cursor-pointer';
+        cancelBtn.textContent = 'Keep Touring';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className =
+          'px-4 py-2 rounded text-white-100 font-bold bg-red-40 border-0 hover:bg-red-60 cursor-pointer';
+        confirmBtn.textContent = 'End Tour';
+        buttons.appendChild(cancelBtn);
+        buttons.appendChild(confirmBtn);
+        modal.appendChild(title);
+        modal.appendChild(desc);
+        modal.appendChild(buttons);
+        overlay.appendChild(modal);
+        const cleanup = () => {
+          try {
+            overlay.remove();
+          } catch {}
+          document.body.classList.remove('smelter-modal-open');
+          endConfirmOpenRef.current = false;
+        };
+        cancelBtn.addEventListener('click', () => {
+          resolve(false);
+          cleanup();
+        });
+        confirmBtn.addEventListener('click', () => {
+          resolve(true);
+          cleanup();
+        });
+
+        document.body.appendChild(overlay);
+      } catch {
+        endConfirmOpenRef.current = false;
+        resolve(false);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -98,12 +166,46 @@ export function useDriverTour(
         userOnDeselected?.(element, step, ctx);
       },
       onDestroyStarted: () => {
-        if (
-          !driverRef.current?.hasNextStep() ||
-          confirm('You are about to end the tour. Are you sure?')
-        ) {
+        if (forceDestroyRef.current) {
           driverRef.current?.destroy();
+          return;
         }
+        const currentIndex =
+          (driverRef.current?.getActiveIndex?.() as number | undefined) ?? 0;
+        const hasMore = !!driverRef.current?.hasNextStep?.();
+        // If no more steps, end without asking
+        if (!hasMore) {
+          driverRef.current?.destroy?.();
+          return;
+        }
+        // Temporarily destroy to allow modal interaction, then decide
+        forceDestroyRef.current = true;
+        try {
+          driverRef.current?.destroy?.();
+        } finally {
+          forceDestroyRef.current = false;
+        }
+        void showEndTourConfirm().then((shouldEnd) => {
+          if (shouldEnd) {
+            // User chose to end; nothing else to do
+            return;
+          }
+          // Keep touring: restart and move to the previously active step
+          try {
+            // Recreate the tour
+            // Reuse the same start logic
+            // Start at step 0 then move to saved index on next frame
+            (async () => {
+              start();
+              // Move to previous index after driver initializes
+              requestAnimationFrame(() => {
+                try {
+                  driverRef.current?.moveTo?.(currentIndex);
+                } catch {}
+              });
+            })();
+          } catch {}
+        });
       },
       onPopoverRender: (popover: any, ctx: any) => {
         userOnPopoverRender?.(popover, ctx);
@@ -144,7 +246,14 @@ export function useDriverTour(
 
     const d = driver(config);
     driverRef.current = d;
-    console.log('start tour', id, driverRef.current, 'steps', steps.length);
+    // Notify app that a tour is starting
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('smelter:tour:start', { detail: { id } }),
+        );
+      }
+    } catch {}
     d.drive();
   }, [id, options, steps]);
 
@@ -154,6 +263,15 @@ export function useDriverTour(
 
   const stop = useCallback(() => {
     driverRef.current?.destroy?.();
+  }, []);
+
+  const forceStop = useCallback(() => {
+    forceDestroyRef.current = true;
+    try {
+      driverRef.current?.destroy?.();
+    } finally {
+      forceDestroyRef.current = false;
+    }
   }, []);
 
   const highlight = useCallback((step: DriveStep) => {
@@ -190,6 +308,7 @@ export function useDriverTour(
     start,
     reset,
     stop,
+    forceStop,
     highlight,
     next,
     prev,

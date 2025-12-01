@@ -98,6 +98,7 @@ export function useDriverTourControls(id: string): DriverTourEntry {
     start: noop,
     reset: noop,
     stop: noop,
+    forceStop: noop,
     highlight: noop as unknown as DriverTourEntry['highlight'],
     next: noop,
     prev: noop,

@@ -94,6 +94,33 @@ export default function RoomPage() {
         id='mobile'
         steps={mobileTourSteps}
         options={mobileTourOptions}>
+        {/*
+          Force-stop any running tours the moment the room is pending deletion.
+          This component uses the DriverTour context, so it must be rendered
+          within the providers.
+        */}
+        {(() => {
+          function StopToursOnPendingDelete({ pending }: { pending: boolean }) {
+            const { forceStop: stopMobile } = useDriverTourControls('mobile');
+            const { forceStop: stopRoom } = useDriverTourControls('room');
+            const { forceStop: stopShaders } = useDriverTourControls('shaders');
+            const { forceStop: stopComposing } =
+              useDriverTourControls('composing');
+            const didStopRef = useRef(false);
+            useEffect(() => {
+              if (!pending || didStopRef.current) return;
+              didStopRef.current = true;
+              stopMobile?.();
+              stopRoom?.();
+              stopShaders?.();
+              stopComposing?.();
+            }, [pending, stopMobile, stopRoom, stopShaders, stopComposing]);
+            return null;
+          }
+          return (
+            <StopToursOnPendingDelete pending={!!roomState.pendingDelete} />
+          );
+        })()}
         <DriverTourProvider
           id='room'
           steps={roomTourSteps}

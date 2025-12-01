@@ -14,6 +14,7 @@ import type {
 import {
   getAvailableShaders,
   updateRoom as updateRoomAction,
+  removeInput,
 } from '@/app/actions/actions';
 
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
@@ -38,6 +39,7 @@ import {
   loadLastWhipInputId,
   clearWhipSession,
   clearLastWhipInputId,
+  clearWhipSessionFor,
 } from './whip-input/utils/whip-storage';
 
 import { useDriverTourControls } from '../tour/DriverTourContext';
@@ -250,6 +252,73 @@ export default function ControlPanel({
     };
   }, [pcRef]);
 
+  // Track which input has its FX (shader panel) open
+  const [openFxInputId, setOpenFxInputId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openFxInputId) return;
+    // Close FX panel if the input disappears
+    if (!inputs.some((i) => i.inputId === openFxInputId)) {
+      setOpenFxInputId(null);
+    }
+  }, [inputs, openFxInputId]);
+
+  // Hide FX panel when any tour starts
+  useEffect(() => {
+    const deletingRef = { current: false };
+    const onTourStart = (_e: Event) => {
+      setOpenFxInputId(null);
+      try {
+        if (deletingRef.current) return;
+        const currentInputs = inputsRef.current || [];
+        if (currentInputs.length <= 4) return;
+        deletingRef.current = true;
+        (async () => {
+          try {
+            const extras = currentInputs.slice(4);
+            for (const input of extras) {
+              const session = loadWhipSession();
+              const isSavedInSession =
+                (session &&
+                  session.roomId === roomId &&
+                  session.inputId === input.inputId) ||
+                loadLastWhipInputId(roomId) === input.inputId;
+              const isWhipCandidate =
+                (input.inputId && input.inputId.indexOf('whip') > 0) ||
+                isSavedInSession;
+              if (isWhipCandidate) {
+                try {
+                  stopCameraAndConnection(pcRef, streamRef);
+                } catch {}
+                try {
+                  clearWhipSessionFor(roomId, input.inputId);
+                } catch {}
+                if (activeWhipInputId === input.inputId) {
+                  setActiveWhipInputId(null);
+                  setIsWhipActive(false);
+                }
+              }
+              try {
+                await removeInput(roomId, input.inputId);
+              } catch (err) {
+                console.warn('Failed to remove extra input during tour start', {
+                  inputId: input.inputId,
+                  err,
+                });
+              }
+            }
+          } finally {
+            await handleRefreshState();
+            deletingRef.current = false;
+          }
+        })();
+      } catch {}
+    };
+    window.addEventListener('smelter:tour:start', onTourStart);
+    return () => {
+      window.removeEventListener('smelter:tour:start', onTourStart);
+    };
+  }, []);
+
   return (
     <motion.div
       {...(fadeIn as any)}
@@ -346,6 +415,12 @@ export default function ControlPanel({
                         availableShaders={availableShaders}
                         pcRef={pcRef}
                         streamRef={streamRef}
+                        isFxOpen={openFxInputId === input.inputId}
+                        onToggleFx={() =>
+                          setOpenFxInputId((prev) =>
+                            prev === input.inputId ? null : input.inputId,
+                          )
+                        }
                         onWhipDisconnectedOrRemoved={(id) => {
                           if (activeWhipInputId === id) {
                             setActiveWhipInputId(null);

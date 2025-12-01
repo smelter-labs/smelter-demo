@@ -28,6 +28,14 @@ interface InputEntryProps {
   pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
   streamRef?: React.MutableRefObject<MediaStream | null>;
   onWhipDisconnectedOrRemoved?: (inputId: string) => void;
+  isFxOpen?: boolean;
+  onToggleFx?: () => void;
+}
+
+// Utility: check if any shader is enabled
+function hasEnabledShader(input: Input) {
+  if (!input.shaders) return false;
+  return input.shaders.some((shader) => shader.enabled);
 }
 
 function StatusButton({
@@ -41,6 +49,8 @@ function StatusButton({
   showSliders: boolean;
   onClick: () => void;
 }) {
+  const shaderAnyEnabled = hasEnabledShader(input);
+
   const getStatusLabel = () => {
     if (loading) {
       return <LoadingSpinner size='sm' variant='spinner' />;
@@ -48,14 +58,18 @@ function StatusButton({
     if (showSliders) {
       return (
         <span className='flex items-center'>
-          <SlidersHorizontal className='mr-1 text-purple-60' />
+          <SlidersHorizontal
+            className={`mr-1 ${shaderAnyEnabled ? 'text-green-60' : 'text-purple-60'}`}
+          />
           Hide FX
         </span>
       );
     }
     return (
       <span className='flex items-center'>
-        <SlidersHorizontal className='mr-1 text-purple-60' />
+        <SlidersHorizontal
+          className={`mr-1 ${shaderAnyEnabled ? 'text-green-60' : 'text-purple-60'}`}
+        />
         Show FX
       </span>
     );
@@ -125,6 +139,8 @@ export default function InputEntry({
   pcRef,
   streamRef,
   onWhipDisconnectedOrRemoved,
+  isFxOpen,
+  onToggleFx,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
@@ -143,6 +159,9 @@ export default function InputEntry({
   const sliderTimers = useRef<{
     [key: string]: NodeJS.Timeout | number | null;
   }>({});
+
+  const effectiveShowSliders =
+    typeof isFxOpen === 'boolean' ? isFxOpen : showSliders;
 
   availableShaders.forEach((availableShader) => {
     if (!input.shaders) {
@@ -237,8 +256,12 @@ export default function InputEntry({
 
   const handleSlidersToggle = useCallback(() => {
     shadersTourNextIf(0);
-    setShowSliders((prev) => !prev);
-  }, [shadersTourNextIf]);
+    if (onToggleFx) {
+      onToggleFx();
+    } else {
+      setShowSliders((prev) => !prev);
+    }
+  }, [shadersTourNextIf, onToggleFx]);
 
   const handleShaderToggle = useCallback(
     async (shaderId: string) => {
@@ -382,7 +405,7 @@ export default function InputEntry({
             <StatusButton
               input={input}
               loading={connectionStateLoading}
-              showSliders={showSliders}
+              showSliders={effectiveShowSliders}
               onClick={handleSlidersToggle}
             />
           </div>
@@ -416,12 +439,12 @@ export default function InputEntry({
           className={
             shaderPanelBase +
             ' ' +
-            (showSliders ? shaderPanelShow : shaderPanelHide)
+            (effectiveShowSliders ? shaderPanelShow : shaderPanelHide)
           }
-          aria-hidden={!showSliders}
+          aria-hidden={!effectiveShowSliders}
           style={{
-            maxHeight: showSliders ? '500px' : 0,
-            height: showSliders ? '100%' : 0,
+            maxHeight: effectiveShowSliders ? '500px' : 0,
+            height: effectiveShowSliders ? '100%' : 0,
             transitionProperty: 'opacity, transform, height, max-height',
           }}>
           <ShaderPanel

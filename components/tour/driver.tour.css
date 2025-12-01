@@ -87,3 +87,10 @@
   background: #000;
   transition: width 0.2s ease-out;
 }
+
+/* While a Smelter modal is open, let clicks pass to it, not the tour */
+body.smelter-modal-open .driver-overlay,
+body.smelter-modal-open .driver-popover,
+body.smelter-modal-open .driver-stage {
+  pointer-events: none !important;
+}

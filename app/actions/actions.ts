@@ -81,7 +81,8 @@ export type Layout =
   | 'grid'
   | 'primary-on-left'
   | 'primary-on-top'
-  | 'picture-in-picture';
+  | 'picture-in-picture'
+  | 'transition';
 
 export interface ChannelSuggestion {
   streamId: string;
