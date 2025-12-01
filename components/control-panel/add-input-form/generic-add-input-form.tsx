@@ -32,6 +32,7 @@ export type GenericAddInputFormProps<T> = {
   inputDisabled?: boolean;
   id?: string;
   submitOnItem?: boolean;
+  showButton?: boolean;
 };
 
 export function GenericAddInputForm<T>({
@@ -52,6 +53,7 @@ export function GenericAddInputForm<T>({
   inputDisabled = false,
   id = '',
   submitOnItem = false,
+  showButton = true,
 }: GenericAddInputFormProps<T>) {
   const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
   const [loading, setLoading] = useState(false);
@@ -242,7 +244,7 @@ export function GenericAddInputForm<T>({
           renderSuggestion={renderSuggestion}
         />
       </div>
-      {!submitOnItem && (
+      {showButton && (
         <Button
           size='lg'
           variant='default'

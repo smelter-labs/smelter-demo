@@ -56,7 +56,8 @@ export default function TwitchAddInputForm({
       roomId={roomId}
       refreshState={refreshState}
       suggestions={suggestions.twitch}
-      submitOnItem={false}
+      submitOnItem={true}
+      showButton={true}
       filterSuggestions={(twitchSuggestions, currentSuggestion, inputs) =>
         twitchSuggestions
           .filter((suggestion) => {

@@ -44,17 +44,6 @@ export default function TourLauncher() {
       </div>
       <ArrowHint targetRef={roomTourBtnRef} />
       <button
-        aria-label='Using Shaders'
-        title='Using Shaders'
-        onClick={() => {
-          stopRoomTour?.();
-          stopComposingTour?.();
-          startShadersTour();
-        }}
-        className='disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-white/10 transition-colors cursor-pointer'>
-        <SlidersHorizontal className='w-5 h-5 text-white/80 hover:text-white' />
-      </button>
-      <button
         aria-label='Composing Videos'
         title='Composing Videos'
         onClick={() => {
@@ -69,6 +58,17 @@ export default function TourLauncher() {
           className='w-full h-full text-white/80 hover:text-white'
           style={{ display: 'block' }}
         />
+      </button>
+      <button
+        aria-label='Using Shaders'
+        title='Using Shaders'
+        onClick={() => {
+          stopRoomTour?.();
+          stopComposingTour?.();
+          startShadersTour();
+        }}
+        className='disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-white/10 transition-colors cursor-pointer'>
+        <SlidersHorizontal className='w-5 h-5 text-white/80 hover:text-white' />
       </button>
     </div>
   );
