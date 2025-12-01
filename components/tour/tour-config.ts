@@ -2,20 +2,26 @@ import type { DriveStep } from 'driver.js';
 import type { useDriverTour } from './useDriverTour';
 import type { AccordionHandle } from '../ui/accordion';
 
-/**
- * Ensures the accordion for the streams-list-container is open during the tour step.
- */
 export function handleAccordionHighlightStarted(
   element: any,
   step: any,
   opts: any,
 ) {
   if (!element) return;
-  const accordion = element.closest(
+  const thisAccordion = element.closest(
     '[data-accordion="true"]',
   ) as HTMLDivElement;
-  if (accordion && accordion.getAttribute('data-open') === 'false') {
-    accordion.querySelector('button')?.click();
+  const allAccordions = document.querySelectorAll(
+    '[data-accordion="true"]',
+  ) as NodeListOf<HTMLDivElement>;
+  allAccordions.forEach((acc) => {
+    if (acc !== thisAccordion && acc.getAttribute('data-open') === 'true') {
+      acc.querySelector('button')?.click();
+    }
+  });
+
+  if (thisAccordion && thisAccordion.getAttribute('data-open') === 'false') {
+    thisAccordion.querySelector('button')?.click();
   }
 }
 
@@ -23,12 +29,24 @@ export const roomTourSteps: DriveStep[] = [
   {
     element: '[data-tour="video-player-container"]',
     popover: {
-      title: 'Hello Smelter!',
+      title: 'Adding Streams',
       description:
         'What you see now is a video composed in real time from multiple sources. Hard to believe, right?',
       side: 'bottom',
       align: 'center',
       showButtons: ['next'],
+    },
+    onHighlightStarted: (element, step, opts) => {
+      const thisAccordion = document.querySelector(
+        '[data-tour="twitch-add-input-form-container"]',
+      ) as Element;
+      console.log('thisAccordion', thisAccordion);
+      if (
+        thisAccordion &&
+        thisAccordion.getAttribute('data-open') === 'false'
+      ) {
+        thisAccordion.querySelector('button')?.click();
+      }
     },
   },
   {
@@ -41,7 +59,13 @@ export const roomTourSteps: DriveStep[] = [
       align: 'center',
       showButtons: [],
     },
-    onHighlightStarted: handleAccordionHighlightStarted,
+    onHighlightStarted: (element, step, opts) => {
+      if (!element) {
+        element = document.querySelector(
+          '[data-tour="twitch-add-input-form-container"]',
+        ) as Element;
+      }
+    },
   },
   {
     element: '[data-tour="twitch-suggestion-item-container"]',

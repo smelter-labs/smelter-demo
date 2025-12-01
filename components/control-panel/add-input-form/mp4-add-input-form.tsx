@@ -29,6 +29,7 @@ export function Mp4AddInputForm({
     <GenericAddInputForm<string>
       id='mp4-suggestion-container'
       inputs={inputs}
+      showButton={false}
       roomId={roomId}
       inputDisabled={true}
       refreshState={refreshState}

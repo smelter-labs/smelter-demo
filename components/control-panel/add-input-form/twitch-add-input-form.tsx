@@ -57,6 +57,7 @@ export default function TwitchAddInputForm({
       refreshState={refreshState}
       suggestions={suggestions.twitch}
       submitOnItem={true}
+      showButton={true}
       filterSuggestions={(twitchSuggestions, currentSuggestion, inputs) =>
         twitchSuggestions
           .filter((suggestion) => {

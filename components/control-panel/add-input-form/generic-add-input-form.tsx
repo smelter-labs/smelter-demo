@@ -32,6 +32,7 @@ export type GenericAddInputFormProps<T> = {
   inputDisabled?: boolean;
   id?: string;
   submitOnItem?: boolean;
+  showButton?: boolean;
 };
 
 export function GenericAddInputForm<T>({
@@ -52,6 +53,7 @@ export function GenericAddInputForm<T>({
   inputDisabled = false,
   id = '',
   submitOnItem = false,
+  showButton = true,
 }: GenericAddInputFormProps<T>) {
   const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,7 @@ export function GenericAddInputForm<T>({
   const suggestionBoxClass =
     windowWidth !== undefined && windowWidth < 1280
       ? 'absolute z-30 left-0 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-0 w-full overflow-y-auto text-sm sm:text-base'
-      : 'absolute z-30 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-[320px] sm:min-w-[400px] w-[120%] sm:w-[140%] overflow-y-auto text-sm sm:text-base';
+      : 'absolute z-30 left-0 right-0 mt-1 bg-black-90 border border-purple-40 rounded-md shadow-lg max-h-56 min-w-0 w-full overflow-y-auto text-sm sm:text-base';
 
   const handleSubmit = async (e?: React.FormEvent | Event) => {
     if (e) e.preventDefault();
@@ -242,20 +244,22 @@ export function GenericAddInputForm<T>({
           renderSuggestion={renderSuggestion}
         />
       </div>
-      <Button
-        size='lg'
-        variant='default'
-        className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
-        type='submit'
-        disabled={loading}>
-        {loading ? (
-          <>
-            <LoadingSpinner size='sm' variant='spinner' /> {loadingText}
-          </>
-        ) : (
-          <>{buttonText}</>
-        )}
-      </Button>
+      {showButton && (
+        <Button
+          size='lg'
+          variant='default'
+          className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
+          type='submit'
+          disabled={loading}>
+          {loading ? (
+            <>
+              <LoadingSpinner size='sm' variant='spinner' /> {loadingText}
+            </>
+          ) : (
+            <>{buttonText}</>
+          )}
+        </Button>
+      )}
     </form>
   );
 }
