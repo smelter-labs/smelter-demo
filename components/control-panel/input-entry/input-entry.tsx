@@ -443,7 +443,7 @@ export default function InputEntry({
           }
           aria-hidden={!effectiveShowSliders}
           style={{
-            maxHeight: effectiveShowSliders ? '500px' : 0,
+            maxHeight: effectiveShowSliders ? '1500px' : 0,
             height: effectiveShowSliders ? '100%' : 0,
             transitionProperty: 'opacity, transform, height, max-height',
           }}>
