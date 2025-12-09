@@ -80,8 +80,6 @@ export function useDriverTour(
           endConfirmOpenRef.current = false;
         };
         cancelBtn.addEventListener('click', () => {
-          const activeIndex = driverRef.current?.getActiveIndex?.();
-          console.log('activeIndex', activeIndex);
           resolve(false);
           cleanup();
         });
@@ -115,7 +113,6 @@ export function useDriverTour(
       const overlay = document.querySelector(
         '.driver-overlay',
       ) as HTMLElement | null;
-      console.log('overlay', overlay);
       if (!overlay) return;
       if (overlayClickHandlerRef.current) {
         overlay.removeEventListener(
@@ -127,10 +124,8 @@ export function useDriverTour(
       const handler = (e: MouseEvent) => {
         try {
           const activeIndex = driverRef.current?.getActiveIndex?.();
-          console.log('activeIndex', activeIndex);
           // room tour, step index 2: [data-tour="twitch-suggestion-item-container"]
           if (id === 'room' && activeIndex === 2) {
-            console.log('preventing default');
             e.preventDefault();
             e.stopPropagation();
             (e as any).stopImmediatePropagation?.();
@@ -144,7 +139,6 @@ export function useDriverTour(
   }, [id]);
 
   const detachOverlayClickGuard = useCallback(() => {
-    console.log('detachOverlayClickGuard');
     try {
       const overlay = document.querySelector(
         '.driver-overlay',
@@ -255,7 +249,6 @@ export function useDriverTour(
           forceDestroyRef.current = false;
         }
         void showEndTourConfirm().then((shouldEnd) => {
-          console.log('shouldEnd', shouldEnd);
           if (shouldEnd) {
             try {
               if (typeof window !== 'undefined') {

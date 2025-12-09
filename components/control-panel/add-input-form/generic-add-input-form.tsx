@@ -188,7 +188,6 @@ export function GenericAddInputForm<T>({
     setShowSuggestions(false);
 
     if (submitOnItem) {
-      console.log('submitOnItem is true, submitting...', value);
       next();
       await handleSubmitOnItem(value);
 

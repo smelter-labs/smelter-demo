@@ -92,14 +92,12 @@ export default function IntroView() {
       const room = await createNewRoom(initInputs);
       let hash = '';
       if (typeof window !== 'undefined') {
-        console.log('window.location.hash', window.location.hash);
         const h = (window.location.hash || '').toLowerCase();
         if (
           h.includes('tour-main') ||
           h.includes('tour-composing') ||
           h.includes('tour-shaders')
         ) {
-          console.log('hash', h);
           hash = h;
         }
       }
