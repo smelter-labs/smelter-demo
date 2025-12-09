@@ -40,7 +40,6 @@ export const roomTourSteps: DriveStep[] = [
       const thisAccordion = document.querySelector(
         '[data-tour="twitch-add-input-form-container"]',
       ) as Element;
-      console.log('thisAccordion', thisAccordion);
       if (
         thisAccordion &&
         thisAccordion.getAttribute('data-open') === 'false'
