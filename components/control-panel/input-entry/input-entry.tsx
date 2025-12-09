@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   AvailableShader,
   connectInput,
@@ -8,7 +8,7 @@ import {
   updateInput,
 } from '@/app/actions/actions';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, X, SlidersHorizontal } from 'lucide-react';
+import { Mic, MicOff, X, Type } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 import ShaderPanel from './shader-panel';
 import { stopCameraAndConnection } from '../whip-input/utils/preview';
@@ -30,6 +30,10 @@ interface InputEntryProps {
   onWhipDisconnectedOrRemoved?: (inputId: string) => void;
   isFxOpen?: boolean;
   onToggleFx?: () => void;
+  /**
+   * If true, render only the shaders list (for FX-only view), without input wrapper/details.
+   */
+  fxModeOnly?: boolean;
 }
 
 // Utility: check if any shader is enabled
@@ -50,26 +54,58 @@ function StatusButton({
   onClick: () => void;
 }) {
   const shaderAnyEnabled = hasEnabledShader(input);
+  const installedCount = (input.shaders || []).length;
 
   const getStatusLabel = () => {
     if (loading) {
       return <LoadingSpinner size='sm' variant='spinner' />;
     }
+    // Determine label:
+    // - If viewing sliders: "Hide FX"
+    // - If no shaders installed: "Add Effects"
+    // - If any shader enabled: "Effects"
+    // - Otherwise: "Show FX"
+    const baseIcon = (
+      <img
+        src='/magic-wand.svg'
+        width={16}
+        height={16}
+        alt=''
+        className='mr-2 opacity-90'
+      />
+    );
     if (showSliders) {
       return (
         <span className='flex items-center'>
-          <SlidersHorizontal
-            className={`mr-1 ${shaderAnyEnabled ? 'text-green-60' : 'text-purple-60'}`}
-          />
+          {baseIcon}
           Hide FX
+        </span>
+      );
+    }
+    if (installedCount === 0) {
+      return (
+        <span className='flex items-center'>
+          {baseIcon}
+          Add Effects
+        </span>
+      );
+    }
+    if (shaderAnyEnabled) {
+      return (
+        <span className='flex items-center gap-2'>
+          <span className='flex items-center'>
+            {baseIcon}
+            Effects
+          </span>
+          <span className='inline-flex items-center justify-center rounded-full bg-red-40 text-white-100 text-[10px] font-semibold w-5 h-5 leading-none'>
+            {installedCount}
+          </span>
         </span>
       );
     }
     return (
       <span className='flex items-center'>
-        <SlidersHorizontal
-          className={`mr-1 ${shaderAnyEnabled ? 'text-green-60' : 'text-purple-60'}`}
-        />
+        {baseIcon}
         Show FX
       </span>
     );
@@ -112,7 +148,7 @@ function MuteButton({
       {muted ? (
         <MicOff className=' text-red-40 size-5' />
       ) : (
-        <Mic className=' text-green-60 size-5' />
+        <Mic className=' text-react-100 size-5' />
       )}
     </Button>
   );
@@ -141,6 +177,7 @@ export default function InputEntry({
   onWhipDisconnectedOrRemoved,
   isFxOpen,
   onToggleFx,
+  fxModeOnly,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
@@ -148,9 +185,32 @@ export default function InputEntry({
   const [paramLoading, setParamLoading] = useState<{
     [shaderId: string]: string | null;
   }>({});
+  const [isAddShaderModalOpen, setIsAddShaderModalOpen] = useState(false);
   const muted = input.volume === 0;
+  const showTitle = input.showTitle !== false;
 
   const isWhipInput = input.type === 'whip';
+
+  // Hide "Add Effects" during composing tour
+  const [isComposingTourActive, setIsComposingTourActive] = useState(false);
+  useEffect(() => {
+    const onStart = (e: any) => {
+      try {
+        if (e?.detail?.id === 'composing') setIsComposingTourActive(true);
+      } catch {}
+    };
+    const onStop = (e: any) => {
+      try {
+        if (e?.detail?.id === 'composing') setIsComposingTourActive(false);
+      } catch {}
+    };
+    window.addEventListener('smelter:tour:start', onStart);
+    window.addEventListener('smelter:tour:stop', onStop);
+    return () => {
+      window.removeEventListener('smelter:tour:start', onStart);
+      window.removeEventListener('smelter:tour:stop', onStop);
+    };
+  }, []);
 
   const lastParamChangeRef = useRef<{ [key: string]: number }>({});
   const [sliderValues, setSliderValues] = useState<{ [key: string]: number }>(
@@ -163,23 +223,24 @@ export default function InputEntry({
   const effectiveShowSliders =
     typeof isFxOpen === 'boolean' ? isFxOpen : showSliders;
 
-  availableShaders.forEach((availableShader) => {
-    if (!input.shaders) {
-      input.shaders = [];
-    }
-    if (!input.shaders.find((s) => s.shaderId === availableShader.id)) {
-      input.shaders.push({
-        shaderName: availableShader.name,
-        shaderId: availableShader.id,
-        enabled: false,
-        params:
-          availableShader.params?.map((param) => ({
-            paramName: param.name,
-            paramValue: param.defaultValue ?? 0,
-          })) || [],
-      });
-    }
-  });
+  // Show only shaders that were explicitly added (via drag-and-drop)
+  const visibleShaders = useMemo(
+    () =>
+      availableShaders.filter((availableShader) =>
+        (input.shaders || []).some((s) => s.shaderId === availableShader.id),
+      ),
+    [availableShaders, input.shaders],
+  );
+
+  // Determine which shaders are already added to this input (enabled or disabled)
+  const addedShaderIds = useMemo(
+    () => new Set((input.shaders || []).map((s) => s.shaderId)),
+    [input.shaders],
+  );
+  const canAddMoreShaders = useMemo(
+    () => availableShaders.some((s) => !addedShaderIds.has(s.id)),
+    [availableShaders, addedShaderIds],
+  );
 
   const handleMuteToggle = useCallback(async () => {
     await updateInput(roomId, input.inputId, {
@@ -188,6 +249,15 @@ export default function InputEntry({
     });
     await refreshState();
   }, [roomId, input, muted, refreshState]);
+
+  const handleShowTitleToggle = useCallback(async () => {
+    await updateInput(roomId, input.inputId, {
+      showTitle: !showTitle,
+      shaders: input.shaders,
+      volume: input.volume,
+    });
+    await refreshState();
+  }, [roomId, input, showTitle, refreshState]);
 
   const handleDelete = useCallback(async () => {
     const session = loadWhipSession();
@@ -255,7 +325,7 @@ export default function InputEntry({
   const { nextIf: shadersTourNextIf } = useDriverTourControls('shaders');
 
   const handleSlidersToggle = useCallback(() => {
-    shadersTourNextIf(0);
+    setTimeout(() => shadersTourNextIf(0), 50);
     if (onToggleFx) {
       onToggleFx();
     } else {
@@ -265,15 +335,41 @@ export default function InputEntry({
 
   const handleShaderToggle = useCallback(
     async (shaderId: string) => {
-      if (!input.shaders) return;
       setShaderLoading(shaderId);
       try {
-        const newShadersConfig = input.shaders.map((shader) =>
-          shader.shaderId === shaderId
-            ? { ...shader, enabled: !shader.enabled }
-            : shader,
+        const existing = (input.shaders || []).find(
+          (s) => s.shaderId === shaderId,
         );
-        shadersTourNextIf(1);
+        let newShadersConfig: NonNullable<Input['shaders']>;
+        if (!existing) {
+          const shaderDef = availableShaders.find((s) => s.id === shaderId);
+          if (!shaderDef) {
+            setShaderLoading(null);
+            return;
+          }
+          // Add new shader config enabled by default
+          newShadersConfig = [
+            ...(input.shaders || []),
+            {
+              shaderName: shaderDef.name,
+              shaderId: shaderDef.id,
+              enabled: true,
+              params:
+                shaderDef.params?.map((param) => ({
+                  paramName: param.name,
+                  paramValue: param.defaultValue ?? 0,
+                })) || [],
+            },
+          ];
+        } else {
+          // Toggle enabled state on existing shader
+          newShadersConfig = (input.shaders || []).map((shader) =>
+            shader.shaderId === shaderId
+              ? { ...shader, enabled: !shader.enabled }
+              : shader,
+          );
+        }
+        setTimeout(() => shadersTourNextIf(1), 500);
         await updateInput(roomId, input.inputId, {
           shaders: newShadersConfig,
           volume: input.volume,
@@ -386,6 +482,198 @@ export default function InputEntry({
   const shaderPanelShow = '';
   const shaderPanelHide = 'pointer-events-none  duration-1500';
 
+  const ensureFxOpen = useCallback(() => {
+    if (typeof isFxOpen === 'boolean') {
+      if (!isFxOpen) {
+        onToggleFx?.();
+      }
+    } else {
+      setShowSliders(true);
+    }
+  }, [isFxOpen, onToggleFx]);
+
+  const addShaderConfig = useCallback(
+    async (shaderId: string) => {
+      const shaderDef = availableShaders.find((s) => s.id === shaderId);
+      if (!shaderDef) return;
+      const already = input.shaders?.find((s) => s.shaderId === shaderId);
+      const newConfig = already
+        ? input.shaders?.map((s) =>
+            s.shaderId === shaderId ? { ...s, enabled: true } : s,
+          )
+        : [
+            ...(input.shaders || []),
+            {
+              shaderName: shaderDef.name,
+              shaderId: shaderDef.id,
+              enabled: true,
+              params:
+                shaderDef.params?.map((param) => ({
+                  paramName: param.name,
+                  paramValue: param.defaultValue ?? 0,
+                })) || [],
+            },
+          ];
+      setShaderLoading(shaderId);
+      try {
+        await updateInput(roomId, input.inputId, {
+          shaders: newConfig,
+          volume: input.volume,
+        });
+        await refreshState();
+        ensureFxOpen();
+      } finally {
+        setShaderLoading(null);
+      }
+    },
+    [availableShaders, input, roomId, refreshState, ensureFxOpen],
+  );
+
+  const handleShaderRemove = useCallback(
+    async (shaderId: string) => {
+      const newConfig = (input.shaders || []).filter(
+        (s) => s.shaderId !== shaderId,
+      );
+      setShaderLoading(shaderId);
+      try {
+        await updateInput(roomId, input.inputId, {
+          shaders: newConfig,
+          volume: input.volume,
+        });
+        await refreshState();
+      } finally {
+        setShaderLoading(null);
+      }
+    },
+    [input, roomId, refreshState],
+  );
+
+  // FX-only view: show just the shaders list, no input wrapper/details
+  if (fxModeOnly && effectiveShowSliders) {
+    const shadersForPanel = availableShaders;
+    return (
+      <>
+        <div
+          aria-hidden={!effectiveShowSliders}
+          onDragOver={(e) => {
+            if (
+              e.dataTransfer.types?.includes('application/x-smelter-shader')
+            ) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }
+          }}
+          onDrop={(e) => {
+            try {
+              e.preventDefault();
+              const shaderId = e.dataTransfer.getData(
+                'application/x-smelter-shader',
+              );
+              if (!shaderId) return;
+              const existing = input.shaders?.find(
+                (s) => s.shaderId === shaderId,
+              );
+              if (!existing) {
+                const shaderDef = availableShaders.find(
+                  (s) => s.id === shaderId,
+                );
+                if (!shaderDef) return;
+                const newConfig = [
+                  ...(input.shaders || []),
+                  {
+                    shaderName: shaderDef.name,
+                    shaderId: shaderDef.id,
+                    enabled: true,
+                    params:
+                      shaderDef.params?.map((param) => ({
+                        paramName: param.name,
+                        paramValue: param.defaultValue ?? 0,
+                      })) || [],
+                  },
+                ];
+                (async () => {
+                  setShaderLoading(shaderId);
+                  try {
+                    await updateInput(roomId, input.inputId, {
+                      shaders: newConfig,
+                      volume: input.volume,
+                    });
+                    await refreshState();
+                  } finally {
+                    setShaderLoading(null);
+                  }
+                })();
+                return;
+              }
+              if (!existing.enabled) {
+                handleShaderToggle(shaderId);
+              }
+            } catch {}
+          }}>
+          <ShaderPanel
+            input={input}
+            availableShaders={shadersForPanel}
+            sliderValues={sliderValues}
+            paramLoading={paramLoading}
+            shaderLoading={shaderLoading}
+            onShaderToggle={handleShaderToggle}
+            onShaderRemove={handleShaderRemove}
+            onSliderChange={handleSliderChange}
+            getShaderParamConfig={getShaderParamConfig}
+            getShaderButtonClass={getShaderButtonClass}
+            consolidated={true}
+          />
+        </div>
+
+        {isAddShaderModalOpen && (
+          <div
+            className='fixed inset-0 z-50 flex items-center justify-center'
+            data-no-dnd
+            onClick={() => setIsAddShaderModalOpen(false)}>
+            <div className='absolute inset-0 bg-black/60' />
+            <div
+              className='relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-700 bg-black-90 shadow-xl'
+              onClick={(e) => e.stopPropagation()}>
+              <div className='flex items-center justify-between p-4 border-b border-purple-800'>
+                <div className='text-white-100 font-medium'>Add a shader</div>
+                <button
+                  className='h-8 w-8 p-2 text-white-80 hover:text-white-100'
+                  onClick={() => setIsAddShaderModalOpen(false)}
+                  aria-label='Close modal'>
+                  <X className='size-4' />
+                </button>
+              </div>
+              <div className='max-h-[60vh] overflow-auto p-4'>
+                {availableShaders
+                  .filter((shader) => !addedShaderIds.has(shader.id))
+                  .map((shader) => (
+                    <div
+                      key={shader.id}
+                      className='mb-3 p-4 rounded-xl border transition-all duration-300 bg-purple-900/70 border-purple-700 hover:bg-purple-900/90 hover:shadow-md cursor-pointer'
+                      onClick={() => {
+                        setIsAddShaderModalOpen(false);
+                        addShaderConfig(shader.id);
+                      }}>
+                      <div className='flex items-center justify-between'>
+                        <div>
+                          <h3 className='font-semibold text-white-100 text-lg drop-shadow-sm'>
+                            {shader.name}
+                          </h3>
+                          <p className='text-xs text-white opacity-80'>
+                            {shader.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <div
@@ -402,14 +690,57 @@ export default function InputEntry({
         </div>
         <div className='flex flex-row items-center'>
           <div className='flex-1 flex'>
-            <StatusButton
-              input={input}
-              loading={connectionStateLoading}
-              showSliders={effectiveShowSliders}
-              onClick={handleSlidersToggle}
-            />
+            {(() => {
+              const installedCountForHide = (input.shaders || []).length;
+              const hideAddEffectsButton =
+                isComposingTourActive &&
+                !effectiveShowSliders &&
+                installedCountForHide === 0;
+              if (hideAddEffectsButton) return null;
+              return (
+                <StatusButton
+                  input={input}
+                  loading={connectionStateLoading}
+                  showSliders={effectiveShowSliders}
+                  onClick={handleSlidersToggle}
+                />
+              );
+            })()}
           </div>
           <div className='flex flex-row items-center justify-end flex-1 gap-1'>
+            <Button
+              data-no-dnd
+              size='sm'
+              variant='ghost'
+              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+              onClick={handleShowTitleToggle}
+              aria-label={showTitle ? 'Hide title' : 'Show title'}>
+              <span className='relative inline-flex items-center justify-center'>
+                <Type
+                  className={`${showTitle ? 'text-react-100' : 'text-red-40'} size-5`}
+                />
+                {!showTitle && (
+                  <span className='absolute inset-0 flex items-center justify-center pointer-events-none'>
+                    <svg
+                      width='20'
+                      height='20'
+                      viewBox='0 0 20 20'
+                      fill='none'
+                      className='text-red-40'>
+                      <line
+                        x1='4'
+                        y1='4'
+                        x2='16'
+                        y2='16'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                      />
+                    </svg>
+                  </span>
+                )}
+              </span>
+            </Button>
             <MuteButton
               muted={muted}
               disabled={input.sourceState === 'offline'}
@@ -446,20 +777,136 @@ export default function InputEntry({
             maxHeight: effectiveShowSliders ? '500px' : 0,
             height: effectiveShowSliders ? '100%' : 0,
             transitionProperty: 'opacity, transform, height, max-height',
+          }}
+          onDragOver={(e) => {
+            if (
+              e.dataTransfer.types?.includes('application/x-smelter-shader')
+            ) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }
+          }}
+          onDrop={(e) => {
+            try {
+              e.preventDefault();
+              const shaderId = e.dataTransfer.getData(
+                'application/x-smelter-shader',
+              );
+              if (!shaderId) return;
+              const existing = input.shaders?.find(
+                (s) => s.shaderId === shaderId,
+              );
+              if (!existing) {
+                const shaderDef = availableShaders.find(
+                  (s) => s.id === shaderId,
+                );
+                if (!shaderDef) return;
+                const newConfig = [
+                  ...(input.shaders || []),
+                  {
+                    shaderName: shaderDef.name,
+                    shaderId: shaderDef.id,
+                    enabled: true,
+                    params:
+                      shaderDef.params?.map((param) => ({
+                        paramName: param.name,
+                        paramValue: param.defaultValue ?? 0,
+                      })) || [],
+                  },
+                ];
+                (async () => {
+                  setShaderLoading(shaderId);
+                  try {
+                    await updateInput(roomId, input.inputId, {
+                      shaders: newConfig,
+                      volume: input.volume,
+                    });
+                    await refreshState();
+                  } finally {
+                    setShaderLoading(null);
+                  }
+                })();
+                return;
+              }
+              if (!existing.enabled) {
+                // Enable the shader on drop
+                handleShaderToggle(shaderId);
+              }
+            } catch {}
           }}>
-          <ShaderPanel
-            input={input}
-            availableShaders={availableShaders}
-            sliderValues={sliderValues}
-            paramLoading={paramLoading}
-            shaderLoading={shaderLoading}
-            onShaderToggle={handleShaderToggle}
-            onSliderChange={handleSliderChange}
-            getShaderParamConfig={getShaderParamConfig}
-            getShaderButtonClass={getShaderButtonClass}
-          />
+          {/*
+            In consolidated (FX open) mode, we want to list ALL available shaders
+            for the input, not only those already added. Otherwise, only show
+            the shaders explicitly added to this input.
+          */}
+          {(() => {
+            const shadersForPanel = effectiveShowSliders
+              ? availableShaders
+              : visibleShaders;
+            return (
+              <ShaderPanel
+                input={input}
+                availableShaders={shadersForPanel}
+                sliderValues={sliderValues}
+                paramLoading={paramLoading}
+                shaderLoading={shaderLoading}
+                onShaderToggle={handleShaderToggle}
+                onShaderRemove={handleShaderRemove}
+                onSliderChange={handleSliderChange}
+                getShaderParamConfig={getShaderParamConfig}
+                getShaderButtonClass={getShaderButtonClass}
+                consolidated={effectiveShowSliders}
+              />
+            );
+          })()}
         </div>
       </div>
+
+      {isAddShaderModalOpen && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center'
+          data-no-dnd
+          onClick={() => setIsAddShaderModalOpen(false)}>
+          <div className='absolute inset-0 bg-black/60' />
+          <div
+            className='relative z-10 w-full max-w-lg mx-4 rounded-xl border border-purple-700 bg-black-90 shadow-xl'
+            onClick={(e) => e.stopPropagation()}>
+            <div className='flex items-center justify-between p-4 border-b border-purple-800'>
+              <div className='text-white-100 font-medium'>Add a shader</div>
+              <button
+                className='h-8 w-8 p-2 text-white-80 hover:text-white-100'
+                onClick={() => setIsAddShaderModalOpen(false)}
+                aria-label='Close modal'>
+                <X className='size-4' />
+              </button>
+            </div>
+            <div className='max-h-[60vh] overflow-auto p-4'>
+              {availableShaders
+                .filter((shader) => !addedShaderIds.has(shader.id))
+                .map((shader) => (
+                  <div
+                    key={shader.id}
+                    className='mb-3 p-4 rounded-xl border transition-all duration-300 bg-purple-900/70 border-purple-700 hover:bg-purple-900/90 hover:shadow-md cursor-pointer'
+                    onClick={() => {
+                      setIsAddShaderModalOpen(false);
+                      addShaderConfig(shader.id);
+                    }}>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <h3 className='font-semibold text-white-100 text-lg drop-shadow-sm'>
+                          {shader.name}
+                        </h3>
+                        <p className='text-xs text-white opacity-80'>
+                          {shader.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

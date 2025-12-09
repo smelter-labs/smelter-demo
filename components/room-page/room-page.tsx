@@ -88,17 +88,42 @@ export default function RoomPage() {
     return null;
   }
 
+  function HashTourAutostart({ loading }: { loading: boolean }) {
+    const roomCtl = useDriverTourControls('room');
+    const composingCtl = useDriverTourControls('composing');
+    const shadersCtl = useDriverTourControls('shaders');
+    const didStartRef = useRef(false);
+    let hash = '';
+    if (typeof window !== 'undefined') {
+      console.log('window.location.hash', window.location.hash);
+      const h = (window.location.hash || '').toLowerCase();
+      if (
+        h.includes('tour-main') ||
+        h.includes('tour-composing') ||
+        h.includes('tour-shaders')
+      ) {
+        hash = h;
+        window.location.hash = '';
+        setTimeout(() => {
+          if (h.includes('tour-main')) {
+            roomCtl.start();
+          } else if (h.includes('tour-composing')) {
+            composingCtl.start();
+          } else if (h.includes('tour-shaders')) {
+            shadersCtl.start();
+          }
+        }, 500);
+      }
+    }
+    return null;
+  }
+
   return (
     <DriverToursProvider>
       <DriverTourProvider
         id='mobile'
         steps={mobileTourSteps}
         options={mobileTourOptions}>
-        {/*
-          Force-stop any running tours the moment the room is pending deletion.
-          This component uses the DriverTour context, so it must be rendered
-          within the providers.
-        */}
         {(() => {
           function StopToursOnPendingDelete({ pending }: { pending: boolean }) {
             const { forceStop: stopMobile } = useDriverTourControls('mobile');
@@ -134,6 +159,7 @@ export default function RoomPage() {
               steps={composingTourSteps}
               options={commonTourOptions}>
               <MobileTourAutostart loading={loading} />
+              <HashTourAutostart loading={loading} />
               <motion.div
                 variants={staggerContainer}
                 className='h-screen flex flex-col p-2 py-4 md:p-4 bg-black-100'>

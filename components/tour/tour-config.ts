@@ -179,7 +179,7 @@ export const shadersTourSteps: DriveStep[] = [
     popover: {
       title: 'Using Shaders',
       description:
-        'Each video can be enhanced with various shaders. Click the "Show FX" button to see the available options.',
+        'Each video can be enhanced with various shaders. Click the "Add Effects" button to see the available options.',
       side: 'bottom',
       align: 'center',
       showButtons: [],
@@ -187,7 +187,7 @@ export const shadersTourSteps: DriveStep[] = [
     onHighlightStarted: handleAccordionHighlightStarted,
   },
   {
-    element: '[data-tour="streams-list-container"]',
+    element: '[data-tour="fx-accordion-container"]',
     popover: {
       title: 'Using Shaders',
       description:
@@ -210,7 +210,7 @@ export const shadersTourSteps: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour="streams-list-container"]',
+    element: '[data-tour="fx-accordion-container"]',
     popover: {
       title: 'Adjusting Shaders',
       description:

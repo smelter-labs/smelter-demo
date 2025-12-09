@@ -168,6 +168,13 @@ export function useDriverTour(
       onDestroyStarted: () => {
         if (forceDestroyRef.current) {
           driverRef.current?.destroy();
+          try {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('smelter:tour:stop', { detail: { id } }),
+              );
+            }
+          } catch {}
           return;
         }
         const currentIndex =
@@ -176,6 +183,13 @@ export function useDriverTour(
         // If no more steps, end without asking
         if (!hasMore) {
           driverRef.current?.destroy?.();
+          try {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('smelter:tour:stop', { detail: { id } }),
+              );
+            }
+          } catch {}
           return;
         }
         // Temporarily destroy to allow modal interaction, then decide
@@ -188,6 +202,13 @@ export function useDriverTour(
         void showEndTourConfirm().then((shouldEnd) => {
           if (shouldEnd) {
             // User chose to end; nothing else to do
+            try {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('smelter:tour:stop', { detail: { id } }),
+                );
+              }
+            } catch {}
             return;
           }
           // Keep touring: restart and move to the previously active step
@@ -263,6 +284,13 @@ export function useDriverTour(
 
   const stop = useCallback(() => {
     driverRef.current?.destroy?.();
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('smelter:tour:stop', { detail: { id } }),
+        );
+      }
+    } catch {}
   }, []);
 
   const forceStop = useCallback(() => {
@@ -272,6 +300,13 @@ export function useDriverTour(
     } finally {
       forceDestroyRef.current = false;
     }
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('smelter:tour:stop', { detail: { id } }),
+        );
+      }
+    } catch {}
   }, []);
 
   const highlight = useCallback((step: DriveStep) => {
