@@ -35,13 +35,11 @@ export async function startPublish(
 
   // Monitor connection state to detect disconnections
   pc.onconnectionstatechange = () => {
-    console.log('[WHIP] Connection state changed:', pc.connectionState);
     if (
       pc.connectionState === 'failed' ||
       pc.connectionState === 'disconnected' ||
       pc.connectionState === 'closed'
     ) {
-      console.log('[WHIP] Connection lost, stopping camera stream');
       if (onDisconnected) {
         onDisconnected();
       }
@@ -49,13 +47,11 @@ export async function startPublish(
   };
 
   pc.oniceconnectionstatechange = () => {
-    console.log('[WHIP] ICE connection state changed:', pc.iceConnectionState);
     if (
       pc.iceConnectionState === 'failed' ||
       pc.iceConnectionState === 'disconnected' ||
       pc.iceConnectionState === 'closed'
     ) {
-      console.log('[WHIP] ICE connection lost, stopping camera stream');
       if (onDisconnected) {
         onDisconnected();
       }
