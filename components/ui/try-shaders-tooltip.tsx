@@ -248,7 +248,6 @@ export default function TryShadersTooltip() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}>
       <div className='text-normal font-semibold'>Try out shaders</div>
-      {/* Arrow (centered vertically on right) */}
       <div
         aria-hidden
         style={{
