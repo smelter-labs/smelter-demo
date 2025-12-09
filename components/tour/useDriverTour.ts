@@ -30,6 +30,7 @@ export function useDriverTour(
   const driverRef = useRef<Driver | null>(null);
   const forceDestroyRef = useRef<boolean>(false);
   const endConfirmOpenRef = useRef<boolean>(false);
+  const overlayClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
 
   const showEndTourConfirm = useCallback((): Promise<boolean> => {
     if (endConfirmOpenRef.current) {
@@ -43,7 +44,6 @@ export function useDriverTour(
         const overlay = document.createElement('div');
         overlay.className =
           'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
-        // Ensure we are above any tour overlays
         overlay.style.zIndex = '2147483647';
         overlay.style.pointerEvents = 'auto';
         const modal = document.createElement('div');
@@ -80,6 +80,8 @@ export function useDriverTour(
           endConfirmOpenRef.current = false;
         };
         cancelBtn.addEventListener('click', () => {
+          const activeIndex = driverRef.current?.getActiveIndex?.();
+          console.log('activeIndex', activeIndex);
           resolve(false);
           cleanup();
         });
@@ -106,6 +108,56 @@ export function useDriverTour(
     return () => {
       window.removeEventListener('resize', onResize);
     };
+  }, []);
+
+  const attachOverlayClickGuard = useCallback(() => {
+    try {
+      const overlay = document.querySelector(
+        '.driver-overlay',
+      ) as HTMLElement | null;
+      console.log('overlay', overlay);
+      if (!overlay) return;
+      if (overlayClickHandlerRef.current) {
+        overlay.removeEventListener(
+          'click',
+          overlayClickHandlerRef.current,
+          true,
+        );
+      }
+      const handler = (e: MouseEvent) => {
+        try {
+          const activeIndex = driverRef.current?.getActiveIndex?.();
+          console.log('activeIndex', activeIndex);
+          // room tour, step index 2: [data-tour="twitch-suggestion-item-container"]
+          if (id === 'room' && activeIndex === 2) {
+            console.log('preventing default');
+            e.preventDefault();
+            e.stopPropagation();
+            (e as any).stopImmediatePropagation?.();
+            driverRef.current?.movePrevious?.();
+          }
+        } catch {}
+      };
+      overlay.addEventListener('click', handler, true);
+      overlayClickHandlerRef.current = handler;
+    } catch {}
+  }, [id]);
+
+  const detachOverlayClickGuard = useCallback(() => {
+    console.log('detachOverlayClickGuard');
+    try {
+      const overlay = document.querySelector(
+        '.driver-overlay',
+      ) as HTMLElement | null;
+      if (overlay && overlayClickHandlerRef.current) {
+        overlay.removeEventListener(
+          'click',
+          overlayClickHandlerRef.current,
+          true,
+        );
+      }
+    } catch {}
+    overlayClickHandlerRef.current = null;
   }, []);
 
   const start = useCallback(() => {
@@ -155,17 +207,21 @@ export function useDriverTour(
     const config: UseDriverTourOptions = {
       showProgress: true,
       ...options,
+      overlayOpacity: 0.7,
       popoverClass: 'driverjs-theme',
       steps,
       onHighlighted: (element, step, ctx) => {
         attachResizeObserver(element);
         userOnHighlighted?.(element, step, ctx);
+        attachOverlayClickGuard();
       },
       onDeselected: (element, step, ctx) => {
         detachResizeObserver();
         userOnDeselected?.(element, step, ctx);
+        detachOverlayClickGuard();
       },
       onDestroyStarted: () => {
+        detachOverlayClickGuard();
         if (forceDestroyRef.current) {
           driverRef.current?.destroy();
           try {
@@ -192,7 +248,6 @@ export function useDriverTour(
           } catch {}
           return;
         }
-        // Temporarily destroy to allow modal interaction, then decide
         forceDestroyRef.current = true;
         try {
           driverRef.current?.destroy?.();
@@ -200,8 +255,8 @@ export function useDriverTour(
           forceDestroyRef.current = false;
         }
         void showEndTourConfirm().then((shouldEnd) => {
+          console.log('shouldEnd', shouldEnd);
           if (shouldEnd) {
-            // User chose to end; nothing else to do
             try {
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(
@@ -211,17 +266,16 @@ export function useDriverTour(
             } catch {}
             return;
           }
-          // Keep touring: restart and move to the previously active step
           try {
-            // Recreate the tour
-            // Reuse the same start logic
-            // Start at step 0 then move to saved index on next frame
             (async () => {
               start();
-              // Move to previous index after driver initializes
               requestAnimationFrame(() => {
                 try {
-                  driverRef.current?.moveTo?.(currentIndex);
+                  if (id === 'room' && currentIndex === 2) {
+                    driverRef.current?.moveTo?.(1);
+                  } else {
+                    driverRef.current?.moveTo?.(currentIndex);
+                  }
                 } catch {}
               });
             })();
@@ -267,7 +321,6 @@ export function useDriverTour(
 
     const d = driver(config);
     driverRef.current = d;
-    // Notify app that a tour is starting
     try {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(

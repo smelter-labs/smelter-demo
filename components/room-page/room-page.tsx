@@ -95,7 +95,6 @@ export default function RoomPage() {
     const didStartRef = useRef(false);
     let hash = '';
     if (typeof window !== 'undefined') {
-      console.log('window.location.hash', window.location.hash);
       const h = (window.location.hash || '').toLowerCase();
       if (
         h.includes('tour-main') ||
