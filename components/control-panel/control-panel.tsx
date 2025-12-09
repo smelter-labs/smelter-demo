@@ -22,6 +22,7 @@ import { SortableItem } from '@/components/control-panel/sortable-list/sortable-
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
 import Accordion from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
+import { ArrowLeft } from 'lucide-react';
 import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
 import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
 import { KickAddInputForm } from './add-input-form/kick-add-input-form';
@@ -325,130 +326,173 @@ export default function ControlPanel({
       className='flex flex-col flex-1 min-h-0 gap-1 rounded-xl bg-black-90 border border-black-50 pt-6 shadow-sm'>
       <video id='local-preview' muted playsInline autoPlay className='hidden' />
 
-      {!isKick && (
-        <Accordion
-          title='Add new stream'
-          defaultOpen
-          data-tour='twitch-add-input-form-container'>
-          <TwitchAddInputForm
-            inputs={inputs}
-            roomId={roomId}
-            refreshState={handleRefreshState}
-          />
-        </Accordion>
-      )}
+      {(() => {
+        const fxInput =
+          openFxInputId && inputs.find((i) => i.inputId === openFxInputId)
+            ? inputs.find((i) => i.inputId === openFxInputId)!
+            : null;
+        if (fxInput) {
+          return (
+            <Accordion
+              title={fxInput.title}
+              data-tour='fx-accordion-container'
+              defaultOpen
+              headerIcon={<ArrowLeft width={18} height={18} />}
+              onHeaderClick={() => setOpenFxInputId(null)}>
+              <div className='px-2 py-1'>
+                <InputEntry
+                  input={fxInput}
+                  refreshState={handleRefreshState}
+                  roomId={roomId}
+                  availableShaders={availableShaders}
+                  pcRef={pcRef}
+                  streamRef={streamRef}
+                  isFxOpen={true}
+                  fxModeOnly={true}
+                  onToggleFx={() => setOpenFxInputId(null)}
+                  onWhipDisconnectedOrRemoved={(id) => {
+                    if (activeWhipInputId === id) {
+                      setActiveWhipInputId(null);
+                      setIsWhipActive(false);
+                    }
+                  }}
+                />
+              </div>
+            </Accordion>
+          );
+        }
+        return (
+          <>
+            {!isKick && (
+              <Accordion
+                title='Add new stream'
+                defaultOpen
+                data-tour='twitch-add-input-form-container'>
+                <TwitchAddInputForm
+                  inputs={inputs}
+                  roomId={roomId}
+                  refreshState={handleRefreshState}
+                />
+              </Accordion>
+            )}
 
-      {isKick && (
-        <Accordion
-          title='Add new stream'
-          defaultOpen
-          data-tour='kick-add-input-form-container'>
-          <KickAddInputForm
-            inputs={inputs}
-            roomId={roomId}
-            refreshState={handleRefreshState}
-          />
-        </Accordion>
-      )}
-      <Accordion
-        title='Add new MP4'
-        defaultOpen
-        data-tour='mp4-add-input-form-container'>
-        <Mp4AddInputForm
-          inputs={inputs}
-          roomId={roomId}
-          refreshState={handleRefreshState}
-        />
-      </Accordion>
+            {isKick && (
+              <Accordion
+                title='Add new stream'
+                defaultOpen
+                data-tour='kick-add-input-form-container'>
+                <KickAddInputForm
+                  inputs={inputs}
+                  roomId={roomId}
+                  refreshState={handleRefreshState}
+                />
+              </Accordion>
+            )}
+            <Accordion
+              title='Add new MP4'
+              defaultOpen
+              data-tour='mp4-add-input-form-container'>
+              <Mp4AddInputForm
+                inputs={inputs}
+                roomId={roomId}
+                refreshState={handleRefreshState}
+              />
+            </Accordion>
 
-      <Accordion title='Add new Camera input' defaultOpen>
-        {!activeWhipInputId ? (
-          <WHIPAddInputForm
-            inputs={inputs}
-            roomId={roomId}
-            refreshState={handleRefreshState}
-            userName={userName}
-            setUserName={setUserName}
-            pcRef={pcRef}
-            streamRef={streamRef}
-            setActiveWhipInputId={setActiveWhipInputId}
-            setIsWhipActive={setIsWhipActive}
-          />
-        ) : (
-          <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
-            <div className='text-white-100 text-sm'>
-              {(() => {
-                const whipInput = inputs.find(
-                  (i) => i.inputId === activeWhipInputId,
-                );
-                const displayName = whipInput?.title || userName;
-                return `User ${displayName} is already connected.`;
-              })()}
-            </div>
-          </div>
-        )}
-      </Accordion>
+            <Accordion title='Add new Camera input' defaultOpen>
+              {!activeWhipInputId ? (
+                <WHIPAddInputForm
+                  inputs={inputs}
+                  roomId={roomId}
+                  refreshState={handleRefreshState}
+                  userName={userName}
+                  setUserName={setUserName}
+                  pcRef={pcRef}
+                  streamRef={streamRef}
+                  setActiveWhipInputId={setActiveWhipInputId}
+                  setIsWhipActive={setIsWhipActive}
+                />
+              ) : (
+                <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
+                  <div className='text-white-100 text-sm'>
+                    {(() => {
+                      const whipInput = inputs.find(
+                        (i) => i.inputId === activeWhipInputId,
+                      );
+                      const displayName = whipInput?.title || userName;
+                      return `User ${displayName} is already connected.`;
+                    })()}
+                  </div>
+                </div>
+              )}
+            </Accordion>
 
-      {/* Streams list */}
-      <Accordion title='Streams' defaultOpen data-tour='streams-list-container'>
-        <div className='flex-1 overflow-auto relative'>
-          <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
-          {showStreamsSpinner ? (
-            <div className='flex items-center justify-center h-32'>
-              <LoadingSpinner size='lg' variant='spinner' />
-            </div>
-          ) : (
-            <SortableList
-              items={inputWrappers}
-              resetVersion={listVersion}
-              renderItem={(item) => {
-                const input = inputs.find(
-                  (input) => input.inputId === item.inputId,
-                );
-                return (
-                  <SortableItem key={item.inputId} id={item.id}>
-                    {input && (
-                      <InputEntry
-                        input={input}
-                        refreshState={handleRefreshState}
-                        roomId={roomId}
-                        availableShaders={availableShaders}
-                        pcRef={pcRef}
-                        streamRef={streamRef}
-                        isFxOpen={openFxInputId === input.inputId}
-                        onToggleFx={() =>
-                          setOpenFxInputId((prev) =>
-                            prev === input.inputId ? null : input.inputId,
-                          )
-                        }
-                        onWhipDisconnectedOrRemoved={(id) => {
-                          if (activeWhipInputId === id) {
-                            setActiveWhipInputId(null);
-                            setIsWhipActive(false);
-                          }
-                        }}
-                      />
-                    )}
-                  </SortableItem>
-                );
-              }}
-              onOrderChange={updateOrder}
-            />
-          )}
-        </div>
-      </Accordion>
+            {/* Streams list */}
+            <Accordion
+              title='Streams'
+              defaultOpen
+              data-tour='streams-list-container'>
+              <div className='flex-1 overflow-auto relative'>
+                <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
+                {showStreamsSpinner ? (
+                  <div className='flex items-center justify-center h-32'>
+                    <LoadingSpinner size='lg' variant='spinner' />
+                  </div>
+                ) : (
+                  <SortableList
+                    items={inputWrappers}
+                    resetVersion={listVersion}
+                    renderItem={(item) => {
+                      const input = inputs.find(
+                        (input) => input.inputId === item.inputId,
+                      );
+                      return (
+                        <SortableItem key={item.inputId} id={item.id}>
+                          {input && (
+                            <InputEntry
+                              input={input}
+                              refreshState={handleRefreshState}
+                              roomId={roomId}
+                              availableShaders={availableShaders}
+                              pcRef={pcRef}
+                              streamRef={streamRef}
+                              isFxOpen={openFxInputId === input.inputId}
+                              onToggleFx={() =>
+                                setOpenFxInputId((prev) =>
+                                  prev === input.inputId ? null : input.inputId,
+                                )
+                              }
+                              onWhipDisconnectedOrRemoved={(id) => {
+                                if (activeWhipInputId === id) {
+                                  setActiveWhipInputId(null);
+                                  setIsWhipActive(false);
+                                }
+                              }}
+                            />
+                          )}
+                        </SortableItem>
+                      );
+                    }}
+                    onOrderChange={updateOrder}
+                  />
+                )}
+              </div>
+            </Accordion>
 
-      {/* Layout selector */}
-      <Accordion
-        title='Layouts'
-        defaultOpen
-        data-tour='layout-selector-container'>
-        <LayoutSelector
-          changeLayout={changeLayout}
-          activeLayoutId={roomState.layout}
-          connectedStreamsLength={roomState.inputs.length}
-        />
-      </Accordion>
+            {/* Layout selector */}
+            <Accordion
+              title='Layouts'
+              defaultOpen
+              data-tour='layout-selector-container'>
+              <LayoutSelector
+                changeLayout={changeLayout}
+                activeLayoutId={roomState.layout}
+                connectedStreamsLength={roomState.inputs.length}
+              />
+            </Accordion>
+          </>
+        );
+      })()}
     </motion.div>
   );
 }

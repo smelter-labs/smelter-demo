@@ -45,6 +45,7 @@ export type Input = {
   inputId: string;
   title: string;
   description: string;
+  showTitle?: boolean;
   volume: number;
   type?: string;
   sourceState: 'live' | 'offline' | 'unknown' | 'always-live';
@@ -237,6 +238,7 @@ export async function getAllRooms(): Promise<any> {
 export type UpdateInputOptions = {
   volume: number;
   shaders?: ShaderConfig[];
+  showTitle?: boolean;
 };
 
 export async function updateInput(
