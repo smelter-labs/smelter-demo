@@ -127,7 +127,7 @@ export default function RoomPage() {
         {/*
           Force-stop any running tours the moment the room is pending deletion.
           This component uses the DriverTour context, so it must be rendered
-          within the providers.
+          within the providers. AO.
         */}
         {(() => {
           function StopToursOnPendingDelete({ pending }: { pending: boolean }) {
