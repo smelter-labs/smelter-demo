@@ -11,6 +11,7 @@ import {
   Minimize2 as MinimizeIcon,
   RotateCcw as ReplayIcon,
 } from 'lucide-react';
+import { buildIceServers } from '@/components/control-panel/whip-input/utils/webRTC-helpers';
 
 // You may want to install lucide-react: npm i lucide-react
 // Or swap for your favorite SVG icons.
@@ -343,7 +344,7 @@ export default function OutputStream({
 
 async function connect(endpointUrl: string): Promise<MediaStream> {
   const pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    iceServers: buildIceServers(),
     bundlePolicy: 'max-bundle',
   });
 
