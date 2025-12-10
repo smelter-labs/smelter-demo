@@ -8,8 +8,9 @@ export function buildIceServers(): RTCIceServer[] {
   const username = process.env.NEXT_PUBLIC_TURN_USER;
   const credential = process.env.NEXT_PUBLIC_TURN_PASS;
   const servers: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
-  if (urls.length && username && credential)
+  if (urls.length && username && credential) {
     servers.push({ urls, username, credential });
+  }
   return servers;
 }
 
