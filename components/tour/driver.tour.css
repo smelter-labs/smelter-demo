@@ -36,11 +36,28 @@
 }
 
 .driver-popover.driverjs-theme .driver-popover-close-btn {
-  color: #9b9b9b;
+  background: transparent !important;
+  border: 0 !important;
+  color: #000;
+  text-shadow: none;
+  font-size: 28px; /* 2x larger than default 14px */
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  flex: 0 0 auto;
+  transition: color 0.15s ease;
+  margin-top: 5px;
+  margin-right: 8px;
 }
 
 .driver-popover.driverjs-theme .driver-popover-close-btn:hover {
-  color: #000;
+  background: transparent !important;
+  color: #333;
 }
 
 .driver-popover.driverjs-theme .driver-popover-arrow-side-left.driver-popover-arrow {

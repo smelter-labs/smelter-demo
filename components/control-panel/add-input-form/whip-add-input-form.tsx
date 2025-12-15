@@ -84,6 +84,7 @@ export function WHIPAddInputForm(props: {
   return (
     <GenericAddInputForm<string>
       showArrow={false}
+      forceShowButton
       inputs={inputs}
       refreshState={refreshState}
       suggestions={[]}

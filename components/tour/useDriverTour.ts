@@ -201,7 +201,7 @@ export function useDriverTour(
     const config: UseDriverTourOptions = {
       showProgress: true,
       ...options,
-      overlayOpacity: 0.7,
+      overlayOpacity: 0.6,
       popoverClass: 'driverjs-theme',
       steps,
       onHighlighted: (element, step, ctx) => {

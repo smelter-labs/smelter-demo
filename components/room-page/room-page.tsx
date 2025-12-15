@@ -117,6 +117,29 @@ export default function RoomPage() {
     return null;
   }
 
+  // Expand all accordions after any tour stops
+  useEffect(() => {
+    const onTourStop = () => {
+      try {
+        const allAccordions = document.querySelectorAll(
+          '[data-accordion="true"]',
+        ) as NodeListOf<HTMLDivElement>;
+        allAccordions.forEach((acc) => {
+          if (acc.getAttribute('data-open') !== 'true') {
+            acc.querySelector('button')?.click();
+          }
+        });
+      } catch {}
+    };
+    window.addEventListener('smelter:tour:stop', onTourStop as EventListener);
+    return () => {
+      window.removeEventListener(
+        'smelter:tour:stop',
+        onTourStop as EventListener,
+      );
+    };
+  }, []);
+
   return (
     <DriverToursProvider>
       <DriverTourProvider

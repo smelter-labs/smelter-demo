@@ -90,9 +90,13 @@ export default function RoomView({
 
       <motion.div
         variants={staggerContainer}
-        className='flex-1 md:grid grid-cols-1 gap-0 xl:grid-cols-4 xl:gap-4 min-h-0 items-start'>
-        <VideoPreview videoRef={videoRef} whepUrl={roomState.whepUrl} />
-        <motion.div className='flex flex-col xl:gap-4 min-h-0 justify-start xl:h-full xl:max-h-full overflow-auto'>
+        className='flex-1 grid grid-cols-1 grid-rows-[auto,1fr] gap-0 xl:grid-cols-4 xl:grid-rows-none xl:gap-4 min-h-0 h-full items-start overflow-hidden'>
+        <VideoPreview
+          videoRef={videoRef}
+          whepUrl={roomState.whepUrl}
+          roomId={roomId}
+        />
+        <motion.div className='col-span-1 w-full flex flex-col xl:gap-4 min-h-0 h-full max-h-full justify-start overflow-auto md:pr-4'>
           <ControlPanel
             roomState={roomState}
             roomId={roomId}
