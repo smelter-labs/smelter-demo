@@ -93,7 +93,7 @@ export default function ShaderPanel({
               </div>
               {enabled && shader.params && shader.params.length > 0 && (
                 <div className='mt-3 space-y-5' data-no-dnd>
-                  <div className='border-t border-purple-800 -mx-4 px-4 pt-3' />
+                  <div className='border-t border-[#414154] -mx-4 px-4 pt-3' />
                   {shader.params.map((param) => {
                     const paramConfig = getShaderParamConfig(
                       shader.id,

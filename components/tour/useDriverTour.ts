@@ -201,7 +201,7 @@ export function useDriverTour(
     const config: UseDriverTourOptions = {
       showProgress: true,
       ...options,
-      overlayOpacity: 0.7,
+      overlayOpacity: 0.6,
       popoverClass: 'driverjs-theme',
       steps,
       onHighlighted: (element, step, ctx) => {
@@ -285,26 +285,92 @@ export function useDriverTour(
           0) as number;
         const currentStep = Math.min(Math.max(activeIndex + 1, 1), totalSteps);
         const percent = totalSteps > 1 ? (currentStep / totalSteps) * 100 : 100;
-        let container = wrapper.querySelector(
-          '.driverjs-progress-container',
+        // Insert or update "Step X of Y" label above title
+        try {
+          const titleEl = wrapper.querySelector(
+            '.driver-popover-title',
+          ) as HTMLDivElement | null;
+          if (titleEl) {
+            let stepLabel =
+              titleEl.previousElementSibling as HTMLDivElement | null;
+            if (
+              !stepLabel ||
+              !stepLabel.classList.contains('driverjs-step-label')
+            ) {
+              stepLabel = document.createElement('div');
+              stepLabel.className = 'driverjs-step-label';
+              titleEl.parentElement?.insertBefore(stepLabel, titleEl);
+            }
+            stepLabel.textContent = `Step ${currentStep} of ${totalSteps}`;
+          }
+        } catch {}
+        // Render steps as dots instead of a linear progress bar
+        let dotsContainer = wrapper.querySelector(
+          '.driverjs-steps-dots',
         ) as HTMLDivElement | null;
-        if (!container) {
-          container = document.createElement('div');
-          container.className = 'driverjs-progress-container';
-          const bar = document.createElement('div');
-          bar.className = 'driverjs-progress-bar';
-          const barFill = document.createElement('div');
-          barFill.className = 'driverjs-progress-bar-fill';
-          bar.appendChild(barFill);
-          container.appendChild(bar);
-          wrapper.insertBefore(container, footer);
+        if (!dotsContainer) {
+          dotsContainer = document.createElement('div');
+          dotsContainer.className = 'driverjs-steps-dots';
+          for (let i = 0; i < totalSteps; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'driverjs-step-dot';
+            dotsContainer.appendChild(dot);
+          }
+          wrapper.insertBefore(dotsContainer, footer);
         }
-        const barFill = container.querySelector(
-          '.driverjs-progress-bar-fill',
-        ) as HTMLDivElement | null;
-        if (barFill) {
-          barFill.style.width = `${percent}%`;
+        // Sync active dot
+        const dots = Array.from(
+          dotsContainer.querySelectorAll('.driverjs-step-dot'),
+        ) as HTMLSpanElement[];
+        // If steps count changed, re-create
+        if (dots.length !== totalSteps) {
+          dotsContainer.innerHTML = '';
+          for (let i = 0; i < totalSteps; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'driverjs-step-dot';
+            dotsContainer.appendChild(dot);
+          }
         }
+        const allDots = Array.from(
+          dotsContainer.querySelectorAll('.driverjs-step-dot'),
+        ) as HTMLSpanElement[];
+        allDots.forEach((d, idx) => {
+          if (idx === currentStep - 1) {
+            d.classList.add('active');
+          } else {
+            d.classList.remove('active');
+          }
+        });
+
+        // Remove prev button from DOM entirely if it's hidden to avoid layout offset
+        try {
+          const prevBtn = wrapper.querySelector(
+            '.driver-popover-prev-btn',
+          ) as HTMLButtonElement | null;
+          if (prevBtn) {
+            const inline = prevBtn.getAttribute('style') || '';
+            const computed =
+              typeof window !== 'undefined'
+                ? window.getComputedStyle(prevBtn)
+                : (null as any);
+            if (
+              inline.includes('display: none') ||
+              computed?.display === 'none'
+            ) {
+              const parent = prevBtn.parentElement;
+              prevBtn.remove();
+              // Normalize nav container alignment after removal
+              if (
+                parent &&
+                parent.classList.contains('driver-popover-navigation-btns')
+              ) {
+                try {
+                  (parent as HTMLElement).style.justifyContent = 'flex-start';
+                } catch {}
+              }
+            }
+          }
+        } catch {}
       },
     };
 

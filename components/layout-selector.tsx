@@ -7,7 +7,8 @@ export type Layout =
   | 'grid'
   | 'primary-on-left'
   | 'primary-on-top'
-  | 'picture-in-picture';
+  | 'picture-in-picture'
+  | 'multiple-pictures';
 
 type LayoutConfig = {
   id: Layout;
@@ -119,6 +120,36 @@ export default function LayoutSelector({
                       width: '25%',
                       height: '25%',
                       zIndex: 10 + idx,
+                    }}></div>
+                );
+              },
+            )}
+          </div>
+        );
+      case 'multiple-pictures':
+        return (
+          <div className='w-full h-full relative'>
+            <div
+              className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
+            />
+            {Array.from({ length: Math.max(0, streamCount - 1) }).map(
+              (_, idx) => {
+                // place small tiles around corners/edges
+                const positions = [
+                  { top: '0.5rem', right: '0.5rem' },
+                  { bottom: '0.5rem', right: '0.5rem' },
+                  { bottom: '0.5rem', left: '0.5rem' },
+                ] as const;
+                const pos = positions[idx % positions.length] as any;
+                return (
+                  <div
+                    key={idx}
+                    className='transition-all duration-300 ease-in-out absolute border border-white-25 bg-purple-80 rounded-xs'
+                    style={{
+                      width: '28%',
+                      height: '28%',
+                      zIndex: 10 + idx,
+                      ...pos,
                     }}></div>
                 );
               },

@@ -15,6 +15,7 @@ import {
   getAvailableShaders,
   updateRoom as updateRoomAction,
   removeInput,
+  updateInput,
 } from '@/app/actions/actions';
 
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
@@ -90,6 +91,12 @@ export default function ControlPanel({
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
 
+  // Add-input tabs state (always declared at top-level to preserve hook order)
+  type AddTab = 'twitch' | 'kick' | 'mp4' | 'camera';
+  const [addInputActiveTab, setAddInputActiveTab] = useState<AddTab>(
+    isKick ? 'kick' : 'twitch',
+  );
+
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
       inputsArg.map((input, index) => ({
@@ -126,6 +133,8 @@ export default function ControlPanel({
     inputsRef.current = inputs;
     onInputsChange(inputs);
   }, [inputs, getInputWrappers, onInputsChange]);
+
+  // (moved) reordering effect defined after updateOrder
 
   useEffect(() => {
     setInputs(roomState.inputs);
@@ -177,6 +186,58 @@ export default function ControlPanel({
     };
   }, []);
 
+  // Auto-attach the "multiple-pictures" shader to every input when that layout is active
+  useEffect(() => {
+    if (roomState.layout !== 'multiple-pictures') return;
+    if (!availableShaders || availableShaders.length === 0) return;
+
+    const shaderDef =
+      availableShaders.find((s) => s.id === 'multiple-pictures') ||
+      availableShaders.find(
+        (s) =>
+          s.name.toLowerCase().includes('multiple') &&
+          s.name.toLowerCase().includes('picture'),
+      );
+
+    if (!shaderDef) return;
+
+    (async () => {
+      const updates: Promise<any>[] = [];
+      for (const input of inputsRef.current) {
+        const hasShader = (input.shaders || []).some(
+          (s) => s.shaderId === shaderDef.id,
+        );
+        if (!hasShader) {
+          const newShadersConfig = [
+            ...(input.shaders || []),
+            {
+              shaderName: shaderDef.name,
+              shaderId: shaderDef.id,
+              enabled: true,
+              params:
+                shaderDef.params?.map((param) => ({
+                  paramName: param.name,
+                  paramValue: param.defaultValue ?? 0,
+                })) || [],
+            },
+          ];
+          updates.push(
+            updateInput(roomId, input.inputId, {
+              shaders: newShadersConfig,
+              volume: input.volume,
+            }),
+          );
+        }
+      }
+      if (updates.length > 0) {
+        try {
+          await Promise.allSettled(updates);
+          await handleRefreshState();
+        } catch {}
+      }
+    })();
+  }, [roomState.layout, availableShaders, roomId, handleRefreshState]);
+
   const updateOrder = useCallback(
     async (newInputWrappers: InputWrapper[]) => {
       try {
@@ -189,6 +250,52 @@ export default function ControlPanel({
     },
     [roomId],
   );
+
+  // Allow reordering via up/down events from InputEntry
+  useEffect(() => {
+    const onMove = (e: any) => {
+      try {
+        const { inputId, direction } = e?.detail || {};
+        if (!inputId || !direction) return;
+        setInputWrappers((prev) => {
+          const current = [...prev];
+          const idx = current.findIndex((it) => it.inputId === inputId);
+          if (idx < 0) return prev;
+          const target =
+            direction === 'up'
+              ? Math.max(0, idx - 1)
+              : Math.min(current.length - 1, idx + 1);
+          if (target === idx) return prev;
+          const [item] = current.splice(idx, 1);
+          current.splice(target, 0, item);
+          // Persist order asynchronously
+          void updateOrder(current);
+          return current;
+        });
+        setListVersion((v) => v + 1);
+      } catch {}
+    };
+    window.addEventListener('smelter:inputs:move', onMove as EventListener);
+    return () => {
+      window.removeEventListener(
+        'smelter:inputs:move',
+        onMove as EventListener,
+      );
+    };
+  }, [updateOrder]);
+
+  // When main tour starts, force-switch to Twitch tab (top-level hook, not inside conditional render)
+  useEffect(() => {
+    const onStart = (e: any) => {
+      try {
+        if (e?.detail?.id === 'room') {
+          setAddInputActiveTab('twitch');
+        }
+      } catch {}
+    };
+    window.addEventListener('smelter:tour:start', onStart);
+    return () => window.removeEventListener('smelter:tour:start', onStart);
+  }, []);
 
   const changeLayout = useCallback(
     async (layout: Layout) => {
@@ -339,7 +446,7 @@ export default function ControlPanel({
               defaultOpen
               headerIcon={<ArrowLeft width={18} height={18} />}
               onHeaderClick={() => setOpenFxInputId(null)}>
-              <div className='px-2 py-1'>
+              <div className='px-0 py-1'>
                 <InputEntry
                   input={fxInput}
                   refreshState={handleRefreshState}
@@ -363,70 +470,96 @@ export default function ControlPanel({
         }
         return (
           <>
-            {!isKick && (
-              <Accordion
-                title='Add new stream'
-                defaultOpen
-                data-tour='twitch-add-input-form-container'>
-                <TwitchAddInputForm
-                  inputs={inputs}
-                  roomId={roomId}
-                  refreshState={handleRefreshState}
-                />
-              </Accordion>
-            )}
-
-            {isKick && (
-              <Accordion
-                title='Add new stream'
-                defaultOpen
-                data-tour='kick-add-input-form-container'>
-                <KickAddInputForm
-                  inputs={inputs}
-                  roomId={roomId}
-                  refreshState={handleRefreshState}
-                />
-              </Accordion>
-            )}
-            <Accordion
-              title='Add new MP4'
-              defaultOpen
-              data-tour='mp4-add-input-form-container'>
-              <Mp4AddInputForm
-                inputs={inputs}
-                roomId={roomId}
-                refreshState={handleRefreshState}
-              />
-            </Accordion>
-
-            <Accordion title='Add new Camera input' defaultOpen>
-              {!activeWhipInputId ? (
-                <WHIPAddInputForm
-                  inputs={inputs}
-                  roomId={roomId}
-                  refreshState={handleRefreshState}
-                  userName={userName}
-                  setUserName={setUserName}
-                  pcRef={pcRef}
-                  streamRef={streamRef}
-                  setActiveWhipInputId={setActiveWhipInputId}
-                  setIsWhipActive={setIsWhipActive}
-                />
-              ) : (
-                <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
-                  <div className='text-white-100 text-sm'>
-                    {(() => {
-                      const whipInput = inputs.find(
-                        (i) => i.inputId === activeWhipInputId,
-                      );
-                      const displayName = whipInput?.title || userName;
-                      return `User ${displayName} is already connected.`;
-                    })()}
+            {(() => {
+              const tabs: { id: AddTab; label: string }[] = [
+                { id: 'twitch', label: 'Twitch' },
+                { id: 'kick', label: 'Kick' },
+                { id: 'mp4', label: 'MP4' },
+                { id: 'camera', label: 'Camera' },
+              ];
+              return (
+                <Accordion title='Add Video' defaultOpen data-accordion='true'>
+                  <div className=''>
+                    <div className='flex gap-8 border-b border-[#414154] -mx-4 px-4'>
+                      {tabs.map((t) => {
+                        const isActive = addInputActiveTab === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-base font-bold transition-colors ${
+                              isActive
+                                ? 'border-b-[3px] border-red-40 text-white-100'
+                                : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                            }`}
+                            onClick={() => setAddInputActiveTab(t.id)}>
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className='pt-3'>
+                      {addInputActiveTab === 'twitch' && (
+                        <div data-tour='twitch-add-input-form-container'>
+                          <TwitchAddInputForm
+                            inputs={inputs}
+                            roomId={roomId}
+                            refreshState={handleRefreshState}
+                          />
+                        </div>
+                      )}
+                      {addInputActiveTab === 'kick' && (
+                        <div data-tour='kick-add-input-form-container'>
+                          <KickAddInputForm
+                            inputs={inputs}
+                            roomId={roomId}
+                            refreshState={handleRefreshState}
+                          />
+                        </div>
+                      )}
+                      {addInputActiveTab === 'mp4' && (
+                        <div data-tour='mp4-add-input-form-container'>
+                          <Mp4AddInputForm
+                            inputs={inputs}
+                            roomId={roomId}
+                            refreshState={handleRefreshState}
+                          />
+                        </div>
+                      )}
+                      {addInputActiveTab === 'camera' && (
+                        <>
+                          {!activeWhipInputId ? (
+                            <WHIPAddInputForm
+                              inputs={inputs}
+                              roomId={roomId}
+                              refreshState={handleRefreshState}
+                              userName={userName}
+                              setUserName={setUserName}
+                              pcRef={pcRef}
+                              streamRef={streamRef}
+                              setActiveWhipInputId={setActiveWhipInputId}
+                              setIsWhipActive={setIsWhipActive}
+                            />
+                          ) : (
+                            <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
+                              <div className='text-white-100 text-sm'>
+                                {(() => {
+                                  const whipInput = inputs.find(
+                                    (i) => i.inputId === activeWhipInputId,
+                                  );
+                                  const displayName =
+                                    whipInput?.title || userName;
+                                  return `User ${displayName} is already connected.`;
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </Accordion>
-
+                </Accordion>
+              );
+            })()}
             {/* Streams list */}
             <Accordion
               title='Streams'

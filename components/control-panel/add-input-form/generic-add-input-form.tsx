@@ -33,6 +33,11 @@ export type GenericAddInputFormProps<T> = {
   id?: string;
   submitOnItem?: boolean;
   showButton?: boolean;
+  /**
+   * When true, always show the submit button regardless of whether user typed.
+   * Useful for inputs like Camera where button should be visible.
+   */
+  forceShowButton?: boolean;
 };
 
 export function GenericAddInputForm<T>({
@@ -54,8 +59,10 @@ export function GenericAddInputForm<T>({
   id = '',
   submitOnItem = false,
   showButton = true,
+  forceShowButton = false,
 }: GenericAddInputFormProps<T>) {
   const [currentSuggestion, setCurrentSuggestion] = useState(initialValue);
+  const [userTyped, setUserTyped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -66,6 +73,7 @@ export function GenericAddInputForm<T>({
 
   useEffect(() => {
     setCurrentSuggestion(initialValue);
+    setUserTyped(false);
   }, [initialValue]);
 
   useEffect(() => {
@@ -157,6 +165,7 @@ export function GenericAddInputForm<T>({
       await onSubmit(value);
       await refreshState();
       setCurrentSuggestion('');
+      setUserTyped(false);
     } catch {
     } finally {
       setLoading(false);
@@ -169,6 +178,7 @@ export function GenericAddInputForm<T>({
       await onSubmit(value);
       await refreshState();
       setCurrentSuggestion('');
+      setUserTyped(false);
     } catch {
     } finally {
       setLoading(false);
@@ -179,12 +189,14 @@ export function GenericAddInputForm<T>({
     if (!inputDisabled) {
       setCurrentSuggestion(e.target.value);
       setShowSuggestions(true);
+      setUserTyped(true);
     }
   };
 
   const handleSuggestionSelect = async (suggestion: T) => {
     const value = getSuggestionValue(suggestion);
     setCurrentSuggestion(value);
+    setUserTyped(false);
     setShowSuggestions(false);
 
     if (submitOnItem) {
@@ -203,11 +215,12 @@ export function GenericAddInputForm<T>({
       className='flex flex-row w-full gap-2 sm:gap-3 items-center relative'
       autoComplete='off'
       onSubmit={handleSubmit}>
-      <div className='relative flex-1 min-w-0'>
+      <div className='relative flex-1 min-w-0 my-2 sm:my-2'>
         <input
           ref={inputRef}
           className={
-            'p-2 pr-8 sm:pr-10 border-purple-40 border text-purple-20 bg-transparent rounded-md w-full min-w-0 text-sm sm:text-base sm:p-2 outline-none focus:ring-2 focus:ring-purple-60 transition-all' +
+            'py-3 pl-3 pr-8 sm:py-3 sm:pl-3 sm:pr-10 border-purple-40 border text-purple-20 rounded-md w-full min-w-0 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-60 transition-all ' +
+            (loading ? 'bg-white/10 ' : 'bg-transparent ') +
             (inputDisabled ? ' select-none bg-black-75 cursor-pointer' : '')
           }
           value={currentSuggestion}
@@ -222,7 +235,7 @@ export function GenericAddInputForm<T>({
             setTimeout(() => next(), 200);
           }}
         />
-        {showArrow && (
+        {showArrow && !loading && (
           <span
             className='pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-white opacity-100'
             aria-hidden='true'>
@@ -230,6 +243,11 @@ export function GenericAddInputForm<T>({
               <polygon points='7,9 12,16 17,9' />
             </svg>
           </span>
+        )}
+        {loading && (
+          <div className='absolute inset-0 rounded-md bg-black/40 flex items-center justify-center z-10'>
+            <LoadingSpinner size='lg' variant='spinner' />
+          </div>
         )}
         <SuggestionBox<T>
           id={id}
@@ -243,22 +261,24 @@ export function GenericAddInputForm<T>({
           renderSuggestion={renderSuggestion}
         />
       </div>
-      {showButton && (
-        <Button
-          size='lg'
-          variant='default'
-          className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-3 py-2 text-sm sm:text-base sm:px-6 sm:py-3 transition-all'
-          type='submit'
-          disabled={loading}>
-          {loading ? (
-            <>
-              <LoadingSpinner size='sm' variant='spinner' /> {loadingText}
-            </>
-          ) : (
-            <>{buttonText}</>
-          )}
-        </Button>
-      )}
+      {showButton &&
+        (forceShowButton ||
+          (userTyped && currentSuggestion.trim().length > 0)) && (
+          <Button
+            size='lg'
+            variant='default'
+            className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+            type='submit'
+            disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner size='sm' variant='spinner' /> {loadingText}
+              </>
+            ) : (
+              <>{buttonText}</>
+            )}
+          </Button>
+        )}
     </form>
   );
 }

@@ -8,7 +8,7 @@ import {
   updateInput,
 } from '@/app/actions/actions';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, X, Type } from 'lucide-react';
+import { Mic, MicOff, X, Type, ArrowUp, ArrowDown } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 import ShaderPanel from './shader-panel';
 import { stopCameraAndConnection } from '../whip-input/utils/preview';
@@ -137,13 +137,13 @@ function MuteButton({
   disabled: boolean;
   onClick: () => void;
 }) {
-  if (disabled) return null;
   return (
     <Button
       data-no-dnd
       size='sm'
       variant='ghost'
       className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      disabled={disabled}
       onClick={onClick}>
       {muted ? (
         <MicOff className=' text-red-40 size-5' />
@@ -708,6 +708,48 @@ export default function InputEntry({
             })()}
           </div>
           <div className='flex flex-row items-center justify-end flex-1 gap-1'>
+            <Button
+              data-no-dnd
+              size='sm'
+              variant='ghost'
+              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer text-white-60 hover:text-white-100'
+              aria-label='Move up'
+              onClick={() => {
+                try {
+                  window.dispatchEvent(
+                    new CustomEvent('smelter:inputs:move', {
+                      detail: {
+                        roomId,
+                        inputId: input.inputId,
+                        direction: 'up',
+                      },
+                    }),
+                  );
+                } catch {}
+              }}>
+              <ArrowUp className='size-5' strokeWidth={3} />
+            </Button>
+            <Button
+              data-no-dnd
+              size='sm'
+              variant='ghost'
+              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer text-white-60 hover:text-white-100'
+              aria-label='Move down'
+              onClick={() => {
+                try {
+                  window.dispatchEvent(
+                    new CustomEvent('smelter:inputs:move', {
+                      detail: {
+                        roomId,
+                        inputId: input.inputId,
+                        direction: 'down',
+                      },
+                    }),
+                  );
+                } catch {}
+              }}>
+              <ArrowDown className='size-5' strokeWidth={3} />
+            </Button>
             <Button
               data-no-dnd
               size='sm'

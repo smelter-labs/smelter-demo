@@ -16,9 +16,9 @@
 .driver-popover.driverjs-theme button {
   flex: 1;
   text-align: center;
-  background-color: #000;
+  background-color: #342956;
   color: #ffffff;
-  border: 2px solid #000;
+  border: 2px solid #342956;
   text-shadow: none;
   font-size: 14px;
   padding: 5px 8px;
@@ -26,21 +26,43 @@
 }
 
 .driver-popover.driverjs-theme button:hover {
-  background-color: #000;
+  background-color: #342956;
   color: #ffffff;
 }
 
 .driver-popover.driverjs-theme .driver-popover-navigation-btns {
   justify-content: space-between;
   gap: 3px;
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
+/* Make footer horizontal padding symmetric so button aligns with text */
+
+
 .driver-popover.driverjs-theme .driver-popover-close-btn {
-  color: #9b9b9b;
+  background: transparent !important;
+  border: 0 !important;
+  color: #000;
+  text-shadow: none;
+  font-size: 28px; /* 2x larger than default 14px */
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  flex: 0 0 auto;
+  transition: color 0.15s ease;
+  margin-top: 5px;
+  margin-right: 8px;
 }
 
 .driver-popover.driverjs-theme .driver-popover-close-btn:hover {
-  color: #000;
+  background: transparent !important;
+  color: #333;
 }
 
 .driver-popover.driverjs-theme .driver-popover-arrow-side-left.driver-popover-arrow {
@@ -65,27 +87,35 @@
   gap: 4px;
 }
 
-.driver-popover.driverjs-theme .driverjs-progress-container {
+/* Dots progress indicator */
+.driver-popover.driverjs-theme .driverjs-steps-dots {
   width: 100%;
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+.driver-popover.driverjs-theme .driverjs-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #9b9b9b;
+  opacity: 0.8;
+  transition: width 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+.driver-popover.driverjs-theme .driverjs-step-dot.active {
+  background: #342956; /* violet */
+  opacity: 1;
+  width: 27px; /* 3x wider */
 }
 
-.driver-popover.driverjs-theme .driverjs-progress-bar {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  margin-top:8px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.driver-popover.driverjs-theme .driverjs-progress-bar-fill {
-  height: 100%;
-  width: 0;
-  border-radius: 999px;
-  background: #000;
-  transition: width 0.2s ease-out;
+.driver-popover.driverjs-theme .driverjs-step-label {
+  font-size: 13px;
+  line-height: 1;
+  color: #9b9b9b;
+  margin-bottom: 4px;
 }
 
 /* While a Smelter modal is open, let clicks pass to it, not the tour */
