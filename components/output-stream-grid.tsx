@@ -67,7 +67,9 @@ export default function OutputStreamGrid({
           key={i}
           className='relative bg-black rounded overflow-hidden aspect-video border-[#414154] border'>
           <video
-            ref={(el) => (videoRefs.current[i] = el)}
+            ref={(el) => {
+              videoRefs.current[i] = el;
+            }}
             className='w-full h-full object-cover bg-black'
             playsInline
             autoPlay
