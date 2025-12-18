@@ -9,6 +9,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 ENV NODE_VERSION=24.6.0
 
 USER root
+WORKDIR /tmp
 
 RUN apt-get update -y -qq && \
   apt-get install -y \
@@ -36,12 +37,13 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
 
 ## Build
 USER $USERNAME
+ENV SMELTER_PATH=/home/smelter/smelter/main_process
 
 RUN sudo npm install -g pnpm
 RUN pipx install streamlink
 
 COPY --chown=$USERNAME:$USERNAME  . /home/$USERNAME/demo
 WORKDIR /home/$USERNAME/demo/server
-RUN pnpm install && pnpm build
+RUN CI=1 pnpm install && pnpm build
 
 ENTRYPOINT ["node", "./dist/index.js"]
