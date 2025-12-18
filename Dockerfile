@@ -40,7 +40,9 @@ USER $USERNAME
 ENV SMELTER_PATH=/home/smelter/smelter/main_process
 
 RUN sudo npm install -g pnpm
+
 RUN pipx install streamlink
+ENV PATH=/home/smelter/.local/bin:$PATH
 
 COPY --chown=$USERNAME:$USERNAME  . /home/$USERNAME/demo
 WORKDIR /home/$USERNAME/demo/server
