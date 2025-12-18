@@ -11,10 +11,6 @@ export function PictureInPictureLayout() {
   const firstInput = inputs[0];
   const secondInput = inputs[1];
 
-  if (!firstInput) {
-    return <View />;
-  }
-
   const [waveAmpPx, setWaveAmpPx] = useState(0);
   const [waveSpeed, setWaveSpeed] = useState(0);
   const [marqueeLeft, setMarqueeLeft] = useState(2560);
@@ -97,6 +93,10 @@ export function PictureInPictureLayout() {
       }
     };
   }, []);
+
+  if (!firstInput) {
+    return <View />;
+  }
 
   return (
     <View style={{ direction: 'column' }}>
