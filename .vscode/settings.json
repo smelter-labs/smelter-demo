@@ -2,5 +2,5 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "prettier.configPath": "app/.prettierc.js"
+  "prettier.configPath": "client/.prettierc.js"
 }
