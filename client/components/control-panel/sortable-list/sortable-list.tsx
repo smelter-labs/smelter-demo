@@ -31,7 +31,12 @@ interface BaseItem {
 
 interface Props<T extends BaseItem> {
   items: T[];
-  renderItem(item: T): ReactNode;
+  /**
+   * Render a single item.
+   * index: position of the item in the current ordered list
+   * orderedItems: the full ordered list at render time
+   */
+  renderItem(item: T, index: number, orderedItems: T[]): ReactNode;
   onOrderChange(items: T[]): void;
   resetVersion?: number; // force reset orderedItems when this changes
 }
@@ -137,18 +142,24 @@ export function SortableList<T extends BaseItem>({
           className='SortableList'
           role='application'
           style={{ overflowY: 'hidden', maxHeight: 'none' }}>
-          {orderedItems.map((item) => {
+          {orderedItems.map((item, index) => {
             const isActive = active?.id === item.id;
             return (
               <li key={item.id} style={isActive ? { opacity: 0.5 } : undefined}>
-                {renderItem(item)}
+                {renderItem(item, index, orderedItems)}
               </li>
             );
           })}
         </ul>
       </SortableContext>
       <SortableOverlay>
-        {activeItem ? renderItem(activeItem) : null}
+        {activeItem
+          ? renderItem(
+              activeItem,
+              orderedItems.findIndex((it) => it.id === activeItem.id),
+              orderedItems,
+            )
+          : null}
       </SortableOverlay>
     </DndContext>
   );

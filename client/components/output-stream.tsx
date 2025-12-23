@@ -41,6 +41,8 @@ export default function OutputStream({
   const [isFullscreen, setIsFullscreen] = useState(false);
   // NEW: videoLoaded state
   const [videoLoaded, setVideoLoaded] = useState(false);
+  // Detect mobile to decide between native vs custom controls
+  const [isMobile, setIsMobile] = useState(false);
 
   // Setup WHEP
   useEffect(() => {
@@ -55,6 +57,15 @@ export default function OutputStream({
       }
     });
   }, [whepUrl, videoRef]);
+
+  // Detect mobile environment on client
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ua = navigator.userAgent || '';
+    const isMobileUA =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    setIsMobile(isMobileUA);
+  }, []);
 
   // Video events sync
   useEffect(() => {
@@ -273,11 +284,13 @@ export default function OutputStream({
         autoPlay
         autoFocus
         playsInline
+        // On mobile, prefer native controls; on desktop, rely on custom controls only
+        controls={isMobile}
         style={{ width: '100%', height: '100%', background: 'black' }}
         tabIndex={-1}
       />
-      {/* Custom Controls */}
-      {videoLoaded && (
+      {/* Custom Controls – desktop only */}
+      {videoLoaded && !isMobile && (
         <div
           className={controlBar + ' flex-row justify-between'}
           style={{ userSelect: 'none' }}>

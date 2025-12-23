@@ -89,7 +89,10 @@ export function ScreenshareAddInputForm(props: {
       refreshState={refreshState}
       suggestions={[]}
       placeholder='Enter a username (e.g. John Smith)'
-      initialValue={userName}
+      // For screenshare, default to "Screenshare <number>" instead of any "Camera <number>" / "User <number>"
+      initialValue={userName
+        .replace(/^Camera\s+/i, 'Screenshare ')
+        .replace(/^User\s+/i, 'Screenshare ')}
       onSubmit={async (whipUserName: string) => {
         await handleAddScreenshare(whipUserName);
         setUserName(whipUserName);
