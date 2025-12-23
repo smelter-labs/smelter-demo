@@ -70,6 +70,8 @@ export function GenericAddInputForm<T>({
   const { nextIf, next, reset } = useDriverTourControls('room');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const suggestionBoxRef = useRef<HTMLDivElement | null>(null);
+  const [isRoomTourActive, setIsRoomTourActive] = useState(false);
+  const [hasSelectedDuringTour, setHasSelectedDuringTour] = useState(false);
 
   useEffect(() => {
     setCurrentSuggestion(initialValue);
@@ -107,6 +109,32 @@ export function GenericAddInputForm<T>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
 
+  // Track Room tour activity; used to lock the suggestions dropdown until an item is chosen
+  useEffect(() => {
+    const onStart = (e: any) => {
+      try {
+        if (e?.detail?.id === 'room') {
+          setIsRoomTourActive(true);
+          setHasSelectedDuringTour(false);
+        }
+      } catch {}
+    };
+    const onStop = (e: any) => {
+      try {
+        if (e?.detail?.id === 'room') {
+          setIsRoomTourActive(false);
+          setHasSelectedDuringTour(false);
+        }
+      } catch {}
+    };
+    window.addEventListener('smelter:tour:start', onStart);
+    window.addEventListener('smelter:tour:stop', onStop);
+    return () => {
+      window.removeEventListener('smelter:tour:start', onStart);
+      window.removeEventListener('smelter:tour:stop', onStop);
+    };
+  }, []);
+
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (inputDisabled) {
       if (
@@ -136,6 +164,18 @@ export function GenericAddInputForm<T>({
         highlightedIndex < filteredSuggestions.length
       ) {
         e.preventDefault();
+        // During room tour, force selection (and submission if enabled) instead of merely closing
+        const shouldLock =
+          isRoomTourActive &&
+          !hasSelectedDuringTour &&
+          !!suggestionBoxRef.current?.querySelector(
+            '[data-tour="twitch-suggestion-item-container"]',
+          );
+        if (shouldLock && submitOnItem) {
+          // Trigger normal selection flow which will submit and advance tour
+          void handleSuggestionSelect(filteredSuggestions[highlightedIndex]);
+          return;
+        }
         setCurrentSuggestion(
           getSuggestionValue(filteredSuggestions[highlightedIndex]),
         );
@@ -198,6 +238,9 @@ export function GenericAddInputForm<T>({
     setCurrentSuggestion(value);
     setUserTyped(false);
     setShowSuggestions(false);
+    if (isRoomTourActive) {
+      setHasSelectedDuringTour(true);
+    }
 
     if (submitOnItem) {
       next();

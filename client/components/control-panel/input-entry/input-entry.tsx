@@ -25,6 +25,11 @@ interface InputEntryProps {
   input: Input;
   refreshState: () => Promise<void>;
   availableShaders?: AvailableShader[];
+  /**
+   * Controls whether this input can be removed (shows/hides the delete button).
+   * When false, the "X" button is hidden.
+   */
+  canRemove?: boolean;
   pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
   streamRef?: React.MutableRefObject<MediaStream | null>;
   onWhipDisconnectedOrRemoved?: (inputId: string) => void;
@@ -172,6 +177,7 @@ export default function InputEntry({
   input,
   refreshState,
   availableShaders = [],
+  canRemove = true,
   pcRef,
   streamRef,
   onWhipDisconnectedOrRemoved,
@@ -805,7 +811,7 @@ export default function InputEntry({
                 : <span className='text-green-100 font-bold'>•</span>
             )}
           </Button> */}
-            <DeleteButton onClick={handleDelete} />
+            {canRemove && <DeleteButton onClick={handleDelete} />}
           </div>
         </div>
         <div

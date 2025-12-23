@@ -54,6 +54,16 @@ export default function RoomPage() {
     } else {
       setRoomState(state);
       setLoading(false);
+
+      // Save default inputs on first load if they exist and haven't been saved yet
+      if (typeof window !== 'undefined' && state.inputs.length > 0) {
+        const storageKey = `smelter:default-inputs:${roomId}`;
+        const existing = localStorage.getItem(storageKey);
+        if (!existing) {
+          const defaultInputIds = state.inputs.map((input) => input.inputId);
+          localStorage.setItem(storageKey, JSON.stringify(defaultInputIds));
+        }
+      }
     }
   }, [roomId, router, pathname]);
 

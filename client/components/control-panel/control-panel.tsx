@@ -16,23 +16,30 @@ import {
   updateRoom as updateRoomAction,
   removeInput,
   updateInput,
+  addImageInput,
+  addMP4Input,
+  getPictureSuggestions,
+  getMP4Suggestions,
 } from '@/app/actions/actions';
 
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
 import { SortableItem } from '@/components/control-panel/sortable-list/sortable-item';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
-import Accordion from '@/components/ui/accordion';
+import Accordion, { type AccordionHandle } from '@/components/ui/accordion';
 import LayoutSelector from '@/components/layout-selector';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import TwitchAddInputForm from './add-input-form/twitch-add-input-form';
 import { Mp4AddInputForm } from './add-input-form/mp4-add-input-form';
 import { KickAddInputForm } from './add-input-form/kick-add-input-form';
+import { ImageAddInputForm } from './add-input-form/image-add-input-form';
 import LoadingSpinner from '@/components/ui/spinner';
 import { useAutoResume } from './whip-input/hooks/use-auto-resume';
 import { useWhipHeartbeat } from './whip-input/hooks/use-whip-heartbeat';
 import { useStreamsSpinner } from './whip-input/hooks/use-streams-spinner';
 import { stopCameraAndConnection } from './whip-input/utils/preview';
 import { WHIPAddInputForm } from './add-input-form/whip-add-input-form';
+import { ScreenshareAddInputForm } from './add-input-form/screenshare-add-input-form';
 
 import {
   loadUserName,
@@ -70,6 +77,7 @@ export default function ControlPanel({
   }, [roomId, userName]);
 
   const inputsRef = useRef<Input[]>(roomState.inputs);
+  const addVideoAccordionRef = useRef<AccordionHandle | null>(null);
   const [inputs, setInputs] = useState<Input[]>(roomState.inputs);
   const { nextIf: nextIfComposing } = useDriverTourControls('composing');
 
@@ -77,25 +85,42 @@ export default function ControlPanel({
     roomState.inputs,
   );
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const [activeWhipInputId, setActiveWhipInputId] = useState<string | null>(
+  // Separate refs for camera
+  const cameraPcRef = useRef<RTCPeerConnection | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const [activeCameraInputId, setActiveCameraInputId] = useState<string | null>(
     () => {
       const session = loadWhipSession();
       return session?.roomId === roomId ? session.inputId : null;
     },
   );
-  const [isWhipActive, setIsWhipActive] = useState<boolean>(false);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+
+  // Separate refs for screenshare
+  const screensharePcRef = useRef<RTCPeerConnection | null>(null);
+  const screenshareStreamRef = useRef<MediaStream | null>(null);
+  const [activeScreenshareInputId, setActiveScreenshareInputId] = useState<
+    string | null
+  >(null);
+  const [isScreenshareActive, setIsScreenshareActive] =
+    useState<boolean>(false);
 
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
 
   // Add-input tabs state (always declared at top-level to preserve hook order)
-  type AddTab = 'twitch' | 'kick' | 'mp4' | 'camera';
-  const [addInputActiveTab, setAddInputActiveTab] = useState<AddTab>(
+  type AddTab = 'stream' | 'mp4' | 'image' | 'inputs';
+  const [addInputActiveTab, setAddInputActiveTab] = useState<AddTab>('stream');
+
+  // Stream sub-tab state (Twitch or Kick)
+  type StreamTab = 'twitch' | 'kick';
+  const [streamActiveTab, setStreamActiveTab] = useState<StreamTab>(
     isKick ? 'kick' : 'twitch',
   );
+
+  // Inputs sub-tab state (Camera or Screenshare)
+  type InputsTab = 'camera' | 'screenshare';
+  const [inputsActiveTab, setInputsActiveTab] = useState<InputsTab>('camera');
 
   const getInputWrappers = useCallback(
     (inputsArg: Input[] = inputsRef.current): InputWrapper[] =>
@@ -119,14 +144,15 @@ export default function ControlPanel({
   useAutoResume(
     roomId,
     userName,
-    pcRef,
-    streamRef,
+    cameraPcRef,
+    cameraStreamRef,
     inputs,
     handleRefreshState,
-    setActiveWhipInputId,
-    setIsWhipActive,
+    setActiveCameraInputId,
+    setIsCameraActive,
   );
-  useWhipHeartbeat(roomId, activeWhipInputId, isWhipActive);
+  useWhipHeartbeat(roomId, activeCameraInputId, isCameraActive);
+  useWhipHeartbeat(roomId, activeScreenshareInputId, isScreenshareActive);
 
   useEffect(() => {
     setInputWrappers(getInputWrappers(inputs));
@@ -142,32 +168,57 @@ export default function ControlPanel({
     onInputsChange(roomState.inputs);
   }, [roomState.inputs, onInputsChange]);
 
+  // Camera cleanup
   useEffect(() => {
-    if (!activeWhipInputId) return;
-    const stillExists = inputs.some((i) => i.inputId === activeWhipInputId);
+    if (!activeCameraInputId) return;
+    const stillExists = inputs.some((i) => i.inputId === activeCameraInputId);
     if (stillExists) return;
 
     const timeout = setTimeout(() => {
       const existsNow = inputsRef.current.some(
-        (i) => i.inputId === activeWhipInputId,
+        (i) => i.inputId === activeCameraInputId,
       );
       if (existsNow) return;
       try {
-        stopCameraAndConnection(pcRef, streamRef);
-        setIsWhipActive(false);
+        stopCameraAndConnection(cameraPcRef, cameraStreamRef);
+        setIsCameraActive(false);
         const s = loadWhipSession();
-        if (s && s.roomId === roomId && s.inputId === activeWhipInputId) {
+        if (s && s.roomId === roomId && s.inputId === activeCameraInputId) {
           clearWhipSession(roomId);
         }
         const lastId = loadLastWhipInputId(roomId);
-        if (lastId === activeWhipInputId) clearLastWhipInputId(roomId);
+        if (lastId === activeCameraInputId) clearLastWhipInputId(roomId);
       } finally {
-        setActiveWhipInputId(null);
+        setActiveCameraInputId(null);
       }
     }, 10000);
 
     return () => clearTimeout(timeout);
-  }, [inputs, activeWhipInputId, roomId]);
+  }, [inputs, activeCameraInputId, roomId]);
+
+  // Screenshare cleanup
+  useEffect(() => {
+    if (!activeScreenshareInputId) return;
+    const stillExists = inputs.some(
+      (i) => i.inputId === activeScreenshareInputId,
+    );
+    if (stillExists) return;
+
+    const timeout = setTimeout(() => {
+      const existsNow = inputsRef.current.some(
+        (i) => i.inputId === activeScreenshareInputId,
+      );
+      if (existsNow) return;
+      try {
+        stopCameraAndConnection(screensharePcRef, screenshareStreamRef);
+        setIsScreenshareActive(false);
+      } finally {
+        setActiveScreenshareInputId(null);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [inputs, activeScreenshareInputId, roomId]);
 
   const [availableShaders, setAvailableShaders] = useState<AvailableShader[]>(
     [],
@@ -188,7 +239,7 @@ export default function ControlPanel({
 
   // Auto-attach the "multiple-pictures" shader to every input when that layout is active
   useEffect(() => {
-    if (roomState.layout !== 'multiple-pictures') return;
+    if (roomState.layout !== 'wrapped') return;
     if (!availableShaders || availableShaders.length === 0) return;
 
     const shaderDef =
@@ -198,7 +249,6 @@ export default function ControlPanel({
           s.name.toLowerCase().includes('multiple') &&
           s.name.toLowerCase().includes('picture'),
       );
-
     if (!shaderDef) return;
 
     (async () => {
@@ -284,12 +334,15 @@ export default function ControlPanel({
     };
   }, [updateOrder]);
 
-  // When main tour starts, force-switch to Twitch tab (top-level hook, not inside conditional render)
+  // When main tour starts, force-switch to Stream tab with Twitch (top-level hook, not inside conditional render)
   useEffect(() => {
     const onStart = (e: any) => {
       try {
         if (e?.detail?.id === 'room') {
-          setAddInputActiveTab('twitch');
+          setAddInputActiveTab('stream');
+          setStreamActiveTab('twitch');
+          // Ensure the "Add Video" accordion is open so the user sees Stream/Twitch form
+          addVideoAccordionRef.current?.open();
         }
       } catch {}
     };
@@ -313,7 +366,8 @@ export default function ControlPanel({
 
   useEffect(() => {
     const onUnload = () => {
-      stopCameraAndConnection(pcRef, streamRef);
+      stopCameraAndConnection(cameraPcRef, cameraStreamRef);
+      stopCameraAndConnection(screensharePcRef, screenshareStreamRef);
     };
     window.addEventListener('beforeunload', onUnload);
     window.addEventListener('pagehide', onUnload);
@@ -325,26 +379,28 @@ export default function ControlPanel({
 
   useEffect(() => {
     return () => {
-      stopCameraAndConnection(pcRef, streamRef);
-      setIsWhipActive(false);
+      stopCameraAndConnection(cameraPcRef, cameraStreamRef);
+      stopCameraAndConnection(screensharePcRef, screenshareStreamRef);
+      setIsCameraActive(false);
+      setIsScreenshareActive(false);
     };
   }, []);
 
   useEffect(() => {
-    const pc = pcRef.current;
+    const pc = cameraPcRef.current;
     if (!pc) return;
 
     const handleConnectionStateChange = () => {
       const state = pc.connectionState;
 
       if (state === 'connected') {
-        setIsWhipActive(true);
+        setIsCameraActive(true);
       } else if (
         state === 'failed' ||
         state === 'disconnected' ||
         state === 'closed'
       ) {
-        setIsWhipActive(false);
+        setIsCameraActive(false);
       }
     };
 
@@ -358,7 +414,37 @@ export default function ControlPanel({
         handleConnectionStateChange,
       );
     };
-  }, [pcRef]);
+  }, [cameraPcRef]);
+
+  useEffect(() => {
+    const pc = screensharePcRef.current;
+    if (!pc) return;
+
+    const handleConnectionStateChange = () => {
+      const state = pc.connectionState;
+
+      if (state === 'connected') {
+        setIsScreenshareActive(true);
+      } else if (
+        state === 'failed' ||
+        state === 'disconnected' ||
+        state === 'closed'
+      ) {
+        setIsScreenshareActive(false);
+      }
+    };
+
+    pc.addEventListener('connectionstatechange', handleConnectionStateChange);
+
+    handleConnectionStateChange();
+
+    return () => {
+      pc.removeEventListener(
+        'connectionstatechange',
+        handleConnectionStateChange,
+      );
+    };
+  }, [screensharePcRef]);
 
   // Track which input has its FX (shader panel) open
   const [openFxInputId, setOpenFxInputId] = useState<string | null>(null);
@@ -395,14 +481,22 @@ export default function ControlPanel({
                 isSavedInSession;
               if (isWhipCandidate) {
                 try {
-                  stopCameraAndConnection(pcRef, streamRef);
+                  stopCameraAndConnection(cameraPcRef, cameraStreamRef);
+                  stopCameraAndConnection(
+                    screensharePcRef,
+                    screenshareStreamRef,
+                  );
                 } catch {}
                 try {
                   clearWhipSessionFor(roomId, input.inputId);
                 } catch {}
-                if (activeWhipInputId === input.inputId) {
-                  setActiveWhipInputId(null);
-                  setIsWhipActive(false);
+                if (activeCameraInputId === input.inputId) {
+                  setActiveCameraInputId(null);
+                  setIsCameraActive(false);
+                }
+                if (activeScreenshareInputId === input.inputId) {
+                  setActiveScreenshareInputId(null);
+                  setIsScreenshareActive(false);
                 }
               }
               try {
@@ -452,15 +546,20 @@ export default function ControlPanel({
                   refreshState={handleRefreshState}
                   roomId={roomId}
                   availableShaders={availableShaders}
-                  pcRef={pcRef}
-                  streamRef={streamRef}
+                  canRemove={inputs.length > 1}
+                  pcRef={cameraPcRef}
+                  streamRef={cameraStreamRef}
                   isFxOpen={true}
                   fxModeOnly={true}
                   onToggleFx={() => setOpenFxInputId(null)}
                   onWhipDisconnectedOrRemoved={(id) => {
-                    if (activeWhipInputId === id) {
-                      setActiveWhipInputId(null);
-                      setIsWhipActive(false);
+                    if (activeCameraInputId === id) {
+                      setActiveCameraInputId(null);
+                      setIsCameraActive(false);
+                    }
+                    if (activeScreenshareInputId === id) {
+                      setActiveScreenshareInputId(null);
+                      setIsScreenshareActive(false);
                     }
                   }}
                 />
@@ -472,15 +571,19 @@ export default function ControlPanel({
           <>
             {(() => {
               const tabs: { id: AddTab; label: string }[] = [
-                { id: 'twitch', label: 'Twitch' },
-                { id: 'kick', label: 'Kick' },
+                { id: 'stream', label: 'Stream' },
                 { id: 'mp4', label: 'MP4' },
-                { id: 'camera', label: 'Camera' },
+                { id: 'image', label: 'Image' },
+                { id: 'inputs', label: 'Inputs' },
               ];
               return (
-                <Accordion title='Add Video' defaultOpen data-accordion='true'>
+                <Accordion
+                  ref={addVideoAccordionRef}
+                  title='Add Video'
+                  defaultOpen
+                  data-accordion='true'>
                   <div className=''>
-                    <div className='flex gap-8 border-b border-[#414154] -mx-4 px-4'>
+                    <div className='flex gap-2 sm:gap-3 md:gap-4 lg:gap-4 xl:gap-4 2xl:gap-5 border-b border-[#414154] -mx-4 px-4 justify-center'>
                       {tabs.map((t) => {
                         const isActive = addInputActiveTab === t.id;
                         return (
@@ -498,22 +601,46 @@ export default function ControlPanel({
                       })}
                     </div>
                     <div className='pt-3'>
-                      {addInputActiveTab === 'twitch' && (
-                        <div data-tour='twitch-add-input-form-container'>
-                          <TwitchAddInputForm
-                            inputs={inputs}
-                            roomId={roomId}
-                            refreshState={handleRefreshState}
-                          />
-                        </div>
-                      )}
-                      {addInputActiveTab === 'kick' && (
-                        <div data-tour='kick-add-input-form-container'>
-                          <KickAddInputForm
-                            inputs={inputs}
-                            roomId={roomId}
-                            refreshState={handleRefreshState}
-                          />
+                      {addInputActiveTab === 'stream' && (
+                        <div>
+                          <div className='flex gap-2 sm:gap-3 md:gap-4 lg:gap-4 xl:gap-4 2xl:gap-5 border-b border-[#414154] -mx-4 px-4 mb-3 justify-center'>
+                            <button
+                              className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                                streamActiveTab === 'twitch'
+                                  ? 'border-b-[3px] border-red-40 text-white-100'
+                                  : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                              }`}
+                              onClick={() => setStreamActiveTab('twitch')}>
+                              Twitch
+                            </button>
+                            <button
+                              className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                                streamActiveTab === 'kick'
+                                  ? 'border-b-[3px] border-red-40 text-white-100'
+                                  : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                              }`}
+                              onClick={() => setStreamActiveTab('kick')}>
+                              Kick
+                            </button>
+                          </div>
+                          {streamActiveTab === 'twitch' && (
+                            <div data-tour='twitch-add-input-form-container'>
+                              <TwitchAddInputForm
+                                inputs={inputs}
+                                roomId={roomId}
+                                refreshState={handleRefreshState}
+                              />
+                            </div>
+                          )}
+                          {streamActiveTab === 'kick' && (
+                            <div data-tour='kick-add-input-form-container'>
+                              <KickAddInputForm
+                                inputs={inputs}
+                                roomId={roomId}
+                                refreshState={handleRefreshState}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                       {addInputActiveTab === 'mp4' && (
@@ -525,35 +652,64 @@ export default function ControlPanel({
                           />
                         </div>
                       )}
-                      {addInputActiveTab === 'camera' && (
-                        <>
-                          {!activeWhipInputId ? (
+                      {addInputActiveTab === 'image' && (
+                        <div data-tour='image-add-input-form-container'>
+                          <ImageAddInputForm
+                            inputs={inputs}
+                            roomId={roomId}
+                            refreshState={handleRefreshState}
+                          />
+                        </div>
+                      )}
+                      {addInputActiveTab === 'inputs' && (
+                        <div>
+                          <div className='flex gap-2 sm:gap-3 md:gap-4 lg:gap-4 xl:gap-4 2xl:gap-5 border-b border-[#414154] -mx-4 px-4 mb-3 justify-center'>
+                            <button
+                              className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                                inputsActiveTab === 'camera'
+                                  ? 'border-b-[3px] border-red-40 text-white-100'
+                                  : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                              }`}
+                              onClick={() => setInputsActiveTab('camera')}>
+                              Camera
+                            </button>
+                            <button
+                              className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                                inputsActiveTab === 'screenshare'
+                                  ? 'border-b-[3px] border-red-40 text-white-100'
+                                  : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                              }`}
+                              onClick={() => setInputsActiveTab('screenshare')}>
+                              Screenshare
+                            </button>
+                          </div>
+                          {inputsActiveTab === 'camera' && (
                             <WHIPAddInputForm
                               inputs={inputs}
                               roomId={roomId}
                               refreshState={handleRefreshState}
                               userName={userName}
                               setUserName={setUserName}
-                              pcRef={pcRef}
-                              streamRef={streamRef}
-                              setActiveWhipInputId={setActiveWhipInputId}
-                              setIsWhipActive={setIsWhipActive}
+                              pcRef={cameraPcRef}
+                              streamRef={cameraStreamRef}
+                              setActiveWhipInputId={setActiveCameraInputId}
+                              setIsWhipActive={setIsCameraActive}
                             />
-                          ) : (
-                            <div className='p-4 rounded-md bg-black-80 border border-black-50 flex items-center justify-between'>
-                              <div className='text-white-100 text-sm'>
-                                {(() => {
-                                  const whipInput = inputs.find(
-                                    (i) => i.inputId === activeWhipInputId,
-                                  );
-                                  const displayName =
-                                    whipInput?.title || userName;
-                                  return `User ${displayName} is already connected.`;
-                                })()}
-                              </div>
-                            </div>
                           )}
-                        </>
+                          {inputsActiveTab === 'screenshare' && (
+                            <ScreenshareAddInputForm
+                              inputs={inputs}
+                              roomId={roomId}
+                              refreshState={handleRefreshState}
+                              userName={userName}
+                              setUserName={setUserName}
+                              pcRef={screensharePcRef}
+                              streamRef={screenshareStreamRef}
+                              setActiveWhipInputId={setActiveScreenshareInputId}
+                              setIsWhipActive={setIsScreenshareActive}
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -587,8 +743,9 @@ export default function ControlPanel({
                               refreshState={handleRefreshState}
                               roomId={roomId}
                               availableShaders={availableShaders}
-                              pcRef={pcRef}
-                              streamRef={streamRef}
+                              canRemove={inputs.length > 1}
+                              pcRef={cameraPcRef}
+                              streamRef={cameraStreamRef}
                               isFxOpen={openFxInputId === input.inputId}
                               onToggleFx={() =>
                                 setOpenFxInputId((prev) =>
@@ -596,9 +753,13 @@ export default function ControlPanel({
                                 )
                               }
                               onWhipDisconnectedOrRemoved={(id) => {
-                                if (activeWhipInputId === id) {
-                                  setActiveWhipInputId(null);
-                                  setIsWhipActive(false);
+                                if (activeCameraInputId === id) {
+                                  setActiveCameraInputId(null);
+                                  setIsCameraActive(false);
+                                }
+                                if (activeScreenshareInputId === id) {
+                                  setActiveScreenshareInputId(null);
+                                  setIsScreenshareActive(false);
                                 }
                               }}
                             />
@@ -611,7 +772,144 @@ export default function ControlPanel({
                 )}
               </div>
             </Accordion>
+            <Accordion title='Quick Actions' defaultOpen data-accordion='true'>
+              <div className='flex flex-col gap-3'>
+                <Button
+                  size='lg'
+                  variant='default'
+                  className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  onClick={async () => {
+                    try {
+                      // Get all pictures
+                      const pictures = await getPictureSuggestions();
+                      // Filter logos
+                      const logoImages = pictures.pictures.filter((p) =>
+                        p.startsWith('logo_'),
+                      );
 
+                      // Add all logo images
+                      for (const fileName of logoImages) {
+                        try {
+                          await addImageInput(roomId, fileName);
+                        } catch (e) {
+                          console.warn(`Failed to add image ${fileName}:`, e);
+                        }
+                      }
+
+                      await refreshState();
+                    } catch (e) {
+                      console.error('Failed to add logos:', e);
+                    }
+                  }}>
+                  Add Logos
+                </Button>
+                <Button
+                  size='lg'
+                  variant='default'
+                  className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  onClick={async () => {
+                    try {
+                      // Get all mp4s
+                      const mp4s = await getMP4Suggestions();
+                      // Filter logo animations
+                      const logoAnimMp4s = mp4s.mp4s.filter((m) =>
+                        m.startsWith('logo_'),
+                      );
+
+                      // Add all logo animation mp4s
+                      for (const fileName of logoAnimMp4s) {
+                        try {
+                          await addMP4Input(roomId, fileName);
+                        } catch (e) {
+                          console.warn(`Failed to add mp4 ${fileName}:`, e);
+                        }
+                      }
+
+                      await refreshState();
+                    } catch (e) {
+                      console.error('Failed to add logos anim:', e);
+                    }
+                  }}>
+                  Add Logos Anim
+                </Button>
+                <Button
+                  size='lg'
+                  variant='default'
+                  className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  onClick={async () => {
+                    try {
+                      // Get all mp4s
+                      const mp4s = await getMP4Suggestions();
+                      // Filter team mp4s
+                      const teamMp4s = mp4s.mp4s.filter((m) =>
+                        m.startsWith('wrapped_'),
+                      );
+
+                      // Add all team mp4s
+                      for (const fileName of teamMp4s) {
+                        try {
+                          await addMP4Input(roomId, fileName);
+                        } catch (e) {
+                          console.warn(`Failed to add mp4 ${fileName}:`, e);
+                        }
+                      }
+
+                      await refreshState();
+                    } catch (e) {
+                      console.error('Failed to add team:', e);
+                    }
+                  }}>
+                  Add Team
+                </Button>
+                <Button
+                  size='lg'
+                  variant='default'
+                  className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  onClick={async () => {
+                    try {
+                      // Get all pictures
+                      const pictures = await getPictureSuggestions();
+                      // Find smelter logo
+                      const smelterLogo = pictures.pictures.find(
+                        (p) =>
+                          p.toLowerCase().includes('smelter') &&
+                          p.toLowerCase().includes('logo'),
+                      );
+
+                      // Add smelter logo first
+                      if (smelterLogo) {
+                        try {
+                          await addImageInput(roomId, smelterLogo);
+                        } catch (e) {
+                          console.warn(
+                            `Failed to add smelter logo ${smelterLogo}:`,
+                            e,
+                          );
+                        }
+                      }
+
+                      // Remove all old inputs
+                      const currentInputs = [...inputs];
+                      for (const input of currentInputs) {
+                        try {
+                          await removeInput(roomId, input.inputId);
+                        } catch (e) {
+                          console.warn(
+                            `Failed to remove input ${input.inputId}:`,
+                            e,
+                          );
+                        }
+                      }
+
+                      await refreshState();
+                    } catch (e) {
+                      console.error('Failed to remove all:', e);
+                    }
+                  }}>
+                  Remove All
+                </Button>
+              </div>
+            </Accordion>
             {/* Layout selector */}
             <Accordion
               title='Layouts'

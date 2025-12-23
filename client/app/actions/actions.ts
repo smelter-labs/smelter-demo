@@ -83,7 +83,8 @@ export type Layout =
   | 'primary-on-left'
   | 'primary-on-top'
   | 'picture-in-picture'
-  | 'multiple-pictures'
+  | 'wrapped'
+  | 'wrapped-static'
   | 'transition';
 
 export interface ChannelSuggestion {
@@ -103,6 +104,10 @@ export type KickSuggestions = {
 
 export type MP4Suggestions = {
   mp4s: string[];
+};
+
+export type PictureSuggestions = {
+  pictures: string[];
 };
 
 export async function createNewRoom(
@@ -161,6 +166,10 @@ export async function getKickSuggestions(): Promise<KickSuggestions> {
   return await sendSmelterRequest('get', `/suggestions/kick`);
 }
 
+export async function getPictureSuggestions(): Promise<PictureSuggestions> {
+  return await sendSmelterRequest('get', `/suggestions/pictures`);
+}
+
 export async function addTwitchInput(roomId: string, channelId: string) {
   return await sendSmelterRequest(
     'post',
@@ -188,6 +197,14 @@ export async function addMP4Input(roomId: string, mp4FileName: string) {
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
     { type: 'local-mp4', source: { fileName: mp4FileName, url: '' } },
+  );
+}
+
+export async function addImageInput(roomId: string, imageFileName: string) {
+  return await sendSmelterRequest(
+    'post',
+    `/room/${encodeURIComponent(roomId)}/input`,
+    { type: 'image', fileName: imageFileName },
   );
 }
 

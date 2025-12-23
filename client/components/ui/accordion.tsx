@@ -36,6 +36,14 @@ export type AccordionHandle = {
    * Close the accordion if the given selector matches any child element.
    */
   closeAccordionBySelector: (selector: string) => void;
+  /**
+   * Imperatively open the accordion, regardless of content/selector.
+   */
+  open: () => void;
+  /**
+   * Imperatively close the accordion, regardless of content/selector.
+   */
+  close: () => void;
 };
 
 const Accordion = forwardRef<AccordionHandle, AccordionProps>(
@@ -85,6 +93,8 @@ const Accordion = forwardRef<AccordionHandle, AccordionProps>(
         toggleAccordionBySelector,
         openAccordionBySelector,
         closeAccordionBySelector,
+        open: () => setOpen(true),
+        close: () => setOpen(false),
       }),
       [],
     );

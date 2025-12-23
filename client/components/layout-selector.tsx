@@ -8,7 +8,7 @@ export type Layout =
   | 'primary-on-left'
   | 'primary-on-top'
   | 'picture-in-picture'
-  | 'multiple-pictures';
+  | 'wrapped';
 
 type LayoutConfig = {
   id: Layout;
@@ -32,6 +32,7 @@ export const LAYOUT_CONFIGS = [
     icon: LayoutGrid,
     maxStreams: 4,
   },
+  { id: 'wrapped', name: 'Wrapped', icon: Grid3X3, maxStreams: 4 },
 ] as const satisfies LayoutConfig[];
 
 type LayoutSelectorProps = {
@@ -126,34 +127,46 @@ export default function LayoutSelector({
             )}
           </div>
         );
-      case 'multiple-pictures':
+      case 'wrapped':
         return (
           <div className='w-full h-full relative'>
             <div
               className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
             />
-            {Array.from({ length: Math.max(0, streamCount - 1) }).map(
-              (_, idx) => {
-                // place small tiles around corners/edges
-                const positions = [
-                  { top: '0.5rem', right: '0.5rem' },
-                  { bottom: '0.5rem', right: '0.5rem' },
-                  { bottom: '0.5rem', left: '0.5rem' },
-                ] as const;
-                const pos = positions[idx % positions.length] as any;
-                return (
-                  <div
-                    key={idx}
-                    className='transition-all duration-300 ease-in-out absolute border border-white-25 bg-purple-80 rounded-xs'
-                    style={{
-                      width: '28%',
-                      height: '28%',
-                      zIndex: 10 + idx,
-                      ...pos,
-                    }}></div>
-                );
-              },
-            )}
+            <div className='absolute inset-0 flex items-center justify-center gap-2'>
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`transition-all duration-300 ease-in-out border border-white-25 rounded-full ${
+                    streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'
+                  }`}
+                  style={{
+                    width: '15%',
+                    height: '15%',
+                  }}></div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'wrapped-static':
+        return (
+          <div className='w-full h-full relative'>
+            <div
+              className={`transition-all duration-300 ease-in-out w-full h-full rounded-md border border-white-25 ${streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'}`}
+            />
+            <div className='absolute inset-0 flex items-center justify-center gap-2'>
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`transition-all duration-300 ease-in-out border border-white-25 rounded-full ${
+                    streamCount > 0 ? 'bg-purple-80' : 'bg-transparent'
+                  }`}
+                  style={{
+                    width: '15%',
+                    height: '15%',
+                  }}></div>
+              ))}
+            </div>
           </div>
         );
       default:
