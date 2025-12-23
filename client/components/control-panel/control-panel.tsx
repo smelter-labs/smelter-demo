@@ -482,12 +482,10 @@ export default function ControlPanel({
   // Loading states for Quick Actions buttons
   const [loadingActions, setLoadingActions] = useState<{
     addLogos: boolean;
-    addLogosAnim: boolean;
     addTeam: boolean;
     removeAll: boolean;
   }>({
     addLogos: false,
-    addLogosAnim: false,
     addTeam: false,
     removeAll: false,
   });
@@ -857,52 +855,6 @@ export default function ControlPanel({
                     </span>
                   ) : (
                     'Add Logos'
-                  )}
-                </Button>
-                <Button
-                  size='lg'
-                  variant='default'
-                  className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
-                  disabled={loadingActions.addLogosAnim}
-                  onClick={async () => {
-                    setLoadingActions((prev) => ({
-                      ...prev,
-                      addLogosAnim: true,
-                    }));
-                    try {
-                      // Get all mp4s
-                      const mp4s = await getMP4Suggestions();
-                      // Filter logo animations
-                      const logoAnimMp4s = mp4s.mp4s.filter((m) =>
-                        m.startsWith('logo_'),
-                      );
-
-                      // Add all logo animation mp4s
-                      for (const fileName of logoAnimMp4s) {
-                        try {
-                          await addMP4Input(roomId, fileName);
-                        } catch (e) {
-                          console.warn(`Failed to add mp4 ${fileName}:`, e);
-                        }
-                      }
-
-                      await refreshState();
-                    } catch (e) {
-                      console.error('Failed to add logos anim:', e);
-                    } finally {
-                      setLoadingActions((prev) => ({
-                        ...prev,
-                        addLogosAnim: false,
-                      }));
-                    }
-                  }}>
-                  {loadingActions.addLogosAnim ? (
-                    <span className='flex items-center gap-2'>
-                      <LoadingSpinner size='sm' variant='spinner' />
-                      Adding...
-                    </span>
-                  ) : (
-                    'Add Logos Anim'
                   )}
                 </Button>
                 <Button
