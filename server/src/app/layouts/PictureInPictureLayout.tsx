@@ -207,10 +207,11 @@ export function PictureInPictureLayout() {
                 }}>
                 <Text
                   style={{
-                    fontSize: 90,
+                    fontSize: 72,
                     width: 3560,
                     color: '#ffffff',
-                    fontWeight: 'semi_bold',
+                    fontFamily: 'Poppins',
+                    fontWeight: 'bold',
                   }}>
                   {'This video is composing multiple live streams in real time using smelter.'.toUpperCase()}
                 </Text>

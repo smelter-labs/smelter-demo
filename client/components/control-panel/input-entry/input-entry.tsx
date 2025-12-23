@@ -700,11 +700,11 @@ export default function InputEntry({
       <div
         key={input.inputId}
         className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
-        {/* Grip handle - always visible on left side */}
-        <div className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
+        {/* Grip handle - visible on desktop, hidden on mobile */}
+        <div className='hidden md:block absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
           <GripVertical className='w-5 h-5 text-white-60' />
         </div>
-        <div className='flex items-center mb-3 pl-7'>
+        <div className='flex items-center mb-3 md:pl-7'>
           <span
             className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
             aria-label={getSourceStateLabel()}
@@ -714,7 +714,7 @@ export default function InputEntry({
           </div>
         </div>
         <div className='flex flex-row items-center'>
-          <div className='flex-1 flex pl-7'>
+          <div className='flex-1 flex md:pl-7'>
             {(() => {
               const installedCountForHide = (input.shaders || []).length;
               const hideAddEffectsButton =

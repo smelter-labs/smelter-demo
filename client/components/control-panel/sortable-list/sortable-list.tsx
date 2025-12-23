@@ -75,12 +75,7 @@ export function SortableList<T extends BaseItem>({
   );
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        delay: 250, // Long press delay for mobile devices (250ms)
-        tolerance: 5, // Allow small movement during delay
-      },
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
