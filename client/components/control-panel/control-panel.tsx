@@ -356,12 +356,35 @@ export default function ControlPanel({
         await updateRoomAction(roomId, { layout });
         await refreshState();
         nextIfComposing(2);
+
+        // If switching to wrapped layout, after 2s swap the first two inputs (if there are at least 2)
+        if (layout === 'wrapped' && typeof window !== 'undefined') {
+          setTimeout(async () => {
+            try {
+              const currentInputs = inputsRef.current;
+              if (!currentInputs || currentInputs.length < 2) return;
+
+              const newWrappers = [...getInputWrappers(currentInputs)];
+              // swap first and second
+              const temp = newWrappers[0];
+              newWrappers[0] = newWrappers[1];
+              newWrappers[1] = temp;
+
+              await updateOrder(newWrappers);
+            } catch (e) {
+              console.warn(
+                'Failed to swap first two inputs for wrapped layout:',
+                e,
+              );
+            }
+          }, 2000);
+        }
       } catch (e) {
         console.error('changeLayout failed:', e);
         alert('Failed to change layout.');
       }
     },
-    [roomId, refreshState, nextIfComposing],
+    [roomId, refreshState, nextIfComposing, getInputWrappers, updateOrder],
   );
 
   useEffect(() => {
