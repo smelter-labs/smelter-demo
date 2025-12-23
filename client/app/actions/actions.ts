@@ -83,7 +83,8 @@ export type Layout =
   | 'primary-on-left'
   | 'primary-on-top'
   | 'picture-in-picture'
-  | 'multiple-pictures'
+  | 'wrapped'
+  | 'wrapped-static'
   | 'transition';
 
 export interface ChannelSuggestion {

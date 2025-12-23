@@ -356,69 +356,12 @@ export default function ControlPanel({
         await updateRoomAction(roomId, { layout });
         await refreshState();
         nextIfComposing(2);
-
-        // If switching to wrapped layout, handle default inputs after 2 seconds
-        if (layout === 'wrapped' && typeof window !== 'undefined') {
-          setTimeout(async () => {
-            const storageKey = `smelter:default-inputs:${roomId}`;
-            const defaultInputsJson = localStorage.getItem(storageKey);
-            if (defaultInputsJson) {
-              try {
-                const defaultInputIds: string[] = JSON.parse(defaultInputsJson);
-                // Get current inputs after refresh
-                const currentInputs = inputsRef.current;
-                const currentInputIds = currentInputs.map((i) => i.inputId);
-
-                // Get first two default input IDs
-                const firstTwoDefaultIds = defaultInputIds.slice(0, 2);
-
-                // Check if first two default inputs still exist
-                const firstTwoExist = firstTwoDefaultIds.every((id) =>
-                  currentInputIds.includes(id),
-                );
-
-                if (firstTwoExist) {
-                  // Remove first two default inputs if they still exist
-                  for (const inputId of firstTwoDefaultIds) {
-                    try {
-                      await removeInput(roomId, inputId);
-                    } catch (e) {
-                      console.warn(
-                        `Failed to remove default input ${inputId}:`,
-                        e,
-                      );
-                    }
-                  }
-                } else {
-                  // Swap last two inputs if first two don't exist
-                  if (currentInputs.length >= 2) {
-                    const newWrappers = [...getInputWrappers(currentInputs)];
-                    const lastIndex = newWrappers.length - 1;
-                    const secondLastIndex = newWrappers.length - 2;
-
-                    // Swap last two
-                    const temp = newWrappers[lastIndex];
-                    newWrappers[lastIndex] = newWrappers[secondLastIndex];
-                    newWrappers[secondLastIndex] = temp;
-
-                    await updateOrder(newWrappers);
-                  }
-                }
-
-                // Refresh state after changes
-                await refreshState();
-              } catch (e) {
-                console.warn('Failed to handle default inputs:', e);
-              }
-            }
-          }, 2000);
-        }
       } catch (e) {
         console.error('changeLayout failed:', e);
         alert('Failed to change layout.');
       }
     },
-    [roomId, refreshState, nextIfComposing, getInputWrappers, updateOrder],
+    [roomId, refreshState, nextIfComposing],
   );
 
   useEffect(() => {
