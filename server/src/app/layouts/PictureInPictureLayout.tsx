@@ -210,7 +210,6 @@ export function PictureInPictureLayout() {
                     fontSize: 90,
                     width: 3560,
                     color: '#ffffff',
-                    fontFamily: 'Poppins',
                     fontWeight: 'semi_bold',
                   }}>
                   {'This video is composing multiple live streams in real time using smelter.'.toUpperCase()}

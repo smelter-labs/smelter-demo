@@ -377,7 +377,7 @@ export default function ControlPanel({
                 e,
               );
             }
-          }, 2000);
+          }, 1000);
         }
       } catch (e) {
         console.error('changeLayout failed:', e);
@@ -479,6 +479,19 @@ export default function ControlPanel({
     }
   }, [inputs, openFxInputId]);
 
+  // Loading states for Quick Actions buttons
+  const [loadingActions, setLoadingActions] = useState<{
+    addLogos: boolean;
+    addLogosAnim: boolean;
+    addTeam: boolean;
+    removeAll: boolean;
+  }>({
+    addLogos: false,
+    addLogosAnim: false,
+    addTeam: false,
+    removeAll: false,
+  });
+
   // Hide FX panel when any tour starts
   useEffect(() => {
     const deletingRef = { current: false };
@@ -570,6 +583,8 @@ export default function ControlPanel({
                   roomId={roomId}
                   availableShaders={availableShaders}
                   canRemove={inputs.length > 1}
+                  canMoveUp={false}
+                  canMoveDown={false}
                   pcRef={cameraPcRef}
                   streamRef={cameraStreamRef}
                   isFxOpen={true}
@@ -754,10 +769,12 @@ export default function ControlPanel({
                   <SortableList
                     items={inputWrappers}
                     resetVersion={listVersion}
-                    renderItem={(item) => {
+                    renderItem={(item, index, orderedItems) => {
                       const input = inputs.find(
                         (input) => input.inputId === item.inputId,
                       );
+                      const isFirst = index === 0;
+                      const isLast = index === orderedItems.length - 1;
                       return (
                         <SortableItem key={item.inputId} id={item.id}>
                           {input && (
@@ -767,6 +784,8 @@ export default function ControlPanel({
                               roomId={roomId}
                               availableShaders={availableShaders}
                               canRemove={inputs.length > 1}
+                              canMoveUp={!isFirst}
+                              canMoveDown={!isLast}
                               pcRef={cameraPcRef}
                               streamRef={cameraStreamRef}
                               isFxOpen={openFxInputId === input.inputId}
@@ -801,7 +820,9 @@ export default function ControlPanel({
                   size='lg'
                   variant='default'
                   className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  disabled={loadingActions.addLogos}
                   onClick={async () => {
+                    setLoadingActions((prev) => ({ ...prev, addLogos: true }));
                     try {
                       // Get all pictures
                       const pictures = await getPictureSuggestions();
@@ -822,15 +843,32 @@ export default function ControlPanel({
                       await refreshState();
                     } catch (e) {
                       console.error('Failed to add logos:', e);
+                    } finally {
+                      setLoadingActions((prev) => ({
+                        ...prev,
+                        addLogos: false,
+                      }));
                     }
                   }}>
-                  Add Logos
+                  {loadingActions.addLogos ? (
+                    <span className='flex items-center gap-2'>
+                      <LoadingSpinner size='sm' variant='spinner' />
+                      Adding...
+                    </span>
+                  ) : (
+                    'Add Logos'
+                  )}
                 </Button>
                 <Button
                   size='lg'
                   variant='default'
                   className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  disabled={loadingActions.addLogosAnim}
                   onClick={async () => {
+                    setLoadingActions((prev) => ({
+                      ...prev,
+                      addLogosAnim: true,
+                    }));
                     try {
                       // Get all mp4s
                       const mp4s = await getMP4Suggestions();
@@ -851,15 +889,29 @@ export default function ControlPanel({
                       await refreshState();
                     } catch (e) {
                       console.error('Failed to add logos anim:', e);
+                    } finally {
+                      setLoadingActions((prev) => ({
+                        ...prev,
+                        addLogosAnim: false,
+                      }));
                     }
                   }}>
-                  Add Logos Anim
+                  {loadingActions.addLogosAnim ? (
+                    <span className='flex items-center gap-2'>
+                      <LoadingSpinner size='sm' variant='spinner' />
+                      Adding...
+                    </span>
+                  ) : (
+                    'Add Logos Anim'
+                  )}
                 </Button>
                 <Button
                   size='lg'
                   variant='default'
                   className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  disabled={loadingActions.addTeam}
                   onClick={async () => {
+                    setLoadingActions((prev) => ({ ...prev, addTeam: true }));
                     try {
                       // Get all mp4s
                       const mp4s = await getMP4Suggestions();
@@ -880,15 +932,29 @@ export default function ControlPanel({
                       await refreshState();
                     } catch (e) {
                       console.error('Failed to add team:', e);
+                    } finally {
+                      setLoadingActions((prev) => ({
+                        ...prev,
+                        addTeam: false,
+                      }));
                     }
                   }}>
-                  Add Team
+                  {loadingActions.addTeam ? (
+                    <span className='flex items-center gap-2'>
+                      <LoadingSpinner size='sm' variant='spinner' />
+                      Adding...
+                    </span>
+                  ) : (
+                    'Add Team'
+                  )}
                 </Button>
                 <Button
                   size='lg'
                   variant='default'
                   className='bg-purple-80 hover:bg-purple-100 text-white-100 font-semibold cursor-pointer px-4 py-0 h-[48px] sm:h-[52px] text-sm sm:text-base sm:px-7 transition-all'
+                  disabled={loadingActions.removeAll}
                   onClick={async () => {
+                    setLoadingActions((prev) => ({ ...prev, removeAll: true }));
                     try {
                       // Get all pictures
                       const pictures = await getPictureSuggestions();
@@ -927,9 +993,21 @@ export default function ControlPanel({
                       await refreshState();
                     } catch (e) {
                       console.error('Failed to remove all:', e);
+                    } finally {
+                      setLoadingActions((prev) => ({
+                        ...prev,
+                        removeAll: false,
+                      }));
                     }
                   }}>
-                  Remove All
+                  {loadingActions.removeAll ? (
+                    <span className='flex items-center gap-2'>
+                      <LoadingSpinner size='sm' variant='spinner' />
+                      Removing...
+                    </span>
+                  ) : (
+                    'Remove All'
+                  )}
                 </Button>
               </div>
             </Accordion>

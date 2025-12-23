@@ -8,7 +8,15 @@ import {
   updateInput,
 } from '@/app/actions/actions';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, X, Type, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  Mic,
+  MicOff,
+  X,
+  Type,
+  ChevronUp,
+  ChevronDown,
+  GripVertical,
+} from 'lucide-react';
 import LoadingSpinner from '@/components/ui/spinner';
 import ShaderPanel from './shader-panel';
 import { stopCameraAndConnection } from '../whip-input/utils/preview';
@@ -30,6 +38,11 @@ interface InputEntryProps {
    * When false, the "X" button is hidden.
    */
   canRemove?: boolean;
+  /**
+   * Controls whether up/down move arrows are enabled.
+   */
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
   pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
   streamRef?: React.MutableRefObject<MediaStream | null>;
   onWhipDisconnectedOrRemoved?: (inputId: string) => void;
@@ -147,7 +160,7 @@ function MuteButton({
       data-no-dnd
       size='sm'
       variant='ghost'
-      className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+      className='transition-all duration-300 ease-in-out h-7 w-7 p-1.5 cursor-pointer'
       disabled={disabled}
       onClick={onClick}>
       {muted ? (
@@ -165,7 +178,7 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
       data-no-dnd
       size='sm'
       variant='ghost'
-      className='transition-all duration-300 ease-in-out h-6 w-6 p-2 cursor-pointer'
+      className='transition-all duration-300 ease-in-out h-7 w-7 p-1.5 cursor-pointer'
       onClick={onClick}>
       <X className=' text-red-40 size-5' />
     </Button>
@@ -178,6 +191,8 @@ export default function InputEntry({
   refreshState,
   availableShaders = [],
   canRemove = true,
+  canMoveUp = true,
+  canMoveDown = true,
   pcRef,
   streamRef,
   onWhipDisconnectedOrRemoved,
@@ -684,8 +699,12 @@ export default function InputEntry({
     <>
       <div
         key={input.inputId}
-        className='p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
-        <div className='flex items-center mb-3'>
+        className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
+        {/* Grip handle - always visible on left side */}
+        <div className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
+          <GripVertical className='w-5 h-5 text-white-60' />
+        </div>
+        <div className='flex items-center mb-3 pl-7'>
           <span
             className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
             aria-label={getSourceStateLabel()}
@@ -695,7 +714,7 @@ export default function InputEntry({
           </div>
         </div>
         <div className='flex flex-row items-center'>
-          <div className='flex-1 flex'>
+          <div className='flex-1 flex pl-7'>
             {(() => {
               const installedCountForHide = (input.shaders || []).length;
               const hideAddEffectsButton =
@@ -713,12 +732,17 @@ export default function InputEntry({
               );
             })()}
           </div>
-          <div className='flex flex-row items-center justify-end flex-1 gap-1'>
+          <div className='flex flex-row items-center justify-end flex-1 gap-0.5 pr-1'>
             <Button
               data-no-dnd
               size='sm'
               variant='ghost'
-              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer text-white-60 hover:text-white-100'
+              className={`transition-all duration-300 ease-in-out h-7 w-7 p-1.5 cursor-pointer ${
+                canMoveUp
+                  ? 'text-white-100 hover:text-white-100'
+                  : 'text-white-60'
+              }`}
+              disabled={!canMoveUp}
               aria-label='Move up'
               onClick={() => {
                 try {
@@ -733,13 +757,18 @@ export default function InputEntry({
                   );
                 } catch {}
               }}>
-              <ArrowUp className='size-5' strokeWidth={3} />
+              <ChevronUp className='size-5' strokeWidth={3} />
             </Button>
             <Button
               data-no-dnd
               size='sm'
               variant='ghost'
-              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer text-white-60 hover:text-white-100'
+              className={`transition-all duration-300 ease-in-out h-7 w-7 p-1.5 cursor-pointer ${
+                canMoveDown
+                  ? 'text-white-100 hover:text-white-100'
+                  : 'text-white-60'
+              }`}
+              disabled={!canMoveDown}
               aria-label='Move down'
               onClick={() => {
                 try {
@@ -754,13 +783,13 @@ export default function InputEntry({
                   );
                 } catch {}
               }}>
-              <ArrowDown className='size-5' strokeWidth={3} />
+              <ChevronDown className='size-5' strokeWidth={3} />
             </Button>
             <Button
               data-no-dnd
               size='sm'
               variant='ghost'
-              className='transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer'
+              className='transition-all duration-300 ease-in-out h-7 w-7 p-1.5 cursor-pointer'
               onClick={handleShowTitleToggle}
               aria-label={showTitle ? 'Hide title' : 'Show title'}>
               <span className='relative inline-flex items-center justify-center'>
