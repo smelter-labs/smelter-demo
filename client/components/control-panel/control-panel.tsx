@@ -372,7 +372,10 @@ export default function ControlPanel({
 
               await updateOrder(newWrappers);
             } catch (e) {
-              console.warn('Failed to swap first two inputs for wrapped layout:', e);
+              console.warn(
+                'Failed to swap first two inputs for wrapped layout:',
+                e,
+              );
             }
           }, 2000);
         }
