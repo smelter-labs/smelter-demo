@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -33,7 +33,6 @@ export default function IntroView() {
   const router = useRouter();
   const pathname = usePathname();
   const [loadingNew, setLoadingNew] = useState(false);
-  const autoStartedRef = useRef(false);
 
   // Suggestions state
   const [twitchSuggestions, setTwitchSuggestions] = useState<any[]>([]);
@@ -108,17 +107,6 @@ export default function IntroView() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, basePath, pathname, twitchSuggestions, kickSuggestions]);
-
-  // Auto-create room on initial load when URL contains any hash
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (autoStartedRef.current) return;
-    const h = window.location.hash || '';
-    if (!h) return;
-    autoStartedRef.current = true;
-    void handleCreateRoom();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <motion.div
