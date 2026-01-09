@@ -22,6 +22,7 @@ export default function RoomView({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [showAutoplayPopup, setShowAutoplayPopup] = useState(true);
   const [played, setPlayed] = useState(false);
+  const [isAutoTourStarting, setIsAutoTourStarting] = useState(false);
   const pathname = usePathname();
   const isKick = pathname?.toLowerCase().includes('kick');
   const { start: startRoomTour } = useDriverTourControls('room');
@@ -47,6 +48,20 @@ export default function RoomView({
     setupVideoEventListeners();
   }, [setupVideoEventListeners]);
 
+  // Check if tour is auto-starting via hash
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const h = (window.location.hash || '').toLowerCase();
+    if (
+      h.includes('tour-main') ||
+      h.includes('tour-composing') ||
+      h.includes('tour-shaders')
+    ) {
+      setIsAutoTourStarting(true);
+      setShowAutoplayPopup(false);
+    }
+  }, []);
+
   // Auto-start the room tour only on first site visit (skip Kick variant and on mobile)
   useEffect(() => {
     try {
@@ -56,6 +71,9 @@ export default function RoomView({
       const STORAGE_KEY = 'smelter:tour:room:first-visit:v1';
       const seen = window.localStorage.getItem(STORAGE_KEY) === '1';
       if (seen) return;
+      // If auto-starting tour, don't show autoplay modal
+      setIsAutoTourStarting(true);
+      setShowAutoplayPopup(false);
       // Delay slightly to ensure DOM targets are present
       const t = window.setTimeout(() => {
         startRoomTour?.();
@@ -73,15 +91,18 @@ export default function RoomView({
       try {
         await videoRef.current.play();
       } catch (error) {
-        setShowAutoplayPopup(true);
+        // Only show autoplay popup if tour is not auto-starting
+        if (!isAutoTourStarting) {
+          setShowAutoplayPopup(true);
+        }
       }
     };
     attemptAutoplay();
-  }, []);
+  }, [isAutoTourStarting]);
 
   return (
     <>
-      {showAutoplayPopup && !played && (
+      {showAutoplayPopup && !played && !isAutoTourStarting && (
         <AutoplayModal
           onAllow={() => handleAutoplayPermission(true)}
           onDeny={() => handleAutoplayPermission(false)}
