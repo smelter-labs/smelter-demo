@@ -31,14 +31,9 @@ interface BaseItem {
 
 interface Props<T extends BaseItem> {
   items: T[];
-  /**
-   * Render a single item.
-   * index: position of the item in the current ordered list
-   * orderedItems: the full ordered list at render time
-   */
   renderItem(item: T, index: number, orderedItems: T[]): ReactNode;
   onOrderChange(items: T[]): void;
-  resetVersion?: number; // force reset orderedItems when this changes
+  resetVersion?: number;
 }
 
 export function SortableList<T extends BaseItem>({
@@ -62,7 +57,6 @@ export function SortableList<T extends BaseItem>({
     });
   }, [items]);
 
-  // Explicit reset trigger from parent (e.g., after auto-resume) to ensure orderedItems syncs
   useEffect(() => {
     if (resetVersion !== undefined) {
       setOrderedItems(items);
@@ -141,7 +135,11 @@ export function SortableList<T extends BaseItem>({
           data-tour='inputs-list-container'
           className='SortableList'
           role='application'
-          style={{ overflowY: 'hidden', maxHeight: 'none' }}>
+          style={{
+            overflowY: 'hidden',
+            overflowX: 'hidden',
+            maxHeight: 'none',
+          }}>
           {orderedItems.map((item, index) => {
             const isActive = active?.id === item.id;
             return (
