@@ -272,7 +272,6 @@ export default function ShaderPanel({
 function ShaderParamSlider({
   param,
   paramValue,
-  loading: _loading,
   onChange,
   sliderClass,
   accentColor,

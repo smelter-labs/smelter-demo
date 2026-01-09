@@ -135,7 +135,11 @@ export function SortableList<T extends BaseItem>({
           data-tour='inputs-list-container'
           className='SortableList'
           role='application'
-          style={{ overflowY: 'hidden', overflowX: 'hidden', maxHeight: 'none' }}>
+          style={{
+            overflowY: 'hidden',
+            overflowX: 'hidden',
+            maxHeight: 'none',
+          }}>
           {orderedItems.map((item, index) => {
             const isActive = active?.id === item.id;
             return (

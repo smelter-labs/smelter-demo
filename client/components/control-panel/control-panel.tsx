@@ -323,6 +323,7 @@ export default function ControlPanel({
           return current;
         });
         setListVersion((v) => v + 1);
+        nextIfComposing(0);
       } catch {}
     };
     window.addEventListener('smelter:inputs:move', onMove as EventListener);
@@ -332,7 +333,7 @@ export default function ControlPanel({
         onMove as EventListener,
       );
     };
-  }, [updateOrder]);
+  }, [updateOrder, nextIfComposing]);
 
   // When main tour starts, force-switch to Stream tab with Twitch (top-level hook, not inside conditional render)
   useEffect(() => {

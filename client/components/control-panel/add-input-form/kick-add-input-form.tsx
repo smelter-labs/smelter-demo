@@ -22,8 +22,7 @@ function extractKickChannelId(maybeUrl: string): string | undefined {
     if (['www.kick.com', 'kick.com'].includes(url.host)) {
       return url.pathname.replace(/^\/+|\/+$/g, '');
     }
-  } catch {
-  }
+  } catch {}
   return undefined;
 }
 
