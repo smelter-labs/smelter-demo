@@ -33,10 +33,6 @@ export type GenericAddInputFormProps<T> = {
   id?: string;
   submitOnItem?: boolean;
   showButton?: boolean;
-  /**
-   * When true, always show the submit button regardless of whether user typed.
-   * Useful for inputs like Camera where button should be visible.
-   */
   forceShowButton?: boolean;
 };
 
@@ -109,7 +105,6 @@ export function GenericAddInputForm<T>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
 
-  // Track Room tour activity; used to lock the suggestions dropdown until an item is chosen
   useEffect(() => {
     const onStart = (e: any) => {
       try {
@@ -164,7 +159,6 @@ export function GenericAddInputForm<T>({
         highlightedIndex < filteredSuggestions.length
       ) {
         e.preventDefault();
-        // During room tour, force selection (and submission if enabled) instead of merely closing
         const shouldLock =
           isRoomTourActive &&
           !hasSelectedDuringTour &&
@@ -172,7 +166,6 @@ export function GenericAddInputForm<T>({
             '[data-tour="twitch-suggestion-item-container"]',
           );
         if (shouldLock && submitOnItem) {
-          // Trigger normal selection flow which will submit and advance tour
           void handleSuggestionSelect(filteredSuggestions[highlightedIndex]);
           return;
         }

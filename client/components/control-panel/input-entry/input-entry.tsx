@@ -33,14 +33,7 @@ interface InputEntryProps {
   input: Input;
   refreshState: () => Promise<void>;
   availableShaders?: AvailableShader[];
-  /**
-   * Controls whether this input can be removed (shows/hides the delete button).
-   * When false, the "X" button is hidden.
-   */
   canRemove?: boolean;
-  /**
-   * Controls whether up/down move arrows are enabled.
-   */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   pcRef?: React.MutableRefObject<RTCPeerConnection | null>;
@@ -48,13 +41,9 @@ interface InputEntryProps {
   onWhipDisconnectedOrRemoved?: (inputId: string) => void;
   isFxOpen?: boolean;
   onToggleFx?: () => void;
-  /**
-   * If true, render only the shaders list (for FX-only view), without input wrapper/details.
-   */
   fxModeOnly?: boolean;
 }
 
-// Utility: check if any shader is enabled
 function hasEnabledShader(input: Input) {
   if (!input.shaders) return false;
   return input.shaders.some((shader) => shader.enabled);
@@ -71,27 +60,48 @@ function StatusButton({
   showSliders: boolean;
   onClick: () => void;
 }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [showOnlyIcon, setShowOnlyIcon] = useState(false);
   const shaderAnyEnabled = hasEnabledShader(input);
   const installedCount = (input.shaders || []).length;
+
+  useEffect(() => {
+    const checkWidth = () => {
+      if (buttonRef.current) {
+        const width = buttonRef.current.offsetWidth;
+        setShowOnlyIcon(width < 120);
+      }
+    };
+
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    const resizeObserver = new ResizeObserver(checkWidth);
+    if (buttonRef.current) {
+      resizeObserver.observe(buttonRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkWidth);
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const getStatusLabel = () => {
     if (loading) {
       return <LoadingSpinner size='sm' variant='spinner' />;
     }
-    // Determine label:
-    // - If viewing sliders: "Hide FX"
-    // - If no shaders installed: "Add Effects"
-    // - If any shader enabled: "Effects"
-    // - Otherwise: "Show FX"
     const baseIcon = (
       <img
         src='/magic-wand.svg'
         width={16}
         height={16}
         alt=''
-        className='mr-2 opacity-90'
+        className={showOnlyIcon ? 'opacity-90' : 'mr-2 opacity-90'}
       />
     );
+    if (showOnlyIcon) {
+      return baseIcon;
+    }
     if (showSliders) {
       return (
         <span className='flex items-center'>
@@ -136,10 +146,11 @@ function StatusButton({
 
   return (
     <Button
+      ref={buttonRef}
       data-no-dnd
       size='sm'
       style={{ width: '100%' }}
-      className={`text-xs text-white-100 hover:opacity-75 cursor-pointer ${getStatusColor()} transition-all duration-200`}
+      className={`text-xs text-white-100 hover:opacity-75 cursor-pointer overflow-hidden ${getStatusColor()} transition-all duration-200`}
       onClick={onClick}>
       {getStatusLabel()}
     </Button>
@@ -207,12 +218,12 @@ export default function InputEntry({
     [shaderId: string]: string | null;
   }>({});
   const [isAddShaderModalOpen, setIsAddShaderModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const muted = input.volume === 0;
   const showTitle = input.showTitle !== false;
 
   const isWhipInput = input.type === 'whip';
 
-  // Hide "Add Effects" during composing tour
   const [isComposingTourActive, setIsComposingTourActive] = useState(false);
   useEffect(() => {
     const onStart = (e: any) => {
@@ -233,6 +244,15 @@ export default function InputEntry({
     };
   }, []);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const lastParamChangeRef = useRef<{ [key: string]: number }>({});
   const [sliderValues, setSliderValues] = useState<{ [key: string]: number }>(
     {},
@@ -244,7 +264,6 @@ export default function InputEntry({
   const effectiveShowSliders =
     typeof isFxOpen === 'boolean' ? isFxOpen : showSliders;
 
-  // Show only shaders that were explicitly added (via drag-and-drop)
   const visibleShaders = useMemo(
     () =>
       availableShaders.filter((availableShader) =>
@@ -253,7 +272,6 @@ export default function InputEntry({
     [availableShaders, input.shaders],
   );
 
-  // Determine which shaders are already added to this input (enabled or disabled)
   const addedShaderIds = useMemo(
     () => new Set((input.shaders || []).map((s) => s.shaderId)),
     [input.shaders],
@@ -368,7 +386,6 @@ export default function InputEntry({
             setShaderLoading(null);
             return;
           }
-          // Add new shader config enabled by default
           newShadersConfig = [
             ...(input.shaders || []),
             {
@@ -383,7 +400,6 @@ export default function InputEntry({
             },
           ];
         } else {
-          // Toggle enabled state on existing shader
           newShadersConfig = (input.shaders || []).map((shader) =>
             shader.shaderId === shaderId
               ? { ...shader, enabled: !shader.enabled }
@@ -429,7 +445,6 @@ export default function InputEntry({
         }
       }, 500);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [roomId, input, refreshState],
   );
 
@@ -463,7 +478,6 @@ export default function InputEntry({
         });
         await refreshState();
       } finally {
-        // paramLoading is handled in handleSliderChange
       }
     },
     [roomId, input, refreshState],
@@ -569,7 +583,6 @@ export default function InputEntry({
     [input, roomId, refreshState],
   );
 
-  // FX-only view: show just the shaders list, no input wrapper/details
   if (fxModeOnly && effectiveShowSliders) {
     const shadersForPanel = availableShaders;
     return (
@@ -699,11 +712,12 @@ export default function InputEntry({
     <>
       <div
         key={input.inputId}
-        className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154]'>
-        {/* Grip handle - visible on desktop, hidden on mobile */}
-        <div className='hidden md:block absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
-          <GripVertical className='w-5 h-5 text-white-60' />
-        </div>
+        className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154] overflow-hidden'>
+        {!isMobile && (
+          <div className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
+            <GripVertical className='w-5 h-5 text-white-60' />
+          </div>
+        )}
         <div className='flex items-center mb-3 md:pl-7'>
           <span
             className={`inline-block w-3 h-3 rounded-full mr-2 ${getSourceStateColor()}`}
@@ -713,8 +727,8 @@ export default function InputEntry({
             {input.title}
           </div>
         </div>
-        <div className='flex flex-row items-center'>
-          <div className='flex-1 flex md:pl-7'>
+        <div className='flex flex-row items-center min-w-0'>
+          <div className='flex-1 flex md:pl-7 min-w-0'>
             {(() => {
               const installedCountForHide = (input.shaders || []).length;
               const hideAddEffectsButton =
@@ -823,23 +837,6 @@ export default function InputEntry({
               disabled={input.sourceState === 'offline'}
               onClick={handleMuteToggle}
             />
-            {/* <Button
-            data-no-dnd
-            size='sm'
-            variant='ghost'
-            className={`transition-all duration-300 ease-in-out h-8 w-8 p-2 cursor-pointer`}
-            aria-label={input.status === 'connected' ? 'Disconnect' : 'Connect'}
-            disabled={connectionStateLoading}
-            onClick={handleConnectionToggle}
-          >
-            {connectionStateLoading ? (
-              <LoadingSpinner size="sm" variant="spinner" />
-            ) : (
-              input.status === 'connected'
-                ? <span className='text-red-80 font-bold'>•</span>
-                : <span className='text-green-100 font-bold'>•</span>
-            )}
-          </Button> */}
             {canRemove && <DeleteButton onClick={handleDelete} />}
           </div>
         </div>
@@ -906,16 +903,10 @@ export default function InputEntry({
                 return;
               }
               if (!existing.enabled) {
-                // Enable the shader on drop
                 handleShaderToggle(shaderId);
               }
             } catch {}
           }}>
-          {/*
-            In consolidated (FX open) mode, we want to list ALL available shaders
-            for the input, not only those already added. Otherwise, only show
-            the shaders explicitly added to this input.
-          */}
           {(() => {
             const shadersForPanel = effectiveShowSliders
               ? availableShaders

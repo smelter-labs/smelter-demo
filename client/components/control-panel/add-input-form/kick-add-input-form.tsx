@@ -23,7 +23,6 @@ function extractKickChannelId(maybeUrl: string): string | undefined {
       return url.pathname.replace(/^\/+|\/+$/g, '');
     }
   } catch {
-    // Not a valid URL, treat as plain channel ID
   }
   return undefined;
 }

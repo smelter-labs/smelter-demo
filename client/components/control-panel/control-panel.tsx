@@ -757,7 +757,7 @@ export default function ControlPanel({
               title='Streams'
               defaultOpen
               data-tour='streams-list-container'>
-              <div className='flex-1 overflow-auto relative'>
+              <div className='flex-1 overflow-y-auto overflow-x-hidden relative'>
                 <div className='pointer-events-none absolute top-0 left-0 right-0 h-2 z-40' />
                 {showStreamsSpinner ? (
                   <div className='flex items-center justify-center h-32'>
