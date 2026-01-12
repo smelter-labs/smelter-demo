@@ -150,7 +150,7 @@
 }
 
 /* Scale control panel elements to 75% for screen widths between 1280px and 1920px */
-@media (min-width: 1280px) and (max-width: 1919px) {
+@media (min-width: 1280px) and (max-width: 1600px) {
   .control-panel-container {
     overflow-x: hidden;
   }

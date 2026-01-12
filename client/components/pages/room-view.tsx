@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import { staggerContainer } from '@/utils/animations';
 import VideoPreview from '@/components/video-preview';
 import ControlPanel from '@/components/control-panel/control-panel';
-import { useDriverTourControls } from '@/components/tour/DriverTourContext';
-import { usePathname } from 'next/navigation';
 
 interface RoomViewProps {
   roomId: string;
@@ -23,9 +21,6 @@ export default function RoomView({
   const [showAutoplayPopup, setShowAutoplayPopup] = useState(true);
   const [played, setPlayed] = useState(false);
   const [isAutoTourStarting, setIsAutoTourStarting] = useState(false);
-  const pathname = usePathname();
-  const isKick = pathname?.toLowerCase().includes('kick');
-  const { start: startRoomTour } = useDriverTourControls('room');
 
   const handleAutoplayPermission = useCallback((allow: boolean) => {
     if (allow) {
@@ -61,29 +56,6 @@ export default function RoomView({
       setShowAutoplayPopup(false);
     }
   }, []);
-
-  // Auto-start the room tour only on first site visit (skip Kick variant and on mobile)
-  useEffect(() => {
-    try {
-      if (typeof window === 'undefined') return;
-      if (isKick) return;
-      if (window.matchMedia('(max-width: 767px)').matches) return; // don't show on mobile
-      const STORAGE_KEY = 'smelter:tour:room:first-visit:v1';
-      const seen = window.localStorage.getItem(STORAGE_KEY) === '1';
-      if (seen) return;
-      // If auto-starting tour, don't show autoplay modal
-      setIsAutoTourStarting(true);
-      setShowAutoplayPopup(false);
-      // Delay slightly to ensure DOM targets are present
-      const t = window.setTimeout(() => {
-        startRoomTour?.();
-        window.localStorage.setItem(STORAGE_KEY, '1');
-      }, 500);
-      return () => window.clearTimeout(t);
-    } catch {
-      // ignore storage errors
-    }
-  }, [isKick, startRoomTour]);
 
   useEffect(() => {
     const attemptAutoplay = async () => {

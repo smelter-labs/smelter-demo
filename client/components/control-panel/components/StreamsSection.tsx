@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { Input, AvailableShader } from '@/app/actions/actions';
 import type { InputWrapper } from '../hooks/use-control-panel-state';
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
@@ -41,6 +42,17 @@ export function StreamsSection({
   activeScreenshareInputId,
   onWhipDisconnectedOrRemoved,
 }: StreamsSectionProps) {
+  const [isWideScreen, setIsWideScreen] = useState(true);
+
+  useEffect(() => {
+    const checkWidth = () => {
+      setIsWideScreen(window.innerWidth >= 1600);
+    };
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
+
   return (
     <Accordion title='Streams' defaultOpen data-tour='streams-list-container'>
       <div className='flex-1 overflow-y-auto overflow-x-hidden relative'>
@@ -53,6 +65,7 @@ export function StreamsSection({
           <SortableList
             items={inputWrappers}
             resetVersion={listVersion}
+            disableDrag={!isWideScreen}
             renderItem={(item, index, orderedItems) => {
               const input = inputs.find(
                 (input) => input.inputId === item.inputId,
@@ -60,7 +73,10 @@ export function StreamsSection({
               const isFirst = index === 0;
               const isLast = index === orderedItems.length - 1;
               return (
-                <SortableItem key={item.inputId} id={item.id}>
+                <SortableItem
+                  key={item.inputId}
+                  id={item.id}
+                  disableDrag={!isWideScreen}>
                   {input && (
                     <InputEntry
                       input={input}
@@ -75,6 +91,7 @@ export function StreamsSection({
                       isFxOpen={openFxInputId === input.inputId}
                       onToggleFx={() => onToggleFx(input.inputId)}
                       onWhipDisconnectedOrRemoved={onWhipDisconnectedOrRemoved}
+                      showGrip={isWideScreen}
                     />
                   )}
                 </SortableItem>

@@ -34,6 +34,7 @@ interface Props<T extends BaseItem> {
   renderItem(item: T, index: number, orderedItems: T[]): ReactNode;
   onOrderChange(items: T[]): void;
   resetVersion?: number;
+  disableDrag?: boolean;
 }
 
 export function SortableList<T extends BaseItem>({
@@ -41,6 +42,7 @@ export function SortableList<T extends BaseItem>({
   renderItem,
   onOrderChange,
   resetVersion,
+  disableDrag = false,
 }: Props<T>) {
   const [orderedItems, setOrderedItems] = useState<T[]>(items);
   const [active, setActive] = useState<Active | null>(null);
@@ -68,12 +70,15 @@ export function SortableList<T extends BaseItem>({
     [active, orderedItems],
   );
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: disableDrag ? 999999 : 8,
+    },
+  });
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  });
+  const sensors = useSensors(pointerSensor, keyboardSensor);
   const IGNORE_TAGS = ['BUTTON'];
 
   const customHandleEvent = (element: HTMLElement | null) => {

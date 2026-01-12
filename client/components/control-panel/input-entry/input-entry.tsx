@@ -42,6 +42,7 @@ interface InputEntryProps {
   isFxOpen?: boolean;
   onToggleFx?: () => void;
   fxModeOnly?: boolean;
+  showGrip?: boolean;
 }
 
 export default function InputEntry({
@@ -58,6 +59,7 @@ export default function InputEntry({
   isFxOpen,
   onToggleFx,
   fxModeOnly,
+  showGrip = true,
 }: InputEntryProps) {
   const [connectionStateLoading, setConnectionStateLoading] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
@@ -452,7 +454,7 @@ export default function InputEntry({
       <div
         key={input.inputId}
         className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154] overflow-hidden'>
-        {!isMobile && (
+        {!isMobile && showGrip && (
           <div className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
             <GripVertical className='w-5 h-5 text-white-60' />
           </div>
