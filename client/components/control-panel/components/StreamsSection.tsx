@@ -1,8 +1,5 @@
-import type {
-  Input,
-  AvailableShader,
-  InputWrapper,
-} from '@/app/actions/actions';
+import type { Input, AvailableShader } from '@/app/actions/actions';
+import type { InputWrapper } from '../hooks/use-control-panel-state';
 import InputEntry from '@/components/control-panel/input-entry/input-entry';
 import { SortableItem } from '@/components/control-panel/sortable-list/sortable-item';
 import { SortableList } from '@/components/control-panel/sortable-list/sortable-list';
