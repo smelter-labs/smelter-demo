@@ -62,36 +62,11 @@ export default function IntroView() {
 
   const basePath = getBasePath(pathname);
 
-  const getRoomRoute = (roomId: string, hash?: string) => {
+  const getRoomRoute = (roomId: string) => {
     // If basePath is empty, just 'room/roomId'
     // Otherwise, 'basePath/room/roomId'
-    const route = basePath ? `${basePath}/room/${roomId}` : `room/${roomId}`;
-    return hash ? route + hash : route;
+    return basePath ? `${basePath}/room/${roomId}` : `room/${roomId}`;
   };
-
-  // Auto-create room and redirect if hash tour is present
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const h = (window.location.hash || '').toLowerCase();
-    if (
-      h.includes('tour-main') ||
-      h.includes('tour-composing') ||
-      h.includes('tour-shaders')
-    ) {
-      // Auto-create room with tour hash
-      void (async () => {
-        setLoadingNew(true);
-        try {
-          const room = await createNewRoom([]);
-          router.push(getRoomRoute(room.roomId, h));
-        } catch (err) {
-          console.error('Failed to auto-create room with tour hash:', err);
-        } finally {
-          setLoadingNew(false);
-        }
-      })();
-    }
-  }, [router, basePath]);
 
   const handleCreateRoom = useCallback(async () => {
     setLoadingNew(true);
@@ -126,7 +101,7 @@ export default function IntroView() {
           hash = h;
         }
       }
-      router.push(getRoomRoute(room.roomId, hash));
+      router.push(getRoomRoute(room.roomId) + hash);
     } finally {
       setLoadingNew(false);
     }
