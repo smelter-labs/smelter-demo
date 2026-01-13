@@ -149,7 +149,6 @@
   }
 }
 
-/* Scale control panel elements to 75% for screen widths between 1280px and 1920px */
 @media (min-width: 1280px) and (max-width: 1600px) {
   .control-panel-container {
     overflow-x: hidden;
@@ -158,6 +157,6 @@
   .control-panel-wrapper {
     transform: scale(0.75);
     transform-origin: top left;
-    width: 133.333%; /* Compensate for scale to maintain original width */
+    width: 133.333%; 
   }
 }

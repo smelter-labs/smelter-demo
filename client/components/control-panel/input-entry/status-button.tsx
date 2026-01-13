@@ -102,7 +102,7 @@ export function StatusButton({
 
   const getStatusColor = () => {
     if (showSliders) return 'bg-purple-60 hover:bg-purple-60';
-    return 'bg-gray-800 hover:bg-purple-60';
+    return 'bg-[#1F1834] border-2 border-[#322D43] hover:bg-purple-60';
   };
 
   return (

@@ -26,6 +26,7 @@ import {
   mobileTourOptions,
 } from '../tour/tour-config';
 import TourLauncher from '@/components/room-page/TourLauncher';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function RoomPage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function RoomPage() {
   const pathname = usePathname();
 
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const [roomState, setRoomState] = useState<RoomState>({
     inputs: [],
     layout: 'grid',
@@ -73,20 +75,21 @@ export default function RoomPage() {
     return () => clearInterval(interval);
   }, [refreshState]);
 
-  function MobileTourAutostart({ loading }: { loading: boolean }) {
+  function MobileTourAutostart({
+    loading,
+    isMobile,
+  }: {
+    loading: boolean;
+    isMobile: boolean;
+  }) {
     const { start } = useDriverTourControls('mobile');
     const startedRef = useRef(false);
     useEffect(() => {
-      // if (loading) return;
-      // if (typeof window === 'undefined') return;
-      // if (startedRef.current) return;
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
       if (!isMobile) return;
       const alreadyShown =
         window.sessionStorage.getItem('mobileTourShown') === '1';
       if (alreadyShown) return;
       startedRef.current = true;
-      // Delay slightly to ensure DOM has settled
       const id = window.setTimeout(() => {
         try {
           window.sessionStorage.setItem('mobileTourShown', '1');
@@ -94,7 +97,7 @@ export default function RoomPage() {
         start();
       }, 1500);
       return () => window.clearTimeout(id);
-    }, [loading, start]);
+    }, [loading, start, isMobile]);
     return null;
   }
 
@@ -190,7 +193,7 @@ export default function RoomPage() {
               id='composing'
               steps={composingTourSteps}
               options={commonTourOptions}>
-              <MobileTourAutostart loading={loading} />
+              <MobileTourAutostart loading={loading} isMobile={isMobile} />
               <HashTourAutostart loading={loading} />
               <motion.div
                 variants={staggerContainer}

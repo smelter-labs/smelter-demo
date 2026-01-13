@@ -2,6 +2,7 @@
 
 import { RefObject, useEffect, useRef, useState, useCallback } from 'react';
 
+import { useIsMobileDevice } from '@/hooks/use-mobile';
 import {
   Play as PlayIcon,
   Pause as PauseIcon,
@@ -42,7 +43,7 @@ export default function OutputStream({
   // NEW: videoLoaded state
   const [videoLoaded, setVideoLoaded] = useState(false);
   // Detect mobile to decide between native vs custom controls
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobileDevice();
 
   // Setup WHEP
   useEffect(() => {
@@ -57,15 +58,6 @@ export default function OutputStream({
       }
     });
   }, [whepUrl, videoRef]);
-
-  // Detect mobile environment on client
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const ua = navigator.userAgent || '';
-    const isMobileUA =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    setIsMobile(isMobileUA);
-  }, []);
 
   // Video events sync
   useEffect(() => {
