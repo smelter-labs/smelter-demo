@@ -14,10 +14,6 @@ import {
 } from 'lucide-react';
 import { buildIceServers } from '@/components/control-panel/whip-input/utils/webRTC-helpers';
 
-// You may want to install lucide-react: npm i lucide-react
-// Or swap for your favorite SVG icons.
-
-// Simple loading spinner component (tailwind-based)
 function LoadingSpinner() {
   return (
     <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
@@ -33,33 +29,28 @@ export default function OutputStream({
   whepUrl: string;
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
-  // Custom controls states
-  const [playing, setPlaying] = useState(false); // Fix: default to "not playing"
+  const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // NEW: videoLoaded state
   const [videoLoaded, setVideoLoaded] = useState(false);
-  // Detect mobile to decide between native vs custom controls
   const isMobile = useIsMobileDevice();
 
-  // Setup WHEP
   useEffect(() => {
     connect(whepUrl).then((stream) => {
       const vid = videoRef.current;
       if (vid && vid.srcObject !== stream) {
         vid.srcObject = stream;
         vid.play().then(
-          () => setPlaying(true), // Set playing if autoplay succeeded
-          () => setPlaying(false), // Set not playing if autoplay failed
+          () => setPlaying(true),
+          () => setPlaying(false),
         );
       }
     });
   }, [whepUrl, videoRef]);
 
-  // Video events sync
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -67,8 +58,8 @@ export default function OutputStream({
     const onTimeUpdate = () => setCurrent(vid.currentTime);
     const onLoadedMetadata = () => {
       setDuration(vid.duration || 0);
-      setVideoLoaded(true); // <-- Mark video as loaded
-      setPlaying(!vid.paused && !vid.ended); // sync play/pause state
+      setVideoLoaded(true);
+      setPlaying(!vid.paused && !vid.ended);
     };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
@@ -85,7 +76,6 @@ export default function OutputStream({
 
     setMuted(vid.muted || vid.volume === 0);
     setVolume(vid.volume);
-    // Fix: derive playing state from actual paused property at mount
     setPlaying(!vid.paused && !vid.ended);
 
     return () => {
@@ -95,20 +85,15 @@ export default function OutputStream({
       vid.removeEventListener('pause', onPause);
       vid.removeEventListener('volumechange', onVolumeChange);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoRef.current]);
 
-  // Fullscreen event sync
   useEffect(() => {
-    // Use the fullscreenchange event to monitor any entry/exit, not just via our button.
     const handleFullscreenChange = () => {
       const vid = videoRef.current;
       if (!vid) {
         setIsFullscreen(false);
         return;
       }
-      // If the video element IS fullscreen, set true; otherwise, set false.
-      // Handles vendor prefixes just in case.
       let isNowFullscreen = false;
       if (document.fullscreenElement === vid) {
         isNowFullscreen = true;
@@ -122,9 +107,7 @@ export default function OutputStream({
       setIsFullscreen(isNowFullscreen);
     };
 
-    // Listen on the document.
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    // Also vendor prefixed for safekeeping.
     document.addEventListener(
       'webkitfullscreenchange',
       handleFullscreenChange as EventListener,
@@ -155,7 +138,6 @@ export default function OutputStream({
     };
   }, [videoRef]);
 
-  // Custom controls handlers
   const handlePlayPause = () => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -200,14 +182,12 @@ export default function OutputStream({
   const handleFullscreen = () => {
     const vid = videoRef.current;
     if (!vid) return;
-    // Use prefixed fullscreen for better compatibility
     if (
       !document.fullscreenElement &&
       !(document as any).webkitFullscreenElement &&
       !(document as any).mozFullScreenElement &&
       !(document as any).msFullscreenElement
     ) {
-      // Try standard, then vendor prefixes.
       if (vid.requestFullscreen) {
         vid.requestFullscreen();
       } else if ((vid as any).webkitRequestFullscreen) {
@@ -217,7 +197,6 @@ export default function OutputStream({
       } else if ((vid as any).msRequestFullscreen) {
         (vid as any).msRequestFullscreen();
       }
-      // No need to setIsFullscreen(true) here; we'll pick up the change in fullscreen event.
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen();
@@ -228,7 +207,6 @@ export default function OutputStream({
       } else if ((document as any).msExitFullscreen) {
         (document as any).msExitFullscreen();
       }
-      // No need to setIsFullscreen(false) here; we'll pick up the change in fullscreen event.
     }
   };
 
@@ -239,7 +217,6 @@ export default function OutputStream({
     vid.play();
   };
 
-  // Utility to format seconds to mm:ss
   const formatTime = (s: number) => {
     if (!isFinite(s)) return '--:--';
     const m = Math.floor(s / 60);
@@ -247,7 +224,6 @@ export default function OutputStream({
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Styles for custom controls (tailwind-like or adjust as needed)
   const controlBar =
     'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-black/20 flex items-center px-4 py-3 gap-3 z-10';
   const button =
@@ -259,7 +235,6 @@ export default function OutputStream({
     <div
       className='relative w-full h-full bg-black rounded-md overflow-hidden border-[#414154] border-4 aspect-[16/9]'
       style={{ maxWidth: 1920, maxHeight: 1080 }}>
-      {/* Spinner, only show if not loaded */}
       {!videoLoaded && (
         <>
           <img src='/video-bg-placeholder.png' alt='Video placeholder' />
@@ -276,18 +251,15 @@ export default function OutputStream({
         autoPlay
         autoFocus
         playsInline
-        // On mobile, prefer native controls; on desktop, rely on custom controls only
         controls={isMobile}
         style={{ width: '100%', height: '100%', background: 'black' }}
         tabIndex={-1}
       />
-      {/* Custom Controls – desktop only */}
       {videoLoaded && !isMobile && (
         <div
           className={controlBar + ' flex-row justify-between'}
           style={{ userSelect: 'none' }}>
           <div className='flex items-center gap-3'>
-            {/* Play/Pause */}
             <button
               className={button}
               onClick={handlePlayPause}
@@ -299,13 +271,11 @@ export default function OutputStream({
               )}
             </button>
 
-            {/* Time & Seekbar */}
             <span className='text-xs text-white w-12 text-right tabular-nums font-mono mr-1'>
               {formatTime(current)}
             </span>
           </div>
           <div className='flex items-center gap-2 ml-auto'>
-            {/* Volume */}
             <button
               className={button + ' ml-2'}
               onClick={handleMuteToggle}
@@ -329,7 +299,6 @@ export default function OutputStream({
               style={{ marginLeft: 2, marginRight: 8, width: '120px' }}
             />
 
-            {/* Fullscreen */}
             <button
               className={button}
               onClick={handleFullscreen}

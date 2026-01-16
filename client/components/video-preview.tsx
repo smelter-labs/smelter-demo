@@ -2,7 +2,7 @@ import OutputStream from '@/components/output-stream';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Share2 } from 'lucide-react';
+import { Share2, Mail } from 'lucide-react';
 import { fadeInUp } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import { VideoOff } from 'lucide-react';
@@ -42,6 +42,19 @@ export default function VideoPreview({
             </div>
             {roomId && (
               <div className='mt-3 flex justify-end'>
+                <Button
+                  size='lg'
+                  asChild
+                  variant='outline'
+                  className='text-black bg-slate-200 hover:bg-slate-300 mr-2'>
+                  <Link
+                    href='https://www.smelter.dev/#contact'
+                    target='_blank'
+                    rel='noopener noreferrer'>
+                    <Mail className='w-4 h-4' />
+                    Contact Us
+                  </Link>
+                </Button>
                 <Button
                   size='lg'
                   asChild
