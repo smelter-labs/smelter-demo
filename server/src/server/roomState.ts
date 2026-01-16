@@ -76,6 +76,7 @@ export class RoomState {
   public creationTimestamp: number;
 
   public pendingDelete?: boolean;
+  public isPublic: boolean = false;
 
   public constructor(idPrefix: string, output: SmelterOutput, initInputs: RegisterInputOptions[]) {
     this.mp4sDir = path.join(process.cwd(), 'mp4s');

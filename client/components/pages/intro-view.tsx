@@ -12,8 +12,23 @@ import {
   RegisterInputOptions,
   getTwitchSuggestions,
   getKickSuggestions,
+  getAllRooms,
 } from '@/app/actions/actions';
+import Link from 'next/link';
 import { staggerContainer } from '@/utils/animations';
+
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  }
+  return `${seconds}s`;
+}
 
 function getBasePath(pathname: string): string {
   // Remove trailing slash if present
@@ -38,6 +53,11 @@ export default function IntroView() {
   const [twitchSuggestions, setTwitchSuggestions] = useState<any[]>([]);
   const [kickSuggestions, setKickSuggestions] = useState<any[]>([]);
 
+  // Active rooms state
+  type Room = { roomId: string; createdAt?: number; isPublic?: boolean };
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+
   // Load suggestions on mount
   useEffect(() => {
     let mounted = true;
@@ -57,6 +77,29 @@ export default function IntroView() {
     })();
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  // Load rooms on mount and refresh every 5s
+  useEffect(() => {
+    let mounted = true;
+    const fetchRooms = async () => {
+      try {
+        const roomsData = await getAllRooms();
+        if (mounted) {
+          setRooms(roomsData.rooms || roomsData || []);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        if (mounted) setLoadingRooms(false);
+      }
+    };
+    fetchRooms();
+    const interval = setInterval(fetchRooms, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -141,6 +184,35 @@ export default function IntroView() {
               {loadingNew && <LoadingSpinner size='sm' variant='spinner' />}
             </Button>
           </div>
+
+          {!loadingRooms && rooms.filter((r) => r.isPublic).length > 0 && (
+            <div className='mt-8 text-center'>
+              <h3 className='text-lg font-semibold text-white-100 mb-3'>
+                Active Rooms
+              </h3>
+              <ul className='space-y-2'>
+                {rooms
+                  .filter((r) => r.isPublic)
+                  .map((room) => (
+                    <li key={room.roomId}>
+                      <Link
+                        href={getRoomRoute(room.roomId)}
+                        className='flex items-center justify-between px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-white-100 text-sm'>
+                        <span className='font-mono truncate'>
+                          {room.roomId}
+                        </span>
+                        {room.createdAt && (
+                          <span className='text-xs text-gray-400 ml-4 whitespace-nowrap'>
+                            {new Date(room.createdAt).toLocaleTimeString()} ·{' '}
+                            {formatDuration(Date.now() - room.createdAt)}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </motion.div>

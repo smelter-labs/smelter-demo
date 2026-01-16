@@ -56,7 +56,7 @@ function PictureInPictureLayout() {
                 const intervalMs = 10;
                 const step = (pxPerSec * intervalMs) / 1000;
                 const resetRight = 2560;
-                const minLeft = -3120;
+                const minLeft = -5620;
                 marqueeId = setInterval(() => {
                     if (!mounted) {
                         return;
@@ -158,10 +158,10 @@ function PictureInPictureLayout() {
                                         top: 48,
                                         left: Math.round(marqueeLeft),
                                     }, children: (0, jsx_runtime_1.jsx)(smelter_1.Text, { style: {
-                                            fontSize: 90,
-                                            width: 3560,
+                                            fontSize: 72,
+                                            width: 5860,
                                             color: '#ffffff',
                                             fontFamily: 'Poppins',
-                                            fontWeight: 'semi_bold',
-                                        }, children: 'This video is composing multiple live streams in real time using smelter.'.toUpperCase() }) }) })] }) }) })] }));
+                                            fontWeight: 'bold',
+                                        }, children: 'This video is composed of multiple videos and overlays in real time using smelter. Want to learn more? Reach out at contact@smelter.dev.'.toUpperCase() }) }) })] }) }) })] }));
 }
