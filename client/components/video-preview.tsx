@@ -51,7 +51,7 @@ export default function VideoPreview({
                     size='lg'
                     variant='outline'
                     onClick={onTogglePublic}
-                    className={`max-md:h-8 max-md:px-3 max-md:text-xs ${
+                    className={`cursor-pointer max-md:h-8 max-md:px-3 max-md:text-xs ${
                       isPublic
                         ? 'text-black bg-slate-200 hover:bg-slate-300'
                         : 'border-2 border-[#322D43] text-gray-400 bg-transparent hover:bg-slate-300'
