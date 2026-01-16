@@ -51,10 +51,10 @@ export default function VideoPreview({
                     size='lg'
                     variant='outline'
                     onClick={onTogglePublic}
-                    className={`border-2 border-[#322D43] ${
+                    className={`max-md:h-8 max-md:px-3 max-md:text-xs ${
                       isPublic
                         ? 'text-black bg-slate-200 hover:bg-slate-300'
-                        : 'text-gray-400 bg-transparent hover:bg-slate-300'
+                        : 'border-2 border-[#322D43] text-gray-400 bg-transparent hover:bg-slate-300'
                     }`}>
                     {isPublic ? (
                       <ToggleRight className='w-4 h-4' />
@@ -69,7 +69,7 @@ export default function VideoPreview({
                     size='lg'
                     asChild
                     variant='outline'
-                    className='text-black hover:bg-slate-300 mr-2'>
+                    className='max-md:h-8 max-md:px-3 max-md:text-xs text-black hover:bg-slate-300 mr-2'>
                     <Link
                       href='https://www.smelter.dev/#contact'
                       target='_blank'
@@ -82,7 +82,7 @@ export default function VideoPreview({
                     size='lg'
                     asChild
                     variant='outline'
-                    className='text-black hover:bg-slate-300'>
+                    className='max-md:h-8 max-md:px-3 max-md:text-xs text-black hover:bg-slate-300'>
                     <Link
                       href={`/room-preview/${roomId}`}
                       target='_blank'
