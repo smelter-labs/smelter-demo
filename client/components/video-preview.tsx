@@ -2,7 +2,7 @@ import OutputStream from '@/components/output-stream';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Share2, Mail } from 'lucide-react';
+import { Share2, Mail, ToggleLeft, ToggleRight } from 'lucide-react';
 import { fadeInUp } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import { VideoOff } from 'lucide-react';
@@ -13,11 +13,15 @@ export default function VideoPreview({
   videoRef,
   tryToPlay,
   roomId,
+  isPublic,
+  onTogglePublic,
 }: {
   whepUrl: string;
   videoRef: RefObject<HTMLVideoElement | null>;
   tryToPlay?(): void;
   roomId?: string;
+  isPublic?: boolean;
+  onTogglePublic?: () => void;
 }) {
   const activeStream = true;
 
@@ -41,33 +45,53 @@ export default function VideoPreview({
               )}
             </div>
             {roomId && (
-              <div className='mt-3 flex justify-end'>
-                <Button
-                  size='lg'
-                  asChild
-                  variant='outline'
-                  className='text-black bg-slate-200 hover:bg-slate-300 mr-2'>
-                  <Link
-                    href='https://www.smelter.dev/#contact'
-                    target='_blank'
-                    rel='noopener noreferrer'>
-                    <Mail className='w-4 h-4' />
-                    Contact Us
-                  </Link>
-                </Button>
-                <Button
-                  size='lg'
-                  asChild
-                  variant='outline'
-                  className='text-black'>
-                  <Link
-                    href={`/room-preview/${roomId}`}
-                    target='_blank'
-                    rel='noopener noreferrer'>
-                    <Share2 className='w-4 h-4' />
-                    Prove Me
-                  </Link>
-                </Button>
+              <div className='mt-3 flex justify-between items-center'>
+                {onTogglePublic && (
+                  <Button
+                    size='lg'
+                    variant='outline'
+                    onClick={onTogglePublic}
+                    className={`border-2 border-[#322D43] ${
+                      isPublic
+                        ? 'text-black bg-slate-200 hover:bg-slate-300'
+                        : 'text-gray-400 bg-transparent hover:bg-slate-300'
+                    }`}>
+                    {isPublic ? (
+                      <ToggleRight className='w-4 h-4' />
+                    ) : (
+                      <ToggleLeft className='w-4 h-4' />
+                    )}
+                    Public
+                  </Button>
+                )}
+                <div className='flex'>
+                  <Button
+                    size='lg'
+                    asChild
+                    variant='outline'
+                    className='text-black hover:bg-slate-300 mr-2'>
+                    <Link
+                      href='https://www.smelter.dev/#contact'
+                      target='_blank'
+                      rel='noopener noreferrer'>
+                      <Mail className='w-4 h-4' />
+                      Contact Us
+                    </Link>
+                  </Button>
+                  <Button
+                    size='lg'
+                    asChild
+                    variant='outline'
+                    className='text-black hover:bg-slate-300'>
+                    <Link
+                      href={`/room-preview/${roomId}`}
+                      target='_blank'
+                      rel='noopener noreferrer'>
+                      <Share2 className='w-4 h-4' />
+                      Prove Me
+                    </Link>
+                  </Button>
+                </div>
               </div>
             )}
           </div>

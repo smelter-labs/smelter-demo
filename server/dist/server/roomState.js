@@ -17,6 +17,7 @@ const PLACEHOLDER_LOGO_FILE = 'logo_Smelter.png';
 class RoomState {
     constructor(idPrefix, output, initInputs) {
         this.layout = 'picture-in-picture';
+        this.isPublic = false;
         this.mp4sDir = node_path_1.default.join(process.cwd(), 'mp4s');
         this.mp4Files = mp4SuggestionMonitor_1.default.mp4Files;
         this.inputs = [];

@@ -71,6 +71,7 @@ export declare class RoomState {
     lastReadTimestamp: number;
     creationTimestamp: number;
     pendingDelete?: boolean;
+    isPublic: boolean;
     constructor(idPrefix: string, output: SmelterOutput, initInputs: RegisterInputOptions[]);
     private getInitialInputState;
     getWhepUrl(): string;

@@ -81,6 +81,7 @@ routes.get<RoomIdParams>('/room/:roomId', async (req, res) => {
     layout,
     whepUrl: room.getWhepUrl(),
     pendingDelete: room.pendingDelete,
+    isPublic: room.isPublic,
   });
 });
 
@@ -107,6 +108,7 @@ routes.get('/rooms', async (_req, res) => {
         whepUrl: room.getWhepUrl(),
         pendingDelete: room.pendingDelete,
         createdAt: room.creationTimestamp,
+        isPublic: room.isPublic,
       };
     })
     .filter(Boolean);
@@ -130,6 +132,7 @@ const UpdateRoomSchema = Type.Object({
       Type.Literal('transition'),
     ])
   ),
+  isPublic: Type.Optional(Type.Boolean()),
 });
 
 // No multiple-pictures shader defaults API - kept local in layout
@@ -147,6 +150,9 @@ routes.post<RoomIdParams & { Body: Static<typeof UpdateRoomSchema> }>(
     }
     if (req.body.layout) {
       await room.updateLayout(req.body.layout);
+    }
+    if (req.body.isPublic !== undefined) {
+      room.isPublic = req.body.isPublic;
     }
 
     res.status(200).send({ status: 'ok' });

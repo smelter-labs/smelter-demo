@@ -1,4 +1,4 @@
-import { RoomState } from '@/app/actions/actions';
+import { RoomState, updateRoom } from '@/app/actions/actions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AutoplayModal from '@/components/ui/autoplay-modal';
 import { motion } from 'framer-motion';
@@ -28,6 +28,11 @@ export default function RoomView({
     }
     setShowAutoplayPopup(false);
   }, []);
+
+  const handleTogglePublic = useCallback(async () => {
+    await updateRoom(roomId, { isPublic: !roomState.isPublic });
+    await refreshState();
+  }, [roomId, roomState.isPublic, refreshState]);
 
   const setupVideoEventListeners = useCallback(() => {
     if (!videoRef.current) {
@@ -88,6 +93,8 @@ export default function RoomView({
           videoRef={videoRef}
           whepUrl={roomState.whepUrl}
           roomId={roomId}
+          isPublic={roomState.isPublic}
+          onTogglePublic={handleTogglePublic}
         />
         <motion.div className='col-span-1 w-full flex flex-col xl:gap-4 min-h-0 h-full max-h-full justify-start overflow-y-auto overflow-x-hidden md:pr-4 control-panel-container'>
           <div className='control-panel-wrapper'>

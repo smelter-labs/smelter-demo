@@ -76,6 +76,7 @@ export type RoomState = {
   layout: Layout;
   whepUrl: string;
   pendingDelete?: boolean;
+  isPublic?: boolean;
 };
 
 export type Layout =
@@ -122,6 +123,7 @@ export async function createNewRoom(
 export type UpdateRoomOptions = {
   inputOrder?: string[];
   layout?: Layout;
+  isPublic?: boolean;
 };
 
 export async function updateRoom(

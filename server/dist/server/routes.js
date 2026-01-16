@@ -55,6 +55,7 @@ exports.routes.get('/room/:roomId', async (req, res) => {
         layout,
         whepUrl: room.getWhepUrl(),
         pendingDelete: room.pendingDelete,
+        isPublic: room.isPublic,
     });
 });
 exports.routes.get('/rooms', async (_req, res) => {
@@ -76,6 +77,8 @@ exports.routes.get('/rooms', async (_req, res) => {
             layout,
             whepUrl: room.getWhepUrl(),
             pendingDelete: room.pendingDelete,
+            createdAt: room.creationTimestamp,
+            isPublic: room.isPublic,
         };
     })
         .filter(Boolean);
@@ -95,6 +98,7 @@ const UpdateRoomSchema = typebox_1.Type.Object({
         typebox_1.Type.Literal('wrapped-static'),
         typebox_1.Type.Literal('transition'),
     ])),
+    isPublic: typebox_1.Type.Optional(typebox_1.Type.Boolean()),
 });
 // No multiple-pictures shader defaults API - kept local in layout
 exports.routes.post('/room/:roomId', { schema: { body: UpdateRoomSchema } }, async (req, res) => {
@@ -106,6 +110,9 @@ exports.routes.post('/room/:roomId', { schema: { body: UpdateRoomSchema } }, asy
     }
     if (req.body.layout) {
         await room.updateLayout(req.body.layout);
+    }
+    if (req.body.isPublic !== undefined) {
+        room.isPublic = req.body.isPublic;
     }
     res.status(200).send({ status: 'ok' });
 });
