@@ -27,6 +27,7 @@ import {
   loadWhipSession,
 } from '../whip-input/utils/whip-storage';
 import { useDriverTourControls } from '@/components/tour/DriverTourContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InputEntryProps {
   roomId: string;
@@ -68,7 +69,7 @@ export default function InputEntry({
     [shaderId: string]: string | null;
   }>({});
   const [isAddShaderModalOpen, setIsAddShaderModalOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const muted = input.volume === 0;
   const showTitle = input.showTitle !== false;
 
@@ -92,15 +93,6 @@ export default function InputEntry({
       window.removeEventListener('smelter:tour:start', onStart);
       window.removeEventListener('smelter:tour:stop', onStop);
     };
-  }, []);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const lastParamChangeRef = useRef<{ [key: string]: number }>({});
@@ -453,7 +445,7 @@ export default function InputEntry({
     <>
       <div
         key={input.inputId}
-        className='group relative p-2 mb-2 last:mb-0 rounded-md bg-purple-100 border-2 border-[#414154] overflow-hidden'>
+        className='group relative p-2 mb-2 last:mb-0 rounded-md bg-[#1F1834] border-2 border-[#322D43] overflow-hidden'>
         {!isMobile && showGrip && (
           <div className='absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none'>
             <GripVertical className='w-5 h-5 text-white-60' />

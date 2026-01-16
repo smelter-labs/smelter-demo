@@ -55,7 +55,7 @@ export function PictureInPictureLayout() {
         const intervalMs = 10;
         const step = (pxPerSec * intervalMs) / 1000;
         const resetRight = 2560;
-        const minLeft = -3120;
+        const minLeft = -5620;
         marqueeId = setInterval(() => {
           if (!mounted) {
             return;
@@ -208,12 +208,12 @@ export function PictureInPictureLayout() {
                 <Text
                   style={{
                     fontSize: 72,
-                    width: 3560,
+                    width: 5860,
                     color: '#ffffff',
                     fontFamily: 'Poppins',
                     fontWeight: 'bold',
                   }}>
-                  {'This video is composing multiple live streams in real time using smelter.'.toUpperCase()}
+                  {'This video is composed of multiple videos and overlays in real time using smelter. Want to learn more? Reach out at contact@smelter.dev.'.toUpperCase()}
                 </Text>
               </View>
             </View>

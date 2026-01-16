@@ -106,6 +106,7 @@ routes.get('/rooms', async (_req, res) => {
         layout,
         whepUrl: room.getWhepUrl(),
         pendingDelete: room.pendingDelete,
+        createdAt: room.creationTimestamp,
       };
     })
     .filter(Boolean);

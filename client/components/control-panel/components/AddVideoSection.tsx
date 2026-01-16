@@ -6,6 +6,7 @@ import { KickAddInputForm } from '../add-input-form/kick-add-input-form';
 import { ImageAddInputForm } from '../add-input-form/image-add-input-form';
 import { WHIPAddInputForm } from '../add-input-form/whip-add-input-form';
 import { ScreenshareAddInputForm } from '../add-input-form/screenshare-add-input-form';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type AddTab = 'stream' | 'mp4' | 'image' | 'inputs';
 type StreamTab = 'twitch' | 'kick';
@@ -56,6 +57,7 @@ export function AddVideoSection({
   setIsScreenshareActive,
   addVideoAccordionRef,
 }: AddVideoSectionProps) {
+  const isMobile = useIsMobile();
   const tabs: { id: AddTab; label: string }[] = [
     { id: 'stream', label: 'Stream' },
     { id: 'mp4', label: 'MP4' },
@@ -150,27 +152,29 @@ export function AddVideoSection({
           )}
           {addInputActiveTab === 'inputs' && (
             <div>
-              <div className='flex gap-2 sm:gap-3 md:gap-4 lg:gap-4 xl:gap-4 2xl:gap-5 border-b border-[#414154] -mx-4 px-4 mb-3 justify-center'>
-                <button
-                  className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
-                    inputsActiveTab === 'camera'
-                      ? 'border-b-[3px] border-red-40 text-white-100'
-                      : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
-                  }`}
-                  onClick={() => setInputsActiveTab('camera')}>
-                  Camera
-                </button>
-                <button
-                  className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
-                    inputsActiveTab === 'screenshare'
-                      ? 'border-b-[3px] border-red-40 text-white-100'
-                      : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
-                  }`}
-                  onClick={() => setInputsActiveTab('screenshare')}>
-                  Screenshare
-                </button>
-              </div>
-              {inputsActiveTab === 'camera' && (
+              {!isMobile && (
+                <div className='flex gap-2 sm:gap-3 md:gap-4 lg:gap-4 xl:gap-4 2xl:gap-5 border-b border-[#414154] -mx-4 px-4 mb-3 justify-center'>
+                  <button
+                    className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                      inputsActiveTab === 'camera'
+                        ? 'border-b-[3px] border-red-40 text-white-100'
+                        : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                    }`}
+                    onClick={() => setInputsActiveTab('camera')}>
+                    Camera
+                  </button>
+                  <button
+                    className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                      inputsActiveTab === 'screenshare'
+                        ? 'border-b-[3px] border-red-40 text-white-100'
+                        : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                    }`}
+                    onClick={() => setInputsActiveTab('screenshare')}>
+                    Screenshare
+                  </button>
+                </div>
+              )}
+              {(isMobile || inputsActiveTab === 'camera') && (
                 <WHIPAddInputForm
                   inputs={inputs}
                   roomId={roomId}
@@ -183,7 +187,7 @@ export function AddVideoSection({
                   setIsWhipActive={setIsCameraActive}
                 />
               )}
-              {inputsActiveTab === 'screenshare' && (
+              {!isMobile && inputsActiveTab === 'screenshare' && (
                 <ScreenshareAddInputForm
                   inputs={inputs}
                   roomId={roomId}
