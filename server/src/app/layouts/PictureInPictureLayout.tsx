@@ -208,10 +208,10 @@ export function PictureInPictureLayout() {
                 <Text
                   style={{
                     fontSize: 72,
-                    width: 5860,
+                    width: 6860,
                     color: '#ffffff',
                     fontFamily: 'Poppins',
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                   }}>
                   {'This video is composed of multiple videos and overlays in real time using smelter. Want to learn more? Reach out at contact@smelter.dev.'.toUpperCase()}
                 </Text>
