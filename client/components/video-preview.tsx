@@ -26,28 +26,25 @@ export default function VideoPreview({
   onTogglePublic?: () => void;
 }) {
   const activeStream = true;
-  const [isVisible, toggleQRModalVisibility] = useReducer(
-    (v) => !v,
-    false
-  );
+  const [isVisible, toggleQRModalVisibility] = useReducer((v) => !v, false);
 
   return (
     <motion.div
       className='col-span-1 xl:col-span-3 sticky top-0 self-start z-10 w-full'
       {...(fadeInUp as any)}>
-        <Modal isVisible={isVisible} onBackdropClick={toggleQRModalVisibility}>
-          <Card className='border-0 px-5'>
-            <CardHeader className='justify-center pl-5'>
-              <CardTitle>Scan to Join Room</CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-col items-center p-3 bg-white'>
-              <QRCode value={window.location.href} size={256} />
-              <p className='text-center text-sm text-gray-600 mt-4 max-w-72'>
-                Scan this QR code with your mobile device to join the room.
-              </p>
-            </CardContent>
-          </Card>
-        </Modal>
+      <Modal isVisible={isVisible} onBackdropClick={toggleQRModalVisibility}>
+        <Card className='border-0 px-5'>
+          <CardHeader className='justify-center pl-5'>
+            <CardTitle>Scan to Join Room</CardTitle>
+          </CardHeader>
+          <CardContent className='flex flex-col items-center p-3 bg-white'>
+            <QRCode value={window.location.href} size={256} />
+            <p className='text-center text-sm text-gray-600 mt-4 max-w-72'>
+              Scan this QR code with your mobile device to join the room.
+            </p>
+          </CardContent>
+        </Card>
+      </Modal>
       <Card className='flex flex-col bg-black-90 border-0'>
         <CardContent className='flex flex-col'>
           <div className='w-full max-w-[1920px] mx-auto'>
