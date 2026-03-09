@@ -1,6 +1,6 @@
 'use client';
 
-import { RefObject, useEffect, useRef, useState, useCallback } from 'react';
+import { RefObject, useEffect, useState } from 'react';
 
 import { useIsMobileDevice } from '@/hooks/use-mobile';
 import {

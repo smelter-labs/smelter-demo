@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fadeIn2 } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import { Grid3X3, Layers, LayoutGrid, LucideIcon, Square } from 'lucide-react';
