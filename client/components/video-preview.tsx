@@ -39,7 +39,11 @@ export default function VideoPreview({
           </CardHeader>
           <CardContent className='flex flex-col items-center p-3'>
             <div className='p-2'>
-              <QRCode bgColor='#d6ecf2' value={window.location.href} size={256} />
+              <QRCode
+                bgColor='#d6ecf2'
+                value={window.location.href}
+                size={256}
+              />
             </div>
             <p className='text-center text-sm text-gray-600 mt-4 max-w-72'>
               Scan this QR code with your mobile device to join the room.
