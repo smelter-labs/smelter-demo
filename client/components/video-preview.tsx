@@ -2,7 +2,7 @@ import OutputStream from '@/components/output-stream';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Share2, Mail, ToggleLeft, ToggleRight, Car } from 'lucide-react';
+import { Share2, Mail, ToggleLeft, ToggleRight } from 'lucide-react';
 import { fadeInUp } from '@/utils/animations';
 import { motion } from 'framer-motion';
 import { VideoOff } from 'lucide-react';
@@ -33,12 +33,14 @@ export default function VideoPreview({
       className='col-span-1 xl:col-span-3 sticky top-0 self-start z-10 w-full'
       {...(fadeInUp as any)}>
       <Modal isVisible={isVisible} onBackdropClick={toggleQRModalVisibility}>
-        <Card className='border-0 px-5'>
+        <Card className='border-0 px-5 bg-[#d6ecf2]'>
           <CardHeader className='justify-center pl-5'>
             <CardTitle>Scan to Join Room</CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col items-center p-3 bg-white'>
-            <QRCode value={window.location.href} size={256} />
+          <CardContent className='flex flex-col items-center p-3'>
+            <div className='p-2'>
+              <QRCode bgColor='#d6ecf2' value={window.location.href} size={256} />
+            </div>
             <p className='text-center text-sm text-gray-600 mt-4 max-w-72'>
               Scan this QR code with your mobile device to join the room.
             </p>
