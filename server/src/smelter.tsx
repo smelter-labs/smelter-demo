@@ -37,6 +37,17 @@ const MP4_DECODER_MAP = {
 
 const WHIP_SERVER_DECODER_PREFERENCES = [config.h264Decoder];
 
+type HlsInputRegisterFn = {
+  registerInput: (
+    inputId: string,
+    request: {
+      type: 'hls';
+      url: string;
+      decoderMap: typeof MP4_DECODER_MAP;
+    }
+  ) => Promise<unknown>;
+};
+
 export class SmelterManager {
   private instance: Smelter;
 
@@ -111,6 +122,9 @@ export class SmelterManager {
           video: { decoderPreferences: WHIP_SERVER_DECODER_PREFERENCES },
         });
         console.log('whipInput', res);
+        if (!res.bearerToken) {
+          throw new Error('WHIP input registration succeeded but no bearer token was returned');
+        }
         return res.bearerToken;
       } else if (opts.type === 'mp4') {
         await this.instance.registerInput(inputId, {
@@ -120,7 +134,7 @@ export class SmelterManager {
           loop: opts.loop ?? true,
         });
       } else if (opts.type === 'hls') {
-        await this.instance.registerInput(inputId, {
+        await (this.instance as unknown as HlsInputRegisterFn).registerInput(inputId, {
           type: 'hls',
           url: opts.url,
           decoderMap: MP4_DECODER_MAP,

@@ -38,7 +38,7 @@ export type ShaderConfig = {
 const AVAILABLE_SHADERS: AvailableShader[] = [
   {
     id: 'ascii-filter',
-    isActive: true,
+    isActive: false,
     isVisible: true,
     name: 'ASCII Filter',
     description: 'A filter that converts the input video to ASCII art.',

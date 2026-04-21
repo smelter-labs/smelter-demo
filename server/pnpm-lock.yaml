@@ -15,11 +15,11 @@ importers:
         specifier: ^0.34.38
         version: 0.34.41
       '@swmansion/smelter':
-        specifier: ^0.3.0
-        version: 0.3.0(react@18.3.1)
+        specifier: next
+        version: 0.4.0-rc.0(react@18.3.1)
       '@swmansion/smelter-node':
-        specifier: ^0.3.2
-        version: 0.3.2(@swmansion/smelter@0.3.0(react@18.3.1))(react@18.3.1)
+        specifier: next
+        version: 0.4.0-rc.0(@swmansion/smelter@0.4.0-rc.0(react@18.3.1))(react@18.3.1)
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -104,19 +104,19 @@ packages:
   '@sinclair/typebox@0.34.41':
     resolution: {integrity: sha512-6gS8pZzSXdyRHTIqoqSVknxolr1kzfy4/CeDnrzsVz8TTIWUbOBr6gnzOmTYJ3eXQNh4IYHIGi5aIL7sOZ2G/g==}
 
-  '@swmansion/smelter-core@0.3.0':
-    resolution: {integrity: sha512-AESENSKzLgHBlyOkehY45wHuP3Q/+EF0ZmrK9ekBohito1lGUY8ZCMd5r4ocl+dUs0voDYmzJFr694O6f7Q55Q==}
+  '@swmansion/smelter-core@0.4.0-rc.0':
+    resolution: {integrity: sha512-GMf2GbVE4/te9Itef/ZHbis/45tgyjHETSkKKSXD/WQuDiOpDcYqmjvstV6sD5ucVMr+iDwwjrHeXH2+tRQPsA==}
     peerDependencies:
-      '@swmansion/smelter': ^0.3.0
+      '@swmansion/smelter': 0.4.0-rc.0
       react: '*'
 
-  '@swmansion/smelter-node@0.3.2':
-    resolution: {integrity: sha512-Fbx1c01qFEaFEyyI2APFQ3AA+XvrEu0FQ69o47puwmjLvtt4n6WJd0OWapWIkfOcwgIB8Wr2MAJ+QmWUfbfFIA==}
+  '@swmansion/smelter-node@0.4.0-rc.0':
+    resolution: {integrity: sha512-isv9HNljnzbnx2eVTuKGzxs7htthoON+1tLYKcL5lMtYrSURYLuHVw0nGahUhd/RQs5xmGyBDD5UG1mO5Wmohg==}
     peerDependencies:
-      '@swmansion/smelter': ^0.3.0
+      '@swmansion/smelter': 0.4.0-rc.0
 
-  '@swmansion/smelter@0.3.0':
-    resolution: {integrity: sha512-rEMazi26MbLE6m6w/LyNn8LlTicDn9jqBe0A3fGRIJYGHrvGOJ3hlmVG8DO1VQ/fktn7r6APpbrGuHT/Jws48g==}
+  '@swmansion/smelter@0.4.0-rc.0':
+    resolution: {integrity: sha512-xrvE8U0XmRBh7p6AY0MHHZ1UB6PwioAK6IlrqRpNqb34Cw8xi30gkfx2wAHGgUcyq0Zmu6lfimCrqy8k9sOX/g==}
     peerDependencies:
       react: '*'
 
@@ -484,8 +484,8 @@ packages:
     resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
     engines: {node: '>=14.16'}
 
-  tar@7.5.2:
-    resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
+  tar@7.5.13:
+    resolution: {integrity: sha512-tOG/7GyXpFevhXVh8jOPJrmtRpOTsYqUIkVdVooZYJS/z8WhfQUX8RJILmeuJNinGAMSu1veBr4asSHFt5/hng==}
     engines: {node: '>=18'}
 
   thread-stream@3.1.0:
@@ -630,22 +630,22 @@ snapshots:
 
   '@sinclair/typebox@0.34.41': {}
 
-  '@swmansion/smelter-core@0.3.0(@swmansion/smelter@0.3.0(react@18.3.1))(react@18.3.1)':
+  '@swmansion/smelter-core@0.4.0-rc.0(@swmansion/smelter@0.4.0-rc.0(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@swmansion/smelter': 0.3.0(react@18.3.1)
+      '@swmansion/smelter': 0.4.0-rc.0(react@18.3.1)
       react: 18.3.1
       react-reconciler: 0.29.2(react@18.3.1)
 
-  '@swmansion/smelter-node@0.3.2(@swmansion/smelter@0.3.0(react@18.3.1))(react@18.3.1)':
+  '@swmansion/smelter-node@0.4.0-rc.0(@swmansion/smelter@0.4.0-rc.0(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@swmansion/smelter': 0.3.0(react@18.3.1)
-      '@swmansion/smelter-core': 0.3.0(@swmansion/smelter@0.3.0(react@18.3.1))(react@18.3.1)
+      '@swmansion/smelter': 0.4.0-rc.0(react@18.3.1)
+      '@swmansion/smelter-core': 0.4.0-rc.0(@swmansion/smelter@0.4.0-rc.0(react@18.3.1))(react@18.3.1)
       form-data: 4.0.5
       fs-extra: 11.3.2
       node-fetch: 2.7.0
       pino: 9.14.0
       pino-pretty: 13.1.3
-      tar: 7.5.2
+      tar: 7.5.13
       uuid: 10.0.0
       ws: 8.18.3
     transitivePeerDependencies:
@@ -654,7 +654,7 @@ snapshots:
       - react
       - utf-8-validate
 
-  '@swmansion/smelter@0.3.0(react@18.3.1)':
+  '@swmansion/smelter@0.4.0-rc.0(react@18.3.1)':
     dependencies:
       react: 18.3.1
 
@@ -1036,7 +1036,7 @@ snapshots:
 
   strip-json-comments@5.0.3: {}
 
-  tar@7.5.2:
+  tar@7.5.13:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
