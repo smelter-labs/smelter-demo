@@ -48,6 +48,18 @@ type HlsInputRegisterFn = {
   ) => Promise<unknown>;
 };
 
+function isFatalSmelterError(err: any): boolean {
+  const stack = err?.body?.stack;
+  if (!Array.isArray(stack)) {
+    return false;
+  }
+  return stack.some(
+    (line: unknown) =>
+      typeof line === 'string' &&
+      line.includes('host memory allocation has failed')
+  );
+}
+
 export class SmelterManager {
   private instance: Smelter;
 
@@ -82,21 +94,29 @@ export class SmelterManager {
 
   public async registerOutput(roomId: string): Promise<SmelterOutput> {
     let store = createRoomStore();
-    await this.instance.registerOutput(roomId, <App store={store} />, {
-      type: 'whep_server',
-      video: {
-        encoder: config.h264Encoder,
-        resolution: {
-          width: 2560,
-          height: 1440,
+    try {
+      await this.instance.registerOutput(roomId, <App store={store} />, {
+        type: 'whep_server',
+        video: {
+          encoder: config.h264Encoder,
+          resolution: {
+            width: 2560,
+            height: 1440,
+          },
         },
-      },
-      audio: {
-        encoder: {
-          type: 'opus',
+        audio: {
+          encoder: {
+            type: 'opus',
+          },
         },
-      },
-    });
+      });
+    } catch (err: any) {
+      if (isFatalSmelterError(err)) {
+        console.error('Fatal Smelter error, exiting for restart', err?.body ?? err);
+        process.exit(1);
+      }
+      throw err;
+    }
 
     return { id: roomId, url: `${config.whepBaseUrl}/${encodeURIComponent(roomId)}`, store };
   }

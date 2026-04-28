@@ -2,6 +2,7 @@ services:
   server:
     env_file: secret.env
     build: .
+    restart: on-failure
     environment:
       SMELTER_DEMO_API_PORT: "9081"
       SMELTER_DEMO_ROUTER_LOGGER_LEVEL: "warn"
