@@ -21,9 +21,9 @@ export const config: Config =
         },
         whepBaseUrl: 'https://puffer.fishjam.io/smelter-demo-whep/whep',
         whipBaseUrl: 'https://puffer.fishjam.io/smelter-demo-whep/whip',
-        //h264Decoder: 'vulkan_h264',
-        h264Decoder: 'ffmpeg_h264',
-        h264Encoder: { type: 'vulkan_h264', bitrate: 20_000_000 },
+        h264Decoder: 'vulkan_h264',
+        // h264Decoder: 'ffmpeg_h264',
+        h264Encoder: { type: 'vulkan_h264', bitrate: 10_000_000 },
         //h264Encoder: {
         //  type: 'ffmpeg_h264',
         //  preset: 'veryfast',
