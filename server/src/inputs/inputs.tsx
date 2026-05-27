@@ -10,8 +10,10 @@ import {
   Shader,
 } from '@swmansion/smelter';
 
-import type { ReactElement } from 'react';
+import { useContext, type ReactElement } from 'react';
+import { useStore } from 'zustand';
 import type { ShaderConfig, ShaderParamConfig } from '../shaders/shaders';
+import { StoreContext } from '../app/store';
 
 type Resolution = { width: number; height: number };
 
@@ -27,13 +29,13 @@ function wrapWithShaders(
   const shader = shaders[index];
   const shaderParams = Array.isArray(shader.params)
     ? shader.params.map(
-        (param: ShaderParamConfig) =>
-          ({
-            type: 'f32',
-            fieldName: param.paramName,
-            value: param.paramValue,
-          }) as ShaderParamStructField
-      )
+      (param: ShaderParamConfig) =>
+        ({
+          type: 'f32',
+          fieldName: param.paramName,
+          value: param.paramValue,
+        }) as ShaderParamStructField
+    )
     : [];
   return (
     <Shader
@@ -42,9 +44,9 @@ function wrapWithShaders(
       shaderParam={
         shaderParams.length > 0
           ? {
-              type: 'struct',
-              value: shaderParams,
-            }
+            type: 'struct',
+            value: shaderParams,
+          }
           : undefined
       }>
       {wrapWithShaders(component, shaders, resolution, index + 1)}
@@ -52,11 +54,19 @@ function wrapWithShaders(
   );
 }
 
-export function Input({ input }: { input: InputConfig }) {
+export function Input({
+  input,
+  subtitlePosition = 'bottom',
+}: {
+  input: InputConfig;
+  subtitlePosition?: 'bottom' | 'top-left';
+}) {
   const streams = useInputStreams();
   const isImage = !!input.imageId;
   const streamState = isImage ? 'playing' : (streams[input.inputId]?.videoState ?? 'finished');
   const resolution = { width: 1920, height: 1080 };
+  const store = useContext(StoreContext);
+  const transcript = useStore(store, s => s.transcripts[input.inputId] ?? '');
 
   const inputComponent = (
     <Rescaler style={resolution}>
@@ -67,9 +77,14 @@ export function Input({ input }: { input: InputConfig }) {
               <Image imageId={input.imageId!} />
             </Rescaler>
           ) : (
-            <Rescaler style={{ rescaleMode: 'fill' }}>
-              <InputStream inputId={input.inputId} volume={input.volume} />
-            </Rescaler>
+            <View style={{ ...resolution }}>
+              <Rescaler style={{ rescaleMode: 'fill' }}>
+                <InputStream inputId={input.inputId} volume={input.volume} />
+              </Rescaler>
+              {transcript ? (
+                <Subtitle text={transcript} parent={resolution} position={subtitlePosition} />
+              ) : null}
+            </View>
           )
         ) : streamState === 'ready' ? (
           <View style={{ padding: 300 }}>
@@ -164,3 +179,53 @@ export function SmallInput({
   }
   return <Rescaler>{smallInputComponent}</Rescaler>;
 }
+
+// Subtitle is sized relative to the input's internal 1920x1080 canvas — same
+// canvas the InputStream is rescaled into — so it scales with the input tile
+// regardless of where it ends up in the output layout. Padding/font numbers
+// are picked to read at the tiniest grid-cell size we actually use.
+function Subtitle({
+  text,
+  parent,
+  position = 'bottom',
+}: {
+  text: string;
+  parent: { width: number; height: number };
+  position?: 'bottom' | 'top-left';
+}) {
+  const margin = Math.round(parent.width * 0.04);
+  const isTopLeft = position === 'top-left';
+  const width = isTopLeft
+    ? Math.round(parent.width * 0.35)
+    : parent.width - 2 * margin;
+  const height = Math.round(parent.height * (isTopLeft ? 0.28 : 0.12));
+  return (
+    <View
+      style={{
+        backgroundColor: '#000000CC',
+        borderRadius: 16,
+        paddingHorizontal: 32,
+        left: margin,
+        ...(isTopLeft ? { top: margin } : { bottom: margin }),
+        width,
+        height,
+        overflow: 'hidden',
+        direction: 'column',
+      }}>
+      <View />
+      <Text
+        style={{
+          width: width - 64,
+          fontSize: isTopLeft ? 36 : 48,
+          lineHeight: 60,
+          color: '#FFFFFFFF',
+          align: 'center',
+          wrap: 'word',
+        }}>
+        {text}
+      </Text>
+      <View />
+    </View>
+  );
+}
+

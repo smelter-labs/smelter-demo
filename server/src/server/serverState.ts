@@ -54,6 +54,15 @@ class ServerState {
     return room;
   }
 
+  public getRoomForInput(inputId: string): RoomState | null {
+    for (const room of Object.values(this.rooms)) {
+      if (room.getInputs().some(i => i.inputId === inputId)) {
+        return room;
+      }
+    }
+    return null;
+  }
+
   public async deleteRoom(roomId: string) {
     const room = this.rooms[roomId];
     delete this.rooms[roomId];

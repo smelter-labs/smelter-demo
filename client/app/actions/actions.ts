@@ -221,11 +221,12 @@ export async function removeInput(roomId: string, inputId: string) {
 export async function addCameraInput(
   roomId: string,
   username?: string,
+  transcription: boolean = false,
 ): Promise<AddInputResponse> {
   const response = await sendSmelterRequest(
     'post',
     `/room/${encodeURIComponent(roomId)}/input`,
-    { type: 'whip', username: username || undefined },
+    { type: 'whip', username: username || undefined, transcription },
   );
   return {
     inputId: response.inputId,

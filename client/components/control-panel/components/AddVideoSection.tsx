@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 type AddTab = 'stream' | 'mp4' | 'image' | 'inputs';
 type StreamTab = 'twitch' | 'kick';
-type InputsTab = 'camera' | 'screenshare';
+type InputsTab = 'camera' | 'camera-captions' | 'screenshare';
 
 type AddVideoSectionProps = {
   inputs: Input[];
@@ -165,6 +165,15 @@ export function AddVideoSection({
                   </button>
                   <button
                     className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
+                      inputsActiveTab === 'camera-captions'
+                        ? 'border-b-[3px] border-red-40 text-white-100'
+                        : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
+                    }`}
+                    onClick={() => setInputsActiveTab('camera-captions')}>
+                    Camera + Captions
+                  </button>
+                  <button
+                    className={`py-2 px-2 md:px-3 -mb-[1px] cursor-pointer text-sm font-bold transition-colors ${
                       inputsActiveTab === 'screenshare'
                         ? 'border-b-[3px] border-red-40 text-white-100'
                         : 'border-b-[3px] border-transparent text-white-75 hover:text-white-100'
@@ -185,6 +194,20 @@ export function AddVideoSection({
                   streamRef={cameraStreamRef}
                   setActiveWhipInputId={setActiveCameraInputId}
                   setIsWhipActive={setIsCameraActive}
+                />
+              )}
+              {!isMobile && inputsActiveTab === 'camera-captions' && (
+                <WHIPAddInputForm
+                  inputs={inputs}
+                  roomId={roomId}
+                  refreshState={refreshState}
+                  userName={userName}
+                  setUserName={setUserName}
+                  pcRef={cameraPcRef}
+                  streamRef={cameraStreamRef}
+                  setActiveWhipInputId={setActiveCameraInputId}
+                  setIsWhipActive={setIsCameraActive}
+                  transcription
                 />
               )}
               {!isMobile && inputsActiveTab === 'screenshare' && (

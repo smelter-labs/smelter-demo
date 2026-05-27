@@ -36,15 +36,26 @@ export type Layout =
 export type RoomStore = {
   inputs: InputConfig[];
   layout: Layout;
+  transcripts: Record<string, string>;
   updateState: (inputs: InputConfig[], layout: Layout) => void;
+  setTranscript: (inputId: string, text: string) => void;
 };
 
 export function createRoomStore(): StoreApi<RoomStore> {
   return createStore<RoomStore>(set => ({
     inputs: [],
     layout: 'grid',
+    transcripts: {},
     updateState: (inputs: InputConfig[], layout: Layout) => {
       set(_state => ({ inputs, layout }));
+    },
+    setTranscript: (inputId: string, text: string) => {
+      set(state => {
+        const next = { ...state.transcripts };
+        if (text) next[inputId] = text;
+        else delete next[inputId];
+        return { transcripts: next };
+      });
     },
   }));
 }
