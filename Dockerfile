@@ -1,4 +1,4 @@
-FROM ghcr.io/smelter-labs/smelter-rc:362799df-x86_64
+FROM ghcr.io/smelter-labs/smelter-rc:7054709b-x86_64
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
