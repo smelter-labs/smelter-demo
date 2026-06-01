@@ -10,7 +10,7 @@ import {
   Shader,
 } from '@swmansion/smelter';
 
-import { useContext, type ReactElement } from 'react';
+import { useContext, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useStore } from 'zustand';
 import type { ShaderConfig, ShaderParamConfig } from '../shaders/shaders';
 import { StoreContext } from '../app/store';
@@ -63,7 +63,21 @@ export function Input({
 }) {
   const streams = useInputStreams();
   const isImage = !!input.imageId;
-  const streamState = isImage ? 'playing' : (streams[input.inputId]?.videoState ?? 'finished');
+  const actualStreamState = isImage ? 'playing' : (streams[input.inputId]?.videoState ?? 'finished');
+  // Looping videos briefly flip between states between iterations — defer every
+  // transition 100ms and only apply it if the value is still the same after the wait.
+  const [streamState, setStreamState] = useState(actualStreamState);
+  const actualStreamStateRef = useRef(actualStreamState);
+  actualStreamStateRef.current = actualStreamState;
+  useEffect(() => {
+    const target = actualStreamState;
+    const timer = setTimeout(() => {
+      if (actualStreamStateRef.current === target) {
+        setStreamState(target);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [actualStreamState]);
   const resolution = { width: 1920, height: 1080 };
   const store = useContext(StoreContext);
   const transcript = useStore(store, s => s.transcripts[input.inputId] ?? '');
