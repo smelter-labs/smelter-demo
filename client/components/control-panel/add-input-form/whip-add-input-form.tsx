@@ -21,6 +21,7 @@ export function WHIPAddInputForm(props: {
   streamRef: React.MutableRefObject<MediaStream | null>;
   setActiveWhipInputId: (id: string | null) => void;
   setIsWhipActive: (active: boolean) => void;
+  transcription?: boolean;
 }) {
   const {
     inputs,
@@ -32,6 +33,7 @@ export function WHIPAddInputForm(props: {
     streamRef,
     setActiveWhipInputId,
     setIsWhipActive,
+    transcription = false,
   } = props;
 
   const handleAddWhip = async (whipUserName: string) => {
@@ -42,7 +44,7 @@ export function WHIPAddInputForm(props: {
     }
     try {
       const s = loadWhipSession();
-      const response = await addCameraInput(roomId, cleanedName);
+      const response = await addCameraInput(roomId, cleanedName, transcription);
 
       setActiveWhipInputId(response.inputId);
       setIsWhipActive(false);
@@ -96,7 +98,7 @@ export function WHIPAddInputForm(props: {
       }}
       renderSuggestion={(suggestion: string) => suggestion}
       getSuggestionValue={(v) => v}
-      buttonText='Add Camera'
+      buttonText={transcription ? 'Add Camera + Captions' : 'Add Camera'}
       loadingText='Adding...'
       validateInput={(value) =>
         !value ? 'Please enter a username.' : undefined

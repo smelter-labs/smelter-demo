@@ -13,7 +13,7 @@ export function PrimaryOnLeftLayout() {
   }
   return (
     <View style={{ direction: 'row' }}>
-      <Rescaler style={{ width: 1500 }}>
+      <Rescaler style={{ width: 1700 }}>
         <Input input={firstInput} />
       </Rescaler>
       <Tiles transition={{ durationMs: 300 }} style={{ padding: 10 }}>

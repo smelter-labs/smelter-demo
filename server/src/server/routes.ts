@@ -173,6 +173,7 @@ const AddInputSchema = Type.Union([
   Type.Object({
     type: Type.Literal('whip'),
     username: Type.String(),
+    transcription: Type.Boolean(),
   }),
   Type.Object({
     type: Type.Literal('local-mp4'),

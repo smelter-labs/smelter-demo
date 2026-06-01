@@ -1,5 +1,5 @@
 import { View, Tiles, Rescaler, Image, Text } from '@swmansion/smelter';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useId, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { StoreContext } from '../store';
 import { Input, SmallInput } from '../../inputs/inputs';
@@ -17,7 +17,9 @@ export function PictureInPictureLayout() {
 
   const [waveAmpPx, setWaveAmpPx] = useState(0);
   const [waveSpeed, setWaveSpeed] = useState(0);
-  const [marqueeLeft, setMarqueeLeft] = useState(2560);
+  const [marquee, setMarquee] = useState({ left: 2560, cycle: 0 });
+  const marqueeRef = useRef(marquee);
+  const marqueeBaseId = useId();
   useEffect(() => {
     let mounted = true;
     let tweenId: ReturnType<typeof setInterval> | null = null;
@@ -52,7 +54,7 @@ export function PictureInPictureLayout() {
       setWaveAmpPx(0);
       if (!marqueeId) {
         const pxPerSec = 240;
-        const intervalMs = 10;
+        const intervalMs = 500;
         const step = (pxPerSec * intervalMs) / 1000;
         const resetRight = 2560;
         const minLeft = -5620;
@@ -60,10 +62,14 @@ export function PictureInPictureLayout() {
           if (!mounted) {
             return;
           }
-          setMarqueeLeft(prev => {
-            const next = prev - step;
-            return next < minLeft ? resetRight : next;
-          });
+          const cur = marqueeRef.current;
+          const nextLeft = cur.left - step;
+          const updated =
+            nextLeft < minLeft
+              ? { left: resetRight, cycle: cur.cycle + 1 }
+              : { left: nextLeft, cycle: cur.cycle };
+          marqueeRef.current = updated;
+          setMarquee(updated);
         }, intervalMs);
       }
       timerId = setTimeout(() => {
@@ -95,6 +101,9 @@ export function PictureInPictureLayout() {
       if (timerId) {
         clearTimeout(timerId);
       }
+      if (marqueeId) {
+        clearInterval(marqueeId);
+      }
     };
   }, []);
 
@@ -111,7 +120,7 @@ export function PictureInPictureLayout() {
           top: 0,
           left: 0,
         }}>
-        <Input input={firstInput} />
+        <Input input={firstInput} subtitlePosition="top-left" />
       </Rescaler>
       {secondInput ? (
         <Rescaler style={{ top: 60, right: 60, width: 640, height: 1080 }}>
@@ -196,6 +205,8 @@ export function PictureInPictureLayout() {
                 backgroundColor: '#342956',
               }}>
               <View
+                id={`${marqueeBaseId}:${marquee.cycle}`}
+                transition={{ durationMs: 600, shouldInterrupt: true }}
                 style={{
                   direction: 'column',
                   height: 192,
@@ -203,7 +214,7 @@ export function PictureInPictureLayout() {
                   overflow: 'visible',
                   padding: 10,
                   top: 48,
-                  left: Math.round(marqueeLeft),
+                  left: Math.round(marquee.left),
                 }}>
                 <Text
                   style={{

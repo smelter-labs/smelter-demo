@@ -52,7 +52,7 @@ export function useControlPanelState(
     isKick ? 'kick' : 'twitch',
   );
 
-  type InputsTab = 'camera' | 'screenshare';
+  type InputsTab = 'camera' | 'camera-captions' | 'screenshare';
   const [inputsActiveTab, setInputsActiveTab] = useState<InputsTab>('camera');
 
   const getInputWrappers = useCallback(

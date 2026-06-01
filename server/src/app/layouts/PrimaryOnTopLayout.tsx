@@ -14,7 +14,7 @@ export function PrimaryOnTopLayout() {
 
   return (
     <View style={{ direction: 'column' }}>
-      <Rescaler style={{ height: 800 }}>
+      <Rescaler style={{ height: 900 }}>
         <Input input={firstInput} />
       </Rescaler>
       <Tiles transition={{ durationMs: 300 }} style={{ padding: 10 }}>

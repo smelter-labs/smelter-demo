@@ -1,6 +1,7 @@
 import { pathExists, readdir } from 'fs-extra';
 import path from 'node:path';
 import { SmelterInstance, type RegisterSmelterInputOptions, type SmelterOutput } from '../smelter';
+import type { TranscriptEvent } from './pythonBridge';
 import { hlsUrlForKickChannel, hlsUrlForTwitchChannel } from '../streamlink';
 import { TwitchChannelMonitor } from '../twitch/TwitchChannelMonitor';
 import { sleep } from '../utils';
@@ -27,7 +28,7 @@ type TypeSpecificState =
   | { type: 'local-mp4'; mp4FilePath: string }
   | { type: 'twitch-channel'; channelId: string; hlsUrl: string; monitor: TwitchChannelMonitor }
   | { type: 'kick-channel'; channelId: string; hlsUrl: string; monitor: KickChannelMonitor }
-  | { type: 'whip'; whipUrl: string; monitor: WhipInputMonitor }
+  | { type: 'whip'; whipUrl: string; monitor: WhipInputMonitor; transcription: boolean }
   | { type: 'image'; imageId: string };
 
 type UpdateInputOptions = {
@@ -48,6 +49,7 @@ export type RegisterInputOptions =
   | {
       type: 'whip';
       username: string;
+      transcription: boolean;
     }
   | {
       type: 'local-mp4';
@@ -63,6 +65,8 @@ export type RegisterInputOptions =
 
 const PLACEHOLDER_LOGO_FILE = 'logo_Smelter.png';
 
+const SUBTITLE_LINGER_MS = 500;
+
 export class RoomState {
   private inputs: RoomInputState[];
   private layout: Layout = 'picture-in-picture';
@@ -71,6 +75,7 @@ export class RoomState {
   private mp4sDir: string;
   private mp4Files: string[];
   private output: SmelterOutput;
+  private transcriptClearTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   public lastReadTimestamp: number;
   public creationTimestamp: number;
@@ -215,7 +220,7 @@ export class RoomState {
     }
   }
 
-  public async addNewWhipInput(username: string) {
+  public async addNewWhipInput(username: string, transcription: boolean) {
     const inputId = `${this.idPrefix}::whip::${Date.now()}`;
     const monitor = await WhipInputMonitor.startMonitor(username);
     monitor.touch();
@@ -232,8 +237,8 @@ export class RoomState {
       },
       volume: 0,
       whipUrl: '',
+      transcription,
     });
-
     return inputId;
   }
 
@@ -242,7 +247,7 @@ export class RoomState {
     await this.removePlaceholder();
 
     if (opts.type === 'whip') {
-      const inputId = await this.addNewWhipInput(opts.username);
+      const inputId = await this.addNewWhipInput(opts.username, opts.transcription);
       return inputId;
     } else if (opts.type === 'twitch-channel') {
       const inputId = inputIdForTwitchInput(this.idPrefix, opts.channelId);
@@ -399,7 +404,6 @@ export class RoomState {
     if (input.type === 'twitch-channel' || input.type === 'kick-channel') {
       input.monitor.stop();
     }
-
     while (input.status === 'pending') {
       await sleep(500);
     }
@@ -685,6 +689,24 @@ export class RoomState {
       });
     }
   }
+
+  // Apply a wall-clock-aligned transcript event and schedule an
+  // auto-clear after the segment so leftover text doesn't stick.
+  public applyTranscript(event: TranscriptEvent): void {
+    const input = this.inputs.find(i => i.inputId === event.inputId);
+    if (!input || input.type !== 'whip' || !input.transcription) return;
+
+    const prev = this.transcriptClearTimers.get(event.inputId);
+    if (prev) clearTimeout(prev);
+
+    this.output.store.getState().setTranscript(event.inputId, event.text);
+
+    const timer = setTimeout(() => {
+      this.transcriptClearTimers.delete(event.inputId);
+      this.output.store.getState().setTranscript(event.inputId, '');
+    }, event.duration + SUBTITLE_LINGER_MS);
+    this.transcriptClearTimers.set(event.inputId, timer);
+  }
 }
 
 function registerOptionsFromInput(input: RoomInputState): RegisterSmelterInputOptions {
@@ -693,7 +715,7 @@ function registerOptionsFromInput(input: RoomInputState): RegisterSmelterInputOp
   } else if (input.type === 'twitch-channel' || input.type === 'kick-channel') {
     return { type: 'hls', url: input.hlsUrl };
   } else if (input.type === 'whip') {
-    return { type: 'whip', url: input.whipUrl };
+    return { type: 'whip', url: input.whipUrl, transcription: input.transcription };
   } else if (input.type === 'image') {
     // Images are static resources, they don't need to be registered as inputs
     // They are already registered via registerImage and used directly in layouts

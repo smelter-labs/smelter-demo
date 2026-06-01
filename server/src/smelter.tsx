@@ -17,18 +17,19 @@ export type SmelterOutput = {
 
 export type RegisterSmelterInputOptions =
   | {
-      type: 'mp4';
-      filePath: string;
-      loop?: boolean;
-    }
+    type: 'mp4';
+    filePath: string;
+    loop?: boolean;
+  }
   | {
-      type: 'hls';
-      url: string;
-    }
+    type: 'hls';
+    url: string;
+  }
   | {
-      type: 'whip';
-      url: string;
-    };
+    type: 'whip';
+    url: string;
+    transcription: boolean;
+  };
 
 // TODO: optional based on env
 const MP4_DECODER_MAP = {
@@ -62,14 +63,21 @@ function isFatalSmelterError(err: any): boolean {
 
 export class SmelterManager {
   private instance: Smelter;
+  private startedAt: number | null = null;
 
   constructor() {
     this.instance = new Smelter();
   }
 
+  public getStartTime(): number | null {
+    return this.startedAt;
+  }
+
   public async init() {
     await SmelterInstance['instance'].init();
     await SmelterInstance['instance'].start();
+    this.startedAt = Date.now();
+
     await SmelterInstance['instance'].registerImage('spinner', {
       serverPath: path.join(__dirname, '../loading.gif'),
       assetType: 'gif',
@@ -140,6 +148,9 @@ export class SmelterManager {
         const res = await this.instance.registerInput(inputId, {
           type: 'whip_server',
           video: { decoderPreferences: WHIP_SERVER_DECODER_PREFERENCES },
+          ...(opts.transcription
+            ? { sideChannel: { audio: true, delayMs: 8000 } }
+            : {}),
         });
         console.log('whipInput', res);
         if (!res.bearerToken) {
