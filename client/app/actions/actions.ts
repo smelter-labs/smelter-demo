@@ -5,7 +5,7 @@ import type { SpawnOptions } from 'node:child_process';
 import { spawn as nodeSpawn } from 'node:child_process';
 import { assert } from 'node:console';
 
-const BASE_URL = process.env.SMELTER_DEMO_SERVER_URL;
+const BASE_URL = 'https://demo-backend.smelter.dev';
 
 assert(BASE_URL);
 

@@ -19,8 +19,8 @@ export const config: Config =
         logger: {
           level: (process.env.SMELTER_DEMO_ROUTER_LOGGER_LEVEL ?? 'warn') as any,
         },
-        whepBaseUrl: 'https://puffer.fishjam.io/smelter-demo-whep/whep',
-        whipBaseUrl: 'https://puffer.fishjam.io/smelter-demo-whep/whip',
+        whepBaseUrl: 'https://demo-backend.smelter.dev/webrtc/whep',
+        whipBaseUrl: 'https://demo-backend.smelter.dev/webrtc/whip',
         h264Decoder: 'vulkan_h264',
         // h264Decoder: 'ffmpeg_h264',
         h264Encoder: { type: 'vulkan_h264', bitrate: 10_000_000 },
