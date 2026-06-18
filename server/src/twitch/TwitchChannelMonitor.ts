@@ -93,13 +93,10 @@ async function getTopStreams(categoryId: string): Promise<TwitchStreamInfo[]> {
   console.log('[twitch] Got Twitch top streams');
 
   const streamIds = await getTopStreamsFromCategory(categoryId, STREAMS_PER_CATEGORY);
-  return await Promise.all(
-    streamIds
-      .map(async streamId => {
-        return (await getTwitchStreamInfo(streamId))!;
-      })
-      .filter(stream => !!stream)
+  const streams = await Promise.all(
+    streamIds.map(streamId => getTwitchStreamInfo(streamId))
   );
+  return streams.filter((stream): stream is TwitchStreamInfo => !!stream);
 }
 
 export const TwitchChannelSuggestions = new TwitchChannelSuggestionsMonitor();

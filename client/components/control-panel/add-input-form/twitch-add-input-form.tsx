@@ -60,6 +60,7 @@ export default function TwitchAddInputForm({
       showButton={true}
       filterSuggestions={(twitchSuggestions, currentSuggestion, inputs) =>
         twitchSuggestions
+          .filter((suggestion) => !!suggestion)
           .filter((suggestion) => {
             for (const input of inputs) {
               if (input.channelId === suggestion.streamId) {
