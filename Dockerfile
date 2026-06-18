@@ -39,7 +39,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
 USER $USERNAME
 ENV SMELTER_PATH=/home/smelter/smelter/main_process
 
-RUN sudo npm install -g pnpm@10
+RUN sudo npm install -g pnpm
 
 RUN pipx install streamlink
 ENV PATH=/home/smelter/.local/bin:$PATH

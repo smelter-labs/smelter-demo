@@ -1,13 +1,23 @@
 {
   description = "Dev shell for Smelter demo";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Smelter compositor binary, built from source at the v0.6.0 tag.
+    # The flake lives in the tools/nix subdirectory of the repo.
+    smelter.url = "github:software-mansion/smelter/v0.6.0?dir=tools/nix";
+  };
 
   outputs = inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
       perSystem = { config, self', inputs', pkgs, system, lib, ... }:
         let
+          # Smelter compositor binary built from the v0.6.0 tag (tools/nix flake).
+          # @swmansion/smelter-node uses SMELTER_PATH instead of downloading a
+          # prebuilt binary when it is set — see the devShell shellHook below.
+          smelter = inputs'.smelter.packages.default;
+
           smelter-sdk = pkgs.python3Packages.buildPythonPackage rec {
             pname = "smelter-sdk";
             version = "0.1.0";
@@ -58,9 +68,13 @@
                 nodejs
                 ffmpeg
                 pythonEnv
-                nodePackages.vercel
+                vercel-pkg
                 docker-compose
               ];
+
+              shellHook = ''
+                export SMELTER_PATH=${smelter}/bin/smelter
+              '';
             };
           };
         };
