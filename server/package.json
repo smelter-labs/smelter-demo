@@ -16,6 +16,7 @@
     "@swmansion/smelter": "0.4.0",
     "@swmansion/smelter-node": "0.4.0",
     "@types/fs-extra": "^11.0.4",
+    "dotenv": "^17.4.2",
     "fastify": "^5.4.0",
     "fs-extra": "^11.2.0",
     "react": "18.3.1",

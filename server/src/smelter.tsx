@@ -61,6 +61,10 @@ function isFatalSmelterError(err: any): boolean {
   );
 }
 
+function isAlreadyRegisteredError(err: any): boolean {
+  return err?.body?.error_code === 'ENTITY_ALREADY_REGISTERED';
+}
+
 export class SmelterManager {
   private instance: Smelter;
   private startedAt: number | null = null;
@@ -74,30 +78,33 @@ export class SmelterManager {
   }
 
   public async init() {
-    await SmelterInstance['instance'].init();
-    await SmelterInstance['instance'].start();
+    await this.instance.init();
+    await this.instance.start();
     this.startedAt = Date.now();
 
-    await SmelterInstance['instance'].registerImage('spinner', {
+    await this.registerBuiltinImage('spinner', {
       serverPath: path.join(__dirname, '../loading.gif'),
       assetType: 'gif',
     });
-    await SmelterInstance['instance'].registerImage('news_strip', {
+    await this.registerBuiltinImage('news_strip', {
       serverPath: path.join(process.cwd(), 'mp4s', 'news_strip', 'news_strip.png'),
       assetType: 'png',
     });
-    await SmelterInstance['instance'].registerImage('smelter_logo', {
+    await this.registerBuiltinImage('smelter_logo', {
       serverPath: path.join(__dirname, '../imgs/smelter_logo.png'),
       assetType: 'png',
     });
 
     for (const shader of shadersController.shaders) {
       await this.registerShaderFromFile(
-        SmelterInstance['instance'],
         shader.id,
         path.join(__dirname, `../shaders/${shader.shaderFile}`)
       );
     }
+  }
+
+  public async terminate(): Promise<void> {
+    await this.instance.terminate();
   }
 
   public async registerOutput(roomId: string): Promise<SmelterOutput> {
@@ -213,12 +220,31 @@ export class SmelterManager {
     });
   }
 
-  private async registerShaderFromFile(smelter: Smelter, shaderId: string, file: string) {
+  private async registerBuiltinImage(
+    imageId: string,
+    opts: { serverPath: string; assetType: 'jpeg' | 'png' | 'gif' | 'svg' | 'auto' }
+  ): Promise<void> {
+    try {
+      await this.instance.registerImage(imageId, opts);
+    } catch (err: any) {
+      if (isAlreadyRegisteredError(err)) {
+        return;
+      }
+      throw err;
+    }
+  }
+
+  private async registerShaderFromFile(shaderId: string, file: string) {
     const source = await readFile(file, { encoding: 'utf-8' });
 
-    await smelter.registerShader(shaderId, {
-      source,
-    });
+    try {
+      await this.instance.registerShader(shaderId, { source });
+    } catch (err: any) {
+      if (isAlreadyRegisteredError(err)) {
+        return;
+      }
+      throw err;
+    }
   }
 }
 

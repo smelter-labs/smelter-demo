@@ -95,25 +95,25 @@ async def discover_inputs(vad_model, whisper_model: WhisperModel) -> None:
             log.warning("list_channels failed: %s", err)
             channels = []
 
-        for c in channels:
-            if c.kind.value != "audio":
-                continue
-            if c.input_id in running and not running[c.input_id].done():
-                continue
-            log.info("starting whisper worker for %s", c.input_id)
-            running[c.input_id] = asyncio.create_task(
-                run_whisper(c.input_id, vad_model, whisper_model)
-            )
-
         for input_id, task in list(running.items()):
             if task.done():
                 try:
                     task.result()
                 except Exception as err:  # noqa: BLE001
-                    log.warning("whisper worker for %s ended: %s", input_id, err)
+                    log.warning("whisper worker for %s ended: %r", input_id, err)
                 else:
                     log.info("whisper worker for %s ended", input_id)
                 del running[input_id]
+
+        for c in channels:
+            if c.kind.value != "audio":
+                continue
+            if c.input_id in running:
+                continue
+            log.info("starting whisper worker for %s", c.input_id)
+            running[c.input_id] = asyncio.create_task(
+                run_whisper(c.input_id, vad_model, whisper_model)
+            )
 
         await asyncio.sleep(DISCOVERY_INTERVAL_S)
 

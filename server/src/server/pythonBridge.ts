@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 
 import { WebSocketServer, type WebSocket } from 'ws';
@@ -31,6 +31,7 @@ type IncomingMessage = {
 export class PythonBridge {
   private opts: PythonBridgeOptions;
   private ws: WebSocket | null = null;
+  private sidecar: ChildProcess | null = null;
 
   constructor(opts: PythonBridgeOptions) {
     this.opts = opts;
@@ -111,7 +112,7 @@ export class PythonBridge {
       return;
     }
     const pythonBin = process.env.SIDECAR_PYTHON || 'python3';
-    const py = spawn(pythonBin, ['-u', PYTHON_SCRIPT], {
+    this.sidecar = spawn(pythonBin, ['-u', PYTHON_SCRIPT], {
       stdio: 'inherit',
       cwd: path.dirname(PYTHON_SCRIPT),
       env: {
@@ -120,10 +121,11 @@ export class PythonBridge {
         NODE_WS_URL: `ws://127.0.0.1:${this.opts.port}`,
       },
     });
-    py.on('exit', code => console.log(`[sidechannel] python exited with code ${code}`));
-    process.on('SIGINT', () => {
-      py.kill('SIGINT');
-      process.exit(0);
-    });
+    this.sidecar.on('exit', code => console.log(`[sidechannel] python exited with code ${code}`));
+  }
+
+  stop(): void {
+    this.sidecar?.kill('SIGINT');
+    this.sidecar = null;
   }
 }
