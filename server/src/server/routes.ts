@@ -10,6 +10,7 @@ import pictureSuggestionsMonitor from '../pictures/pictureSuggestionMonitor';
 import { KickChannelSuggestions } from '../kick/KickChannelMonitor';
 import type { ShaderConfig } from '../shaders/shaders';
 import shadersController from '../shaders/shaders';
+import { playgroundRoutes } from '../playground/routes';
 
 type RoomIdParams = { Params: { roomId: string } };
 type RoomAndInputIdParams = { Params: { roomId: string; inputId: string } };
@@ -30,6 +31,8 @@ type InputState = {
 export const routes = Fastify({
   logger: config.logger,
 }).withTypeProvider<TypeBoxTypeProvider>();
+
+routes.register(playgroundRoutes, { prefix: '/playground' });
 
 routes.get('/suggestions/mp4s', async (_req, res) => {
   res.status(200).send({ mp4s: mp4SuggestionsMonitor.mp4Files });
