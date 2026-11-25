@@ -3,9 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    # Smelter compositor binary, built from source at the v0.6.0 tag.
+    # Smelter compositor binary, built from source. @swmansion/smelter-node
+    # 0.5.0-rc.1 uses RC 482f554a, but that commit doesn't build with nix
+    # (duplicate `mp4 0.14.0` in Cargo.lock, missing aws-lc), so this pins
+    # master 07b73879, the first commit after it with both fixed.
     # The flake lives in the tools/nix subdirectory of the repo.
-    smelter.url = "github:software-mansion/smelter/v0.6.0?dir=tools/nix";
+    smelter.url = "github:software-mansion/smelter/07b738792493519d9f6e6a0e6bcacb740df394dc?dir=tools/nix";
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -13,7 +16,7 @@
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
       perSystem = { config, self', inputs', pkgs, system, lib, ... }:
         let
-          # Smelter compositor binary built from the v0.6.0 tag (tools/nix flake).
+          # Smelter compositor binary (tools/nix flake).
           # @swmansion/smelter-node uses SMELTER_PATH instead of downloading a
           # prebuilt binary when it is set — see the devShell shellHook below.
           smelter = inputs'.smelter.packages.default;

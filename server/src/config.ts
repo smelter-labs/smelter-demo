@@ -26,8 +26,8 @@ export const config: Config =
         h264Encoder: { type: 'vulkan_h264', bitrate: 10_000_000 },
         //h264Encoder: {
         //  type: 'ffmpeg_h264',
-        //  preset: 'veryfast',
         //  ffmpegOptions: {
+        //    preset: 'veryfast',
         //    tune: 'zerolatency',
         //    thread_type: 'slice',
         //  },
@@ -45,7 +45,6 @@ export const config: Config =
         h264Decoder: 'ffmpeg_h264',
         h264Encoder: {
           type: 'ffmpeg_h264',
-          preset: 'ultrafast',
           ffmpegOptions: {
             tune: 'zerolatency',
             thread_type: 'slice',
