@@ -1,0 +1,43 @@
+name: Restart prod
+
+# Redeploys the already published `latest` image without building a new one.
+# The deploy step mirrors the `deploy` job in deploy_prod.yml (keep both in sync),
+# except that containers are always recreated, even if the image did not change.
+
+on:
+  workflow_dispatch:
+
+# Same group as "Deploy prod", so a restart never runs in parallel with a deploy.
+concurrency:
+  group: demo-prod-deploy
+  cancel-in-progress: false
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 30m
+          envs: TWITCH_CLIENT_ID,TWITCH_CLIENT_SECRET,KICK_CLIENT_ID,KICK_CLIENT_SECRET,SMELTER_SERVER_LOGGER_LEVEL,SMELTER_DEMO_ROUTER_LOGGER_LEVEL,SMELTER_LOGGER_LEVEL
+          script: |
+            set -euo pipefail
+            cd ~/smelter-demo
+            docker compose -f compose.yml pull
+            docker compose -f compose.yml up -d --force-recreate --remove-orphans
+            docker image prune -f
+        env:
+          # Secrets
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          KICK_CLIENT_ID: ${{ secrets.KICK_CLIENT_ID }}
+          KICK_CLIENT_SECRET: ${{ secrets.KICK_CLIENT_SECRET }}
+          # Plain-text config
+          SMELTER_SERVER_LOGGER_LEVEL: "debug,smelter_core=info,naga=info,cosmic_text=info,wgpu_hal=trace,smelter_core::pipeline::instance=warn"
+          SMELTER_DEMO_ROUTER_LOGGER_LEVEL: "warn"
+          SMELTER_LOGGER_LEVEL: "info"
